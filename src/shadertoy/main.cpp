@@ -12,15 +12,16 @@
 // Local headers.
 
 #include "all.hpp"
+#include "error_callback.hpp"
 
-#include <common/all.hpp>
+
 #include <local/all.hpp>
-#include <engine/all.hpp>
 #include <program/all.hpp>
-#include "file.hpp"
-#include "root.hpp"
 
 // External libraries.
+
+#include <agl/engine/all.hpp>
+#include <agl/standard/all.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
