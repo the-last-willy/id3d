@@ -24,6 +24,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <range/v3/view/take.hpp>
+
 // Standard library.
 
 #include <iostream>
@@ -70,19 +72,27 @@ struct App : Program {
         }
 
         auto off = format::off::read(local::root_folder + "/data/queen.off");
-        std::cout << std::endl;
 
         FaceVertexMesh fvmesh;
 
-
-        auto mesh = TriangleMesh();
-        {
-            mesh.triangle_indices = off.triangle_indices;
-            mesh.vertex_positions = off.vertex_positions;
+        auto mesh = triangle_mesh::Mesh();
+        { // Off to triangle mesh.
+            mesh.topology.triangles.resize(size(off.triangle_indices));
+            for(std::size_t i = 0; i < size(off.triangle_indices); ++i) {
+                auto& tis = off.triangle_indices[i];
+                mesh.topology.triangles[i] = triangle_mesh::TriangleTopology{
+                    triangle_mesh::VertexIndex{static_cast<uint32_t>(tis[0])},
+                    triangle_mesh::VertexIndex{static_cast<uint32_t>(tis[1])},
+                    triangle_mesh::VertexIndex{static_cast<uint32_t>(tis[2])}};
+            }
+            mesh.geometry.vertex_positions.resize(size(off.vertex_positions));
+            for(std::size_t i = 0; i < size(off.vertex_positions); ++i) {
+                mesh.geometry.vertex_positions[i] = off.vertex_positions[i];
+            }
         }
 
         {
-            drawable_mesh = vertex_mesh(mesh);
+            drawable_mesh = triangle_mesh::triangle_mesh(mesh);
             for(auto& p : drawable_mesh->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }

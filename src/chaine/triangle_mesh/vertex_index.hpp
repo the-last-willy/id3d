@@ -1,9 +1,15 @@
 #pragma once
 
+#include "chaine/index.hpp"
+
 namespace chaine::triangle_mesh {
 
-struct VertexIndex {
-    unsigned value = 0;
+struct VertexIndexTraits {
+    using Value = uint32_t;
+
+    static constexpr Value default_value = 0;
 };
+
+using VertexIndex = Index<VertexIndexTraits>;
 
 }

@@ -1,20 +1,15 @@
 #pragma once
 
-#include <agl/all.hpp>
-#include <agl/engine/all.hpp>
+#include "mesh.hpp"
+#include "triangle_proxy.hpp"
+#include "vertex_proxy.hpp"
 
-#include <memory>
-#include <vector>
+#include <range/v3/view/enumerate.hpp>
 
-namespace chaine {
-
-struct TriangleMesh {
-    std::vector<agl::Uvec3> triangle_indices = {};
-    std::vector<agl::Vec3> vertex_positions = {};
-};
+namespace chaine::triangle_mesh {
 
 inline
-auto face_mesh(const TriangleMesh& m) {
+auto triangle_mesh(const Mesh& m) {
     auto index_accessor = eng::Accessor();
     {
         auto& accessor = index_accessor;
@@ -26,11 +21,11 @@ auto face_mesh(const TriangleMesh& m) {
             buffer.opengl = create(agl::buffer_tag);
             storage(
                 buffer.opengl,
-                size(m.triangle_indices) * sizeof(agl::Uvec3), 
+                3 * triangle_count(m) * sizeof(uint32_t), 
                 GL_MAP_WRITE_BIT);
-            auto mapping = map<agl::Uvec3>(buffer.opengl, GL_WRITE_ONLY);
-            for(std::size_t i = 0; i < size(m.triangle_indices); ++i) {
-                mapping[i] = m.triangle_indices[i];
+            auto mapping = map<std::array<VertexIndex, 3>>(buffer.opengl, GL_WRITE_ONLY);
+            for(auto&& [i, t] : ranges::views::enumerate(triangles(m))) {
+                mapping[i] = topology(t).vertices;
             }
             unmap(buffer.opengl);
 
@@ -53,11 +48,11 @@ auto face_mesh(const TriangleMesh& m) {
             buffer.opengl = create(agl::buffer_tag);
             storage(
                 buffer.opengl,
-                size(m.vertex_positions) * sizeof(agl::Vec3), 
+                vertex_count(m) * sizeof(agl::Vec3), 
                 GL_MAP_WRITE_BIT);
             auto mapping = map<agl::Vec3>(buffer.opengl, GL_WRITE_ONLY);
-            for(std::size_t i = 0; i < size(m.vertex_positions); ++i) {
-                mapping[i] = m.vertex_positions[i];
+            for(auto&& [i, v] : ranges::views::enumerate(vertices(m))) {
+                mapping[i] = position(v);
             }
             unmap(buffer.opengl);
 
@@ -75,14 +70,14 @@ auto face_mesh(const TriangleMesh& m) {
         primitive.attributes["POSITION"] = std::move(position_accessor);
         primitive.draw_type = agl::DrawType::unsigned_int;
         primitive.indices = std::move(index_accessor);
-        primitive.primitive_count = agl::Count<GLsizei>(GLsizei(3 * size(m.triangle_indices)));
+        primitive.primitive_count = agl::Count<GLsizei>(GLsizei(3 * triangle_count(m)));
     }
 
     return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive_ptr)}));
 }
 
 inline
-auto edge_mesh(const TriangleMesh& m) {
+auto edge_mesh(const Mesh& m) {
     auto index_accessor = eng::Accessor();
     {
         auto& accessor = index_accessor;
@@ -94,16 +89,17 @@ auto edge_mesh(const TriangleMesh& m) {
             buffer.opengl = create(agl::buffer_tag);
             storage(
                 buffer.opengl,
-                6 * size(m.vertex_positions) * sizeof(agl::Uvec3), 
+                6 * triangle_count(m) * sizeof(uint32_t), 
                 GL_MAP_WRITE_BIT);
-            auto mapping = map<GLuint>(buffer.opengl, GL_WRITE_ONLY);
-            for(std::size_t i = 0; i < size(m.triangle_indices); ++i) {
-                mapping[6 * i + 0] = m.triangle_indices[i][0];
-                mapping[6 * i + 1] = m.triangle_indices[i][1];
-                mapping[6 * i + 2] = m.triangle_indices[i][1];
-                mapping[6 * i + 3] = m.triangle_indices[i][2];
-                mapping[6 * i + 4] = m.triangle_indices[i][2];
-                mapping[6 * i + 5] = m.triangle_indices[i][0];
+            auto mapping = map<uint32_t>(buffer.opengl, GL_WRITE_ONLY);
+            for(auto&& [i, tr] : ranges::views::enumerate(triangles(m))) {
+                auto& to = topology(tr);
+                mapping[6 * i + 0] = to.vertices[0];
+                mapping[6 * i + 1] = to.vertices[1];
+                mapping[6 * i + 2] = to.vertices[1];
+                mapping[6 * i + 3] = to.vertices[2];
+                mapping[6 * i + 4] = to.vertices[2];
+                mapping[6 * i + 5] = to.vertices[0];
             }
             unmap(buffer.opengl);
 
@@ -126,11 +122,11 @@ auto edge_mesh(const TriangleMesh& m) {
             buffer.opengl = create(agl::buffer_tag);
             storage(
                 buffer.opengl,
-                size(m.vertex_positions) * sizeof(agl::Vec3), 
+                vertex_count(m) * sizeof(agl::Vec3), 
                 GL_MAP_WRITE_BIT);
             auto mapping = map<agl::Vec3>(buffer.opengl, GL_WRITE_ONLY);
-            for(std::size_t i = 0; i < size(m.vertex_positions); ++i) {
-                mapping[i] = m.vertex_positions[i];
+            for(auto&& [i, v] : ranges::views::enumerate(vertices(m))) {
+                mapping[i] = position(v);
             }
             unmap(buffer.opengl);
 
@@ -149,7 +145,7 @@ auto edge_mesh(const TriangleMesh& m) {
         primitive.draw_mode = agl::DrawMode::lines;
         primitive.draw_type = agl::DrawType::unsigned_int;
         primitive.indices = std::move(index_accessor);
-        primitive.primitive_count = agl::Count<GLsizei>(6 * GLsizei(size(m.triangle_indices)));
+        primitive.primitive_count = agl::Count<GLsizei>(6 * triangle_count(m));
         primitive.vertex_array = agl::vertex_array();
     }
 
@@ -158,34 +154,7 @@ auto edge_mesh(const TriangleMesh& m) {
 
 
 inline
-auto vertex_mesh(const TriangleMesh& m) {
-    auto index_accessor = eng::Accessor();
-    {
-        auto& accessor = index_accessor;
-
-        {
-            auto buffer_ptr = std::make_shared<eng::Buffer>();
-            auto& buffer = *buffer_ptr;
-
-            buffer.opengl = create(agl::buffer_tag);
-            storage(
-                buffer.opengl,
-                size(m.triangle_indices) * sizeof(agl::Uvec3), 
-                GL_MAP_WRITE_BIT);
-            auto mapping = map<agl::Uvec3>(buffer.opengl, GL_WRITE_ONLY);
-            for(std::size_t i = 0; i < size(m.triangle_indices); ++i) {
-                mapping[i] = m.triangle_indices[i];
-            }
-            unmap(buffer.opengl);
-
-            accessor.buffer = buffer_ptr;
-        }
-
-        accessor.buffer_view_byte_stride = agl::Stride<GLsizei>(4);
-        accessor.component_count = agl::Size<GLint>(1);
-        accessor.component_type = GL_UNSIGNED_INT;
-        
-    }
+auto vertex_mesh(const Mesh& m) {
     auto position_accessor = eng::Accessor();
     {
         auto& accessor = position_accessor;
@@ -197,11 +166,11 @@ auto vertex_mesh(const TriangleMesh& m) {
             buffer.opengl = create(agl::buffer_tag);
             storage(
                 buffer.opengl,
-                size(m.vertex_positions) * sizeof(agl::Vec3), 
+                vertex_count(m) * sizeof(agl::Vec3), 
                 GL_MAP_WRITE_BIT);
             auto mapping = map<agl::Vec3>(buffer.opengl, GL_WRITE_ONLY);
-            for(std::size_t i = 0; i < size(m.vertex_positions); ++i) {
-                mapping[i] = m.vertex_positions[i];
+            for(auto&& [i, v] : ranges::views::enumerate(vertices(m))) {
+                mapping[i] = position(v);
             }
             unmap(buffer.opengl);
 
@@ -219,8 +188,7 @@ auto vertex_mesh(const TriangleMesh& m) {
         primitive.attributes["POSITION"] = std::move(position_accessor);
         primitive.draw_mode = agl::DrawMode::points;
         primitive.draw_type = agl::DrawType::unsigned_int;
-        primitive.indices = std::move(index_accessor);
-        primitive.primitive_count = agl::Count<GLsizei>(3 * GLsizei(size(m.triangle_indices)));
+        primitive.primitive_count = agl::Count<GLsizei>(GLsizei(vertex_count(m)));
     }
 
     return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive_ptr)}));

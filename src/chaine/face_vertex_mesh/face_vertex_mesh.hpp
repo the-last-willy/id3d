@@ -18,7 +18,7 @@ struct FacePair {
     unsigned face; 
 };
 
-FaceVertexMesh to_face_vertex_mesh(TriangleMesh mesh) {
+FaceVertexMesh to_face_vertex_mesh(triangle_mesh::Topology mesh) {
 
     FaceVertexMesh fvmesh;
 
