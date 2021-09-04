@@ -11,6 +11,7 @@
 
 // Local headers.
 
+#include "data/all.hpp"
 #include "all.hpp"
 
 #include <local/all.hpp>
@@ -24,6 +25,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <range/v3/view/indirect.hpp>
 #include <range/v3/view/take.hpp>
 
 // Standard library.
@@ -38,9 +40,13 @@ struct RenderSettings {
     bool show_edges = true;
     bool show_triangles = true;
     bool show_vertices = true;
+
+    float point_size = 1.f;
 };
 
 struct App : Program {
+    RenderSettings render_settings;
+
     eng::ShaderCompiler shader_compiler = {};
 
     std::shared_ptr<eng::Mesh> drawable_mesh = nullptr;
@@ -49,6 +55,8 @@ struct App : Program {
     eng::PerspectiveProjection projection = {};
 
     eng::RenderPass render_pass = {};
+
+    eng::RenderPass vertex_pass = {};
 
     void init() override {
         shader_compiler.root = local::src_folder;
@@ -69,6 +77,10 @@ struct App : Program {
                 glCullFace(GL_BACK); }});
             render_pass.program->capabilities.push_back({ agl::Capability::depth_test, []() {
                 glDepthFunc(GL_LESS); }});
+        }
+        {  // Vertex pass.
+            vertex_pass.program = std::make_shared<eng::Program>(
+                data::vertex_program(shader_compiler));
         }
 
         auto off = format::off::read(local::root_folder + "/data/queen.off");
@@ -91,12 +103,19 @@ struct App : Program {
             }
         }
 
-        {
+        { // Render pass.
             drawable_mesh = triangle_mesh::triangle_mesh(mesh);
             for(auto& p : drawable_mesh->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
             add(render_pass, *drawable_mesh);
+        }
+        { // Vertex pass.
+            auto m = triangle_mesh::vertex_mesh(mesh);
+            for(auto& p : m->primitives | ranges::views::indirect) {
+                p.material = std::make_shared<eng::Material>();
+            }
+            add(vertex_pass, *m);
         }
 
         projection.aspect_ratio = 16.f / 9.f;
@@ -137,17 +156,40 @@ struct App : Program {
     void render() override {
         glClearDepthf(1.f);
         glClear(GL_DEPTH_BUFFER_BIT);
-        bind(*render_pass.program);
-        for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
-            auto& p = *render_pass.primitives[i];
-            auto& va = render_pass.vertex_arrays[i];
-            bind(*p.material, *render_pass.program);
-            bind(va);
-            uniform(*render_pass.program, "mvp", transform(projection) * inverse(transform(view)));
-            eng::render(p, va);
+
+        // { // Render pass.
+        //     bind(*render_pass.program);
+        //     for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
+        //         auto& p = *render_pass.primitives[i];
+        //         auto& va = render_pass.vertex_arrays[i];
+        //         bind(*p.material, *render_pass.program);
+        //         bind(va);
+        //         uniform(*render_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+        //         eng::render(p, va);
+        //     }
+        //     unbind(*render_pass.program);
+        // }
+        { // Vertex pass.
+            bind(*vertex_pass.program);
+            for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
+                auto& p = *vertex_pass.primitives[i];
+                auto& va = vertex_pass.vertex_arrays[i];
+                bind(*p.material, *vertex_pass.program);
+                bind(va);
+                uniform(*vertex_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                uniform(*vertex_pass.program, "point_size", render_settings.point_size);
+                eng::render(p, va);
+            }
+            unbind(*vertex_pass.program);
         }
-        unbind(*render_pass.program);
+        { // UI
+            ImGui::Begin("Point size");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::SliderFloat("float", &render_settings.point_size, 1.0f, 10.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::End();
+        }
     }
+
+    
 };
 
 void throwing_main() {
