@@ -32,11 +32,17 @@
 
 //
 
-namespace shadertoy {}
+namespace galin {}
 
-using namespace shadertoy;
+using namespace galin;
+
+struct Settings {
+    float threshold = 0.5;
+};
 
 struct App : Program {
+    Settings settings;
+
     eng::ShaderCompiler shader_compiler = {};
 
     tlw::View view = {};
@@ -59,7 +65,7 @@ struct App : Program {
                     },
                     {
                         agl::fragment_shader_tag,
-                        "galin/shader/blob.glsl"
+                        "galin/shader/main.glsl"
                     }
                 });
             }
@@ -132,17 +138,29 @@ struct App : Program {
         }
     }
 
+    void ui() {
+        ImGui::Begin("Settings");
+        ImGui::DragFloat("Threshold", &settings.threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::End();
+    }
+
     void render() override {
         clear(agl::default_framebuffer, agl::color_tag, {0., 0., 0., 1.});
         if(shader_loaded) {
             bind(empty_vertex_array);
             bind(program);
             uniform(program, "iTime", time);
+
+            uniform(program, "view_transform", transform(view));
+
+            uniform(program, "T", settings.threshold);
+
             draw_arrays(
                 agl::DrawMode::triangles,
                 agl::Offset<GLint>(0),
                 agl::Count<GLsizei>(6));
-        }   
+        }
+        ui();
     }
 };
 
