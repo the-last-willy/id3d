@@ -12,7 +12,7 @@ concept IndexTraits
 
 template<IndexTraits Traits>
 struct Index {
-    using Value = Traits::Value;
+    using Value = typename Traits::Value;
 
     Value value = Traits::default_value;
     
