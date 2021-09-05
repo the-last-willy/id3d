@@ -103,6 +103,8 @@ struct App : Program {
             }
         }
 
+        to_face_vertex_mesh(mesh);
+
         { // Render pass.
             drawable_mesh = triangle_mesh::triangle_mesh(mesh);
             for(auto& p : drawable_mesh->primitives) {
