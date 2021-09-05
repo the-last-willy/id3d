@@ -1,6 +1,6 @@
-#include "shadertoy/shader/shadertoy_prefix.fs"
+#include "galin/shader/shadertoy_prefix.fs"
 
-#include "shadertoy/shader/sdf/all.glsl"
+#include "galin/shader/sdf/all.glsl"
 
 uniform mat4 view;
 
@@ -389,4 +389,4 @@ void mainImage(out vec4 color, in vec2 pxy) {
     color = vec4(rgb, 1.);
 }
 
-#include "shadertoy/shader/shadertoy_suffix.fs"
+#include "galin/shader/shadertoy_suffix.fs"
