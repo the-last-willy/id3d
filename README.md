@@ -1,6 +1,6 @@
 # Willy Jacquet 11806811
 
-This project is an attempt to merge most of my master's degree (ID3D) class projects.
+This project is an attempt to merge a few of my master's degree (ID3D) class projects into a single one.
 
 # Motivation
 
