@@ -38,5 +38,5 @@ INTERFACE
 add_executable(chaine src/chaine/main.cpp)
 target_link_libraries(chaine PRIVATE common)
 
-add_executable(shadertoy src/shadertoy/main.cpp)
-target_link_libraries(shadertoy PRIVATE common)
+add_executable(galin src/galin/main.cpp)
+target_link_libraries(galin PRIVATE common)
