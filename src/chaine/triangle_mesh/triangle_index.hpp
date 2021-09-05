@@ -7,7 +7,7 @@ namespace chaine::triangle_mesh {
 struct TriangleIndexTraits {
     using Value = uint32_t;
 
-    static constexpr Value value = 0;
+    static constexpr Value default_value = 0;
 };
 
 using TriangleIndex = Index<TriangleIndexTraits>;

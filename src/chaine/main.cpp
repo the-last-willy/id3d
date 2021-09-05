@@ -156,7 +156,7 @@ struct App : Program {
     void render() override {
         glClearDepthf(1.f);
         glClear(GL_DEPTH_BUFFER_BIT);
-
+ 
         // { // Render pass.
         //     bind(*render_pass.program);
         //     for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {

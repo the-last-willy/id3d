@@ -5,12 +5,12 @@ namespace chaine {
 template<typename T>
 concept IndexTraits
 = requires {
-    IndexTraits::Value;
+    T::Value;
 
-    IndexTraits::default_value;
+    T::default_value;
 };
 
-template<typename Traits>
+template<IndexTraits Traits>
 struct Index {
     using Value = Traits::Value;
 
