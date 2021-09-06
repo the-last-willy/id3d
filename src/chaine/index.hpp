@@ -18,9 +18,9 @@ struct Index {
     
     Index() = default;
 
-    explicit
-    Index(Value v)
-        : value(v)
+    template<typename... Args> explicit
+    Index(Args&&... args)
+        : value(std::forward<Args>(args)...)
     {}
 
     operator const Value&() const noexcept {
