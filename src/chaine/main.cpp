@@ -74,13 +74,15 @@ struct App : Program {
                 }
             });
             render_pass.program->capabilities.push_back({ agl::Capability::cull_face, []() {
-                glCullFace(GL_BACK); }});
+                glCullFace(GL_FRONT); }});
             render_pass.program->capabilities.push_back({ agl::Capability::depth_test, []() {
                 glDepthFunc(GL_LESS); }});
         }
         {  // Vertex pass.
             vertex_pass.program = std::make_shared<eng::Program>(
                 data::vertex_program(shader_compiler));
+            vertex_pass.program->capabilities.push_back({ agl::Capability::depth_test, []() {
+                glDepthFunc(GL_LESS); }});
         }
 
         auto off = format::off::read(local::root_folder + "/data/queen.off");
@@ -105,7 +107,7 @@ struct App : Program {
 
         to_face_vertex_mesh(mesh);
 
-        { // Render pass.
+        { // Triangle pass.
             drawable_mesh = triangle_mesh::triangle_mesh(mesh);
             for(auto& p : drawable_mesh->primitives) {
                 p->material = std::make_shared<eng::Material>();
@@ -159,19 +161,19 @@ struct App : Program {
         glClearDepthf(1.f);
         glClear(GL_DEPTH_BUFFER_BIT);
  
-        // { // Render pass.
-        //     bind(*render_pass.program);
-        //     for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
-        //         auto& p = *render_pass.primitives[i];
-        //         auto& va = render_pass.vertex_arrays[i];
-        //         bind(*p.material, *render_pass.program);
-        //         bind(va);
-        //         uniform(*render_pass.program, "mvp", transform(projection) * inverse(transform(view)));
-        //         eng::render(p, va);
-        //     }
-        //     unbind(*render_pass.program);
-        // }
-        { // Vertex pass.
+        if(render_settings.show_triangles) { // Render pass.
+            bind(*render_pass.program);
+            for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
+                auto& p = *render_pass.primitives[i];
+                auto& va = render_pass.vertex_arrays[i];
+                bind(*p.material, *render_pass.program);
+                bind(va);
+                uniform(*render_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                eng::render(p, va);
+            }
+            unbind(*render_pass.program);
+        }
+        if(render_settings.show_vertices) {
             bind(*vertex_pass.program);
             for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
                 auto& p = *vertex_pass.primitives[i];
@@ -185,6 +187,12 @@ struct App : Program {
             unbind(*vertex_pass.program);
         }
         { // UI
+            ImGui::Begin("Settings");
+            ImGui::Checkbox("Show vertices ", &render_settings.show_vertices);
+            ImGui::Checkbox("Show edges    ", &render_settings.show_edges);
+            ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
+            ImGui::End();
+
             ImGui::Begin("Point size");                          // Create a window called "Hello, world!" and append into it.
             ImGui::SliderFloat("float", &render_settings.point_size, 1.0f, 10.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::End();

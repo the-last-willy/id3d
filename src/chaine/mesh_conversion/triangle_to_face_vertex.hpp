@@ -6,7 +6,7 @@
 namespace chaine {
 
 inline
-face_vertex_mesh::Mesh face_vertex_mesh(triangle_mesh::Mesh tm) {
+face_vertex_mesh::Mesh to_face_vertex_mesh(triangle_mesh::Mesh tm) {
     face_vertex_mesh::Mesh fvm;
     { // Copy data from 'triangle_mesh' to 'face_vertex_mesh'.
         fvm.geometry.vertex_positions = tm.geometry.vertex_positions;
