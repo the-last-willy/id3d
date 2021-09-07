@@ -37,7 +37,10 @@ namespace galin {}
 using namespace galin;
 
 struct Settings {
+    int steps = 1000;
     float threshold = 0.5;
+
+    std::vector<agl::SubroutineIndex> subroutines;
 };
 
 struct App : Program {
@@ -78,6 +81,11 @@ struct App : Program {
                 static_cast<float>(window.width()),
                 static_cast<float>(window.height()),
                 0.f));
+            { // Subroutines.
+                settings.subroutines.resize(
+                    active_subroutine_uniform_locations(
+                        program.program, agl::fragment_shader_tag));
+            }
         }
     }
 
@@ -140,6 +148,7 @@ struct App : Program {
 
     void ui() {
         ImGui::Begin("Settings");
+        ImGui::DragInt("Steps", &settings.steps, 5.f, 1, 2000, "%d");
         ImGui::DragFloat("Threshold", &settings.threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
         ImGui::End();
     }
@@ -153,6 +162,7 @@ struct App : Program {
 
             uniform(program, "view_transform", transform(view));
 
+            uniform(program, "Steps", settings.steps);
             uniform(program, "T", settings.threshold);
 
             draw_arrays(

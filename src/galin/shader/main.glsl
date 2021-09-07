@@ -4,6 +4,14 @@
 
 uniform mat4 view_transform;
 
+// subroutine vec3 RenderMode();
+
+// subroutine(RenderMode) vec3 render_albedo() {
+//     return vec3(0.);
+// }
+
+// subroutine uniform RenderMode render_mode;
+
 // Common
 
 // Hashing function
@@ -54,7 +62,7 @@ void Ray(in vec2 m, in vec2 p, out vec3 ro, out vec3 rd) {
 
 // Main
 
-const int Steps = 1000;
+uniform int Steps = 1000;
 const float Epsilon = .03; // Marching epsilon
 
 uniform float T = .5;;
@@ -98,6 +106,14 @@ float falloff(float x) {
 
 // Primitives
 
+float circle(vec3 p, vec3 c, float e, float R) {
+    return e * falloff(circle_sdf((p - c) / R) * 2.);
+}
+
+float cube(vec3 p, vec3 c, float e, float R) {
+    return e * falloff(2. * cube_sdf((p - c) / R / 2.) + 1.);
+}
+
 // Point skeleton
 // p : point
 // c : center of skeleton
@@ -106,14 +122,6 @@ float falloff(float x) {
 float point(vec3 p, vec3 c, float e, float R) {
     return e * falloff(length(p - c), R);
 }
-
-float cube(vec3 p, vec3 c, float e, float R) {
-    return falloff(2. * cube_sdf((p - c) / R / 2.) + 1.);
-}
-
-// float box(vec3 p) {
-//     return box
-// }
 
 // Operators
 
@@ -162,7 +170,7 @@ FieldValue Difference(FieldValue a, FieldValue b) {
 FieldValue object_0(in vec3 p) {
     FieldValue d;
     d.color = vec3(1., 0., 0.);
-    d.potential = cube(p, vec3(0., 1., 1.), 1., 4.5);
+    d.potential = circle(rotateY(p - vec3(0., 1., 1.), iTime), vec3(0.), 1., 6.5);
     return d;
 }
 
@@ -170,6 +178,7 @@ FieldValue object_1(in vec3 p) {
     FieldValue d;
     d.color = vec3(0., 1., 0.);
     d.potential = cube(p, vec3(2., 0., -3.), 1., 4.5);
+    d.potential = circle(p, vec3(0., 1., 1.), 1., 4.5);
     return d;
 }
 
@@ -190,10 +199,11 @@ FieldValue object_3(in vec3 p) {
 FieldValue scene(vec3 p) {
     p.z=-p.z;
     FieldValue v = FieldValue(vec3(0.), 0.);
-    v = Blend(v, object_0(p));
+    v = object_0(p);
     v = Blend(v, object_1(p));
-    v = Blend(v, object_2(p));
-    v = Difference(v, object_3(p));
+    // v = Blend(v, object_1(p));
+    // v = Blend(v, object_2(p));
+    // v = Difference(v, object_3(p));
     return v;
 }
 
@@ -441,10 +451,12 @@ void mainImage(out vec4 color, in vec2 pxy) {
         // Compute normalr
         vec3 n = ObjectNormal(pt);
 
-        rgb = scene(pt).color;
+        
 
         // Shade object with light
-        rgb *= Shade(pt, n);
+        rgb = Shade(pt, n);
+
+        rgb *= scene(pt).color;
     }
 
     // Uncomment this line to shade image with false colors representing the number of steps
@@ -452,6 +464,8 @@ void mainImage(out vec4 color, in vec2 pxy) {
     // {
     //     rgb = ShadeSteps(s);
     // }
+
+    // render_mode();
 
     color = vec4(rgb, 1.);
 }
