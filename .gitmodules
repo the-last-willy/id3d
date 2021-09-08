@@ -14,3 +14,6 @@
 [submodule "lib/tinygltf/tinygltf"]
 	path = lib/tinygltf/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "lib/tinyobjloader/tinyobjloader"]
+	path = lib/tinyobjloader/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git
