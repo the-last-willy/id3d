@@ -11,9 +11,6 @@
 
 // Local headers.
 
-#include "data/all.hpp"
-#include "all.hpp"
-
 #include <local/all.hpp>
 #include "program/all.hpp"
 
@@ -34,31 +31,49 @@
 
 //
 
-using namespace chaine;
-
-struct RenderSettings {
-    bool show_edges = true;
-    bool show_triangles = true;
-    bool show_vertices = true;
-
-    float point_size = 1.f;
-};
+using namespace iehl;
 
 struct App : Program {
-    RenderSettings render_settings;
-
     eng::ShaderCompiler shader_compiler = {};
 
-    std::shared_ptr<eng::Mesh> drawable_mesh = nullptr;
+    fomat::gltf2::Content database;
 
     tlw::View view = {};
     eng::PerspectiveProjection projection = {};
 
     eng::RenderPass render_pass = {};
-    eng::RenderPass vertex_pass = {};
-
+    
     void init() override {
         shader_compiler.root = local::src_folder;
+
+        { // Load model.
+            tinygltf::TinyGLTF loader;
+            tinygltf::Model model;
+
+            std::string err;
+            std::string warn;
+
+            bool ret = loader.LoadASCIIFromFile(
+                &model, &err, &warn, 
+                filepath
+                );
+
+            if (!warn.empty()) {
+                std::cerr << "Warning: " << warn << std::endl;
+            }
+
+            if (!err.empty()) {
+                std::cerr << "Error: " << err << std::endl;
+            }
+
+            if (!ret) {
+                std::cerr << "Failed to open GLTF file." << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+
+            database = format::gltf2::fill(model);
+        }
+        
 
         { // Render pass.
             render_pass.program = std::make_shared<eng::Program>();
