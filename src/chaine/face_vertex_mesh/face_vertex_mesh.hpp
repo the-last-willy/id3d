@@ -31,8 +31,9 @@ FaceVertexMesh to_face_vertex_mesh(triangle_mesh::Mesh mesh) {
     }
 
     for(auto i = 0; i < mesh.geometry.triangle_indices.size(); ++i) {
-        auto indices = fvmesh.faces[i].vertices;
-        indices = mesh.geometry.triangle_indices[i];
+        
+        auto &indices = fvmesh.faces[i].vertices = mesh.geometry.triangle_indices[i];
+
         fvmesh.vertices[indices[0]].index = i;
 
         for(auto j = 0; j < 3; ++j) {
