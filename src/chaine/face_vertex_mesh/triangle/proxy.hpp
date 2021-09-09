@@ -4,6 +4,9 @@
 #include "chaine/face_vertex_mesh/vertex/proxy.hpp"
 #include "index.hpp"
 
+#include "range/v3/view/iota.hpp"
+#include "range/v3/view/transform.hpp"
+
 namespace chaine::face_vertex_mesh {
 
 struct TriangleProxy {
@@ -17,18 +20,41 @@ TriangleProxy proxy(Mesh& m, TriangleIndex ti) {
 }
 
 inline
+TriangleIndex index(TriangleProxy tp) {
+    return tp.index;
+}
+
+inline
+auto& topology(TriangleProxy tp) {
+    return tp.mesh.topology.triangles[index(tp)];
+}
+
+inline
+uint32_t edge_count(TriangleProxy) {
+    return 3;
+}
+
+inline
 TriangleProxy adjacent_triangle(TriangleProxy tp, uint32_t i) {
-    return proxy(tp.mesh, tp.mesh.topology.triangles[tp.index].triangles[i]);
+    return proxy(tp.mesh, tp.mesh.topology.triangles[index(tp)].triangles[i]);
 }
 
 inline
 auto vertex(TriangleProxy tp, uint32_t i) {
-    return proxy(tp.mesh, tp.mesh.topology.triangles[tp.index].vertices[i]);
+    return proxy(tp.mesh, tp.mesh.topology.triangles[index(tp)].vertices[i]);
 }
 
 inline
-auto vertices(TriangleProxy) {
-    throw std::runtime_error("Not implemented.");
+uint32_t vertex_count(TriangleProxy) {
+    return 3;
+}
+
+
+inline
+auto vertices(TriangleProxy tp) {
+    return ranges::views::ints(uint32_t(0), vertex_count(tp))
+    | ranges::views::transform([tp] (auto i) {
+        return proxy(tp.mesh, VertexIndex{i}); });
 }
 
 inline

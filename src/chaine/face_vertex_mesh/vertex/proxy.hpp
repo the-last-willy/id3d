@@ -18,6 +18,16 @@ VertexProxy proxy(Mesh& m, VertexIndex vi) {
 }
 
 inline
+auto index(VertexProxy vp) {
+    return vp.index;
+}
+
+inline
+auto& topology(VertexProxy vp) {
+    return vp.mesh.topology.vertices[index(vp)];
+}
+
+inline
 auto& position(VertexProxy vp) {
     return vp.mesh.geometry.vertex_positions[vp.index];
 }
