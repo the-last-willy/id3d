@@ -37,9 +37,9 @@
 using namespace chaine;
 
 struct RenderSettings {
-    bool show_edges = true;
+    bool show_edges = false;
     bool show_triangles = true;
-    bool show_vertices = true;
+    bool show_vertices = false;
 
     float point_size = 1.f;
 };
@@ -49,40 +49,23 @@ struct App : Program {
 
     eng::ShaderCompiler shader_compiler = {};
 
-    std::shared_ptr<eng::Mesh> drawable_mesh = nullptr;
-
     tlw::View view = {};
     eng::PerspectiveProjection projection = {};
 
-    eng::RenderPass render_pass = {};
-
+    eng::RenderPass edge_pass;
+    eng::RenderPass triangle_pass = {};
     eng::RenderPass vertex_pass = {};
 
     void init() override {
         shader_compiler.root = local::src_folder;
 
-        { // Render pass.
-            render_pass.program = std::make_shared<eng::Program>();
-            load(*render_pass.program, shader_compiler, {
-                {
-                    agl::vertex_shader_tag,
-                    "chaine/shader/solid.vs"
-                },
-                {
-                    agl::fragment_shader_tag,
-                    "chaine/shader/solid.fs"
-                }
-            });
-            render_pass.program->capabilities.push_back({ agl::Capability::cull_face, []() {
-                glCullFace(GL_FRONT); }});
-            render_pass.program->capabilities.push_back({ agl::Capability::depth_test, []() {
-                glDepthFunc(GL_LESS); }});
-        }
-        {  // Vertex pass.
+        { // Render passes.
+            edge_pass.program = std::make_shared<eng::Program>(
+                data::edge_program(shader_compiler));
+            triangle_pass.program = std::make_shared<eng::Program>(
+                data::triangle_program(shader_compiler));
             vertex_pass.program = std::make_shared<eng::Program>(
                 data::vertex_program(shader_compiler));
-            vertex_pass.program->capabilities.push_back({ agl::Capability::depth_test, []() {
-                glDepthFunc(GL_LESS); }});
         }
 
         auto off = format::off::read(local::root_folder + "/data/queen.off");
@@ -107,12 +90,19 @@ struct App : Program {
 
         to_face_vertex_mesh(mesh);
 
-        { // Triangle pass.
-            drawable_mesh = triangle_mesh::triangle_mesh(mesh);
-            for(auto& p : drawable_mesh->primitives) {
+        { // Edge pass;
+            auto m = triangle_mesh::edge_mesh(mesh);
+            for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
-            add(render_pass, *drawable_mesh);
+            add(edge_pass, *m);
+        }
+        { // Triangle pass.
+            auto m = triangle_mesh::triangle_mesh(mesh);
+            for(auto& p : m->primitives) {
+                p->material = std::make_shared<eng::Material>();
+            }
+            add(triangle_pass, *m);
         }
         { // Vertex pass.
             auto m = triangle_mesh::vertex_mesh(mesh);
@@ -160,22 +150,34 @@ struct App : Program {
     void render() override {
         glClearDepthf(1.f);
         glClear(GL_DEPTH_BUFFER_BIT);
- 
-        if(render_settings.show_triangles) { // Render pass.
-            bind(*render_pass.program);
-            for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
-                auto& p = *render_pass.primitives[i];
-                auto& va = render_pass.vertex_arrays[i];
-                bind(*p.material, *render_pass.program);
+        
+        if(render_settings.show_triangles) {
+            bind(*triangle_pass.program);
+            for(std::size_t i = 0; i < size(triangle_pass.primitives); ++i) {
+                auto& p = *triangle_pass.primitives[i];
+                auto& va = triangle_pass.vertex_arrays[i];
+                bind(*p.material, *triangle_pass.program);
                 bind(va);
-                uniform(*render_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                uniform(*triangle_pass.program, "mvp", transform(projection) * inverse(transform(view)));
                 eng::render(p, va);
             }
-            unbind(*render_pass.program);
+            unbind(*triangle_pass.program);
+        }
+        if(render_settings.show_edges) {
+            bind(*edge_pass.program);
+            for(std::size_t i = 0; i < size(edge_pass.primitives); ++i) {
+                auto& p = *edge_pass.primitives[i];
+                auto& va = edge_pass.vertex_arrays[i];
+                bind(*p.material, *edge_pass.program);
+                bind(va);
+                uniform(*edge_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                eng::render(p, va);
+            }
+            unbind(*edge_pass.program);
         }
         if(render_settings.show_vertices) {
             bind(*vertex_pass.program);
-            for(std::size_t i = 0; i < size(render_pass.primitives); ++i) {
+            for(std::size_t i = 0; i < size(vertex_pass.primitives); ++i) {
                 auto& p = *vertex_pass.primitives[i];
                 auto& va = vertex_pass.vertex_arrays[i];
                 bind(*p.material, *vertex_pass.program);
@@ -188,8 +190,8 @@ struct App : Program {
         }
         { // UI
             ImGui::Begin("Settings");
-            ImGui::Checkbox("Show vertices ", &render_settings.show_vertices);
-            ImGui::Checkbox("Show edges    ", &render_settings.show_edges);
+            ImGui::Checkbox("Show vertices", &render_settings.show_vertices);
+            ImGui::Checkbox("Show edges", &render_settings.show_edges);
             ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
             ImGui::End();
 

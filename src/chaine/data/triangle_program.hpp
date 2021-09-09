@@ -6,22 +6,23 @@
 namespace chaine::data {
 
 inline
-auto vertex_program(const eng::ShaderCompiler& sc) {
+auto triangle_program(const eng::ShaderCompiler& sc) {
     auto p = eng::Program();
     load(p, sc, {
         {
             agl::vertex_shader_tag,
-            "chaine/shader/vertex.vs"
+            "chaine/shader/triangle.vs"
         }, {     
             agl::fragment_shader_tag,
-            "chaine/shader/vertex.fs"
+            "chaine/shader/triangle.fs"
         }
     });
     p.capabilities.emplace_back(
-        agl::Capability::depth_test,
-        []() { glDepthFunc(GL_LESS); });
+        agl::Capability::cull_face, 
+        []() { glCullFace(GL_FRONT); });
     p.capabilities.emplace_back(
-        agl::Capability::program_point_size);
+        agl::Capability::depth_test, 
+        []() { glDepthFunc(GL_LESS); });
     return p;
 }
 

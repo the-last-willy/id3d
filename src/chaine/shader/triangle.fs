@@ -5,6 +5,7 @@ in vec3 vertex_position;
 out vec3 fragment_rgb;
 
 void main() {
+    // Flat shading.
     vec3 normal = normalize(cross(
         dFdx(vertex_position),
         dFdy(vertex_position)));
