@@ -12,6 +12,7 @@
 // Local headers.
 
 #include "data/all.hpp"
+#include "mesh_conversion/all.hpp"
 #include "all.hpp"
 
 #include <local/all.hpp>
@@ -53,6 +54,7 @@ struct App : Program {
     eng::PerspectiveProjection projection = {};
 
     eng::RenderPass edge_pass;
+    eng::RenderPass edge_pass2;
     eng::RenderPass triangle_pass = {};
     eng::RenderPass vertex_pass = {};
 
@@ -62,6 +64,8 @@ struct App : Program {
         { // Render passes.
             edge_pass.program = std::make_shared<eng::Program>(
                 data::edge_program(shader_compiler));
+            edge_pass2.program = std::make_shared<eng::Program>(
+                data::edge_program(shader_compiler));
             triangle_pass.program = std::make_shared<eng::Program>(
                 data::triangle_program(shader_compiler));
             vertex_pass.program = std::make_shared<eng::Program>(
@@ -69,8 +73,6 @@ struct App : Program {
         }
 
         auto off = format::off::read(local::root_folder + "/data/queen.off");
-
-        FaceVertexMesh fvmesh;
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
@@ -88,14 +90,21 @@ struct App : Program {
             }
         }
 
-        to_face_vertex_mesh(mesh);
+        auto face_vertex_mesh = to_face_vertex_mesh(mesh);
 
-        { // Edge pass;
+        { // Edge pass.
             auto m = triangle_mesh::edge_mesh(mesh);
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
             add(edge_pass, *m);
+        }
+        { // Edge pass 2.
+            auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(face_vertex_mesh));
+            for(auto& p : m->primitives) {
+                p->material = std::make_shared<eng::Material>();
+            }
+            add(edge_pass2, *m);
         }
         { // Triangle pass.
             auto m = triangle_mesh::triangle_mesh(mesh);
@@ -113,6 +122,8 @@ struct App : Program {
         }
 
         projection.aspect_ratio = 16.f / 9.f;
+        projection.z_near = 0.01f;
+        projection.z_far = 100.f;
     }
 
     void update(float) override {
@@ -163,7 +174,11 @@ struct App : Program {
             }
             unbind(*triangle_pass.program);
         }
+        
         if(render_settings.show_edges) {
+            glLineWidth(5.f);
+            
+            uniform(*edge_pass.program, "color", agl::vec3(1.f, 0.f, 0.f));
             bind(*edge_pass.program);
             for(std::size_t i = 0; i < size(edge_pass.primitives); ++i) {
                 auto& p = *edge_pass.primitives[i];
@@ -174,6 +189,20 @@ struct App : Program {
                 eng::render(p, va);
             }
             unbind(*edge_pass.program);
+
+            { // Edge pass 2.
+                uniform(*edge_pass2.program, "color", agl::vec3(0.f, 0.f, 1.f));
+                bind(*edge_pass2.program);
+                for(std::size_t i = 0; i < size(edge_pass2.primitives); ++i) {
+                    auto& p = *edge_pass2.primitives[i];
+                    auto& va = edge_pass2.vertex_arrays[i];
+                    bind(*p.material, *edge_pass2.program);
+                    bind(va);
+                    uniform(*edge_pass2.program, "mvp", transform(projection) * inverse(transform(view)));
+                    eng::render(p, va);
+                }
+                unbind(*edge_pass2.program);
+            }
         }
         if(render_settings.show_vertices) {
             bind(*vertex_pass.program);
@@ -195,8 +224,8 @@ struct App : Program {
             ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
             ImGui::End();
 
-            ImGui::Begin("Point size");                          // Create a window called "Hello, world!" and append into it.
-            ImGui::SliderFloat("float", &render_settings.point_size, 1.0f, 10.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::Begin("Point size");
+            ImGui::SliderFloat("float", &render_settings.point_size, 1.0f, 10.0f);
             ImGui::End();
         }
     }

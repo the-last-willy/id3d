@@ -13,6 +13,11 @@ struct VertexProxy {
 };
 
 inline
+VertexProxy proxy(Mesh& m, VertexIndex vi) {
+    return VertexProxy{m, vi};
+}
+
+inline
 auto& position(VertexProxy vp) {
     return vp.mesh.geometry.vertex_positions[vp.index];
 }

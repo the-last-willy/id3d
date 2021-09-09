@@ -8,8 +8,8 @@
 namespace chaine::face_vertex_mesh {
 
 struct Mesh {
-    Geometry& geometry;
-    Topology& topology;
+    Geometry geometry;
+    Topology topology;
 };
 
 inline

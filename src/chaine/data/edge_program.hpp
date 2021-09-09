@@ -17,6 +17,9 @@ auto edge_program(const eng::ShaderCompiler& sc) {
             "chaine/shader/edge.fs"
         }
     });
+    p.capabilities.emplace_back(
+        agl::Capability::depth_test,
+        []() { glDepthFunc(GL_LEQUAL); });
     return p;
 }
 
