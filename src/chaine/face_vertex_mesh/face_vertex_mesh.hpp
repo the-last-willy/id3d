@@ -11,11 +11,6 @@
 
 namespace chaine {
 
-// struct FaceVertexMesh {
-//     std::vector<Vertex> vertices = {};
-//     std::vector<Face> faces = {};
-// };
-
 struct FacePair {
     uint32_t vertex;
     face_vertex_mesh::TriangleIndex triangle;

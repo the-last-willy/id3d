@@ -11,7 +11,6 @@
 #include "vertex/index.hpp"
 #include "vertex/proxy.hpp"
 #include "vertex/topology.hpp"
-#include "engine.hpp"
 #include "face.hpp"
 #include "face_vertex_mesh.hpp"
 #include "vertex.hpp"

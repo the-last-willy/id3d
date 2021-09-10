@@ -41,7 +41,6 @@ eng::Mesh triangle_adjacency_mesh(face_vertex_mesh::Mesh& m) {
     auto position_accessor = eng::Accessor();
     {
         auto& accessor = position_accessor;
-
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();
             auto& buffer = *buffer_ptr;
