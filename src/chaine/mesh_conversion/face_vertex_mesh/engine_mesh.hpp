@@ -3,6 +3,9 @@
 #include "chaine/face_vertex_mesh/all.hpp"
 
 #include <agl/all.hpp>
+#include <agl/engine/mesh.hpp>
+
+#include <range/v3/view/enumerate.hpp>
 
 namespace chaine {
 
