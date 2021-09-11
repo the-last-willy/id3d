@@ -91,6 +91,33 @@ struct App : Program {
         }
 
         auto face_vertex_mesh = to_face_vertex_mesh(mesh);
+        // for(auto v : vertices(face_vertex_mesh)) {
+        //     color(v) = normalize(position(v)) * .5f + .5f;
+        // }
+
+        { // Compute Laplacian.
+            for(auto v : vertices(face_vertex_mesh)) {
+                auto vertex_area = 0.f;
+                auto sum = agl::vec3(0.f);
+                for(auto t : adjacent_triangles(v)) {
+                    for(uint32_t i = 0; i < 3; ++i) {
+                        if(index(vertex(t, i)) == index(v)) {
+                            auto ui = position(vertex(t, i));
+                            auto uj = position(vertex(t, (i + 1) % vertex_count(t)));
+                            auto uk = position(vertex(t, (i + 2) % vertex_count(t)));
+                            auto aij = dot(ui - uk, uj - uk) / length(cross(ui - uk, uj - uk));
+                            auto aik = dot(ui - uj, uk - uj) / length(cross(ui - uj, uk - uj));
+                            sum += aij * (uj - ui);
+                            sum += aik * (uk - ui);
+                        }
+                    }
+                    vertex_area += face_vertex_mesh::area(t);
+                }
+                vertex_area /= 3.f;
+                auto laplacian = sum / (2.f * vertex_area);
+                normal(v) = -normalize(laplacian);
+            }
+        }
 
         { // Edge pass.
             auto m = triangle_mesh::edge_mesh(mesh);
@@ -100,21 +127,21 @@ struct App : Program {
             add(edge_pass, *m);
         }
         { // Edge pass 2.
-            auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(face_vertex_mesh));
+            auto m = std::make_shared<eng::Mesh>(vertex_adjacency_mesh(face_vertex_mesh));
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
             add(edge_pass2, *m);
         }
         { // Triangle pass.
-            auto m = triangle_mesh::triangle_mesh(mesh);
+            auto m = to_triangle_mesh(face_vertex_mesh);
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
             add(triangle_pass, *m);
         }
         { // Vertex pass.
-            auto m = triangle_mesh::vertex_mesh(mesh);
+            auto m = to_vertex_mesh(face_vertex_mesh);
             for(auto& p : m->primitives | ranges::views::indirect) {
                 p.material = std::make_shared<eng::Material>();
             }
