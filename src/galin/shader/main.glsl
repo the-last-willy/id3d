@@ -170,7 +170,13 @@ FieldValue Difference(FieldValue a, FieldValue b) {
 FieldValue object_0(in vec3 p) {
     FieldValue d;
     d.color = vec3(1., 0., 0.);
-    d.potential = circle(rotateY(p - vec3(0., 1., 1.), iTime), vec3(0.), 1., 6.5);
+    // d.potential = circle(rotateY(p - vec3(0., 1., 1.), iTime), vec3(0.), 1., 6.5);
+    if(p.z >= 0. && p.z < 10.) {
+        d.potential = -point_sdf(p.xy) + 10.;
+    } else {
+        d.potential = 0.;
+    }
+    
     return d;
 }
 
@@ -200,7 +206,7 @@ FieldValue scene(vec3 p) {
     p.z=-p.z;
     FieldValue v = FieldValue(vec3(0.), 0.);
     v = object_0(p);
-    v = Blend(v, object_1(p));
+    // v = Blend(v, object_1(p));
     // v = Blend(v, object_1(p));
     // v = Blend(v, object_2(p));
     // v = Difference(v, object_3(p));
