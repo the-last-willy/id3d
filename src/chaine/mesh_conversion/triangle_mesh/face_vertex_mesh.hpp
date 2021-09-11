@@ -18,7 +18,7 @@ inline
 face_vertex_mesh::Mesh to_face_vertex_mesh(triangle_mesh::Mesh mesh) {
     face_vertex_mesh::Mesh fvmesh;
     { // Geometry.
-        fvmesh.geometry.vertex_positions.resize(vertex_count(mesh));
+        resize_vertices(fvmesh.geometry, vertex_count(mesh));
         fvmesh.geometry.vertex_positions = mesh.geometry.vertex_positions;
     }
     { // Topology.
