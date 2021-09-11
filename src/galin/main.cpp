@@ -37,7 +37,7 @@ namespace galin {}
 using namespace galin;
 
 struct Settings {
-    int steps = 1000;
+    int steps = 200;
     float threshold = 0.5;
 
     std::vector<agl::SubroutineIndex> subroutines;

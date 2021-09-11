@@ -110,8 +110,16 @@ float circle(vec3 p, vec3 c, float e, float R) {
     return e * falloff(circle_sdf((p - c) / R) * 2.);
 }
 
+float cylinder(vec3 p, vec3 c, float e, float R) {
+    return e * falloff(2. * cylinder_sdf((p - c) / R / 2.) + 1.);
+}
+
 float cube(vec3 p, vec3 c, float e, float R) {
     return e * falloff(2. * cube_sdf((p - c) / R / 2.) + 1.);
+}
+
+float line(vec3 p, vec3 a, vec3 b, float e, float R) {
+    return e * falloff(line_sdf(a, b, p) / R);
 }
 
 // Point skeleton
@@ -121,6 +129,10 @@ float cube(vec3 p, vec3 c, float e, float R) {
 // R : radius
 float point(vec3 p, vec3 c, float e, float R) {
     return e * falloff(length(p - c), R);
+}
+
+float segment(vec3 p, vec3 a, vec3 b, float e, float R) {
+    return e * falloff(segment_sdf(a, b, p) / R);
 }
 
 // Operators
@@ -167,16 +179,12 @@ FieldValue Difference(FieldValue a, FieldValue b) {
     return FieldValue(a.color, a.potential - b.potential);
 }
 
+#include "galin/shader/scene/orrery.glsl"
+
 FieldValue object_0(in vec3 p) {
     FieldValue d;
     d.color = vec3(1., 0., 0.);
-    // d.potential = circle(rotateY(p - vec3(0., 1., 1.), iTime), vec3(0.), 1., 6.5);
-    if(p.z >= 0. && p.z < 10.) {
-        d.potential = -point_sdf(p.xy) + 10.;
-    } else {
-        d.potential = 0.;
-    }
-    
+    d.potential = segment(p, vec3(0.), vec3(1.), 1., 1.);
     return d;
 }
 
@@ -205,8 +213,7 @@ FieldValue object_3(in vec3 p) {
 FieldValue scene(vec3 p) {
     p.z=-p.z;
     FieldValue v = FieldValue(vec3(0.), 0.);
-    v = object_0(p);
-    // v = Blend(v, object_1(p));
+    v = orrery(p);
     // v = Blend(v, object_1(p));
     // v = Blend(v, object_2(p));
     // v = Difference(v, object_3(p));
@@ -463,6 +470,8 @@ void mainImage(out vec4 color, in vec2 pxy) {
         rgb = Shade(pt, n);
 
         rgb *= scene(pt).color;
+
+        rgb = n * .5 + .5;
     }
 
     // Uncomment this line to shade image with false colors representing the number of steps
