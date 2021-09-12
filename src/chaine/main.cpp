@@ -55,7 +55,7 @@ struct App : Program {
 
     eng::RenderPass edge_pass;
     eng::RenderPass edge_pass2;
-    eng::RenderPass triangle_pass = {};
+    eng::RenderPass triangle_pass = {}; 
     eng::RenderPass vertex_pass = {};
 
     void init() override {
@@ -105,8 +105,9 @@ struct App : Program {
                             auto ui = position(vertex(t, i));
                             auto uj = position(vertex(t, (i + 1) % vertex_count(t)));
                             auto uk = position(vertex(t, (i + 2) % vertex_count(t)));
-                            auto aij = dot(ui - uk, uj - uk) / length(cross(ui - uk, uj - uk));
-                            auto aik = dot(ui - uj, uk - uj) / length(cross(ui - uj, uk - uj));
+                            auto triangle_area = length(cross(ui - uk, uj - uk));
+                            auto aij = dot(ui - uk, uj - uk) / triangle_area;
+                            auto aik = dot(ui - uj, uk - uj) / triangle_area;
                             sum += aij * (uj - ui);
                             sum += aik * (uk - ui);
                         }
@@ -115,7 +116,28 @@ struct App : Program {
                 }
                 vertex_area /= 3.f;
                 auto laplacian = sum / (2.f * vertex_area);
+                float mean_curvature = length(laplacian) / 2.f;
+                color(v) = agl::vec3(1.f - 1.f / (1.f + mean_curvature / 3.f));
                 normal(v) = -normalize(laplacian);
+            }
+        }
+        { // Flip incorrect normals.
+            for(auto&& t : triangles(face_vertex_mesh)) {
+                auto v0 = vertex(t, 0);
+                auto v1 = vertex(t, 1);
+                auto v2 = vertex(t, 2);
+                auto tn = normalize(cross(
+                    position(v1) - position(v0),
+                    position(v2) - position(v0)));
+                if(dot(normal(v0), tn) < 0.f) {
+                    normal(v0) = -normal(v0);
+                }
+                if(dot(normal(v1), tn) < 0.f) {
+                    normal(v1) = -normal(v1);
+                }
+                if(dot(normal(v2), tn) < 0.f) {
+                    normal(v2) = -normal(v2);
+                }
             }
         }
 
@@ -216,20 +238,6 @@ struct App : Program {
                 eng::render(p, va);
             }
             unbind(*edge_pass.program);
-
-            { // Edge pass 2.
-                uniform(*edge_pass2.program, "color", agl::vec3(0.f, 0.f, 1.f));
-                bind(*edge_pass2.program);
-                for(std::size_t i = 0; i < size(edge_pass2.primitives); ++i) {
-                    auto& p = *edge_pass2.primitives[i];
-                    auto& va = edge_pass2.vertex_arrays[i];
-                    bind(*p.material, *edge_pass2.program);
-                    bind(va);
-                    uniform(*edge_pass2.program, "mvp", transform(projection) * inverse(transform(view)));
-                    eng::render(p, va);
-                }
-                unbind(*edge_pass2.program);
-            }
         }
         if(render_settings.show_vertices) {
             bind(*vertex_pass.program);
@@ -246,13 +254,25 @@ struct App : Program {
         }
         { // UI
             ImGui::Begin("Settings");
+
             ImGui::Checkbox("Show vertices", &render_settings.show_vertices);
+
+            ImGui::Separator();
+
             ImGui::Checkbox("Show edges", &render_settings.show_edges);
+
+            
+
+            ImGui::Separator();
+
             ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
+
             ImGui::End();
 
             ImGui::Begin("Point size");
-            ImGui::SliderFloat("float", &render_settings.point_size, 1.0f, 10.0f);
+
+            ImGui::SliderFloat("Size", &render_settings.point_size, 1.0f, 10.0f);
+            
             ImGui::End();
         }
     }
