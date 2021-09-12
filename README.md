@@ -14,7 +14,7 @@ Some of these projects have been made in group.
 The link below will redirect you 
 
 - [3D Image Synthesis](src/iehl) with Yoan Parra 11505740
-- [Meshes and Computational Geometry](wiki/chaine) with Yoan Parra 11505740
+- [Meshes and Computational Geometry](src/chaine) with Yoan Parra 11505740
 
 # Compatibility
 
