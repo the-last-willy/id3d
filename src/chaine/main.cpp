@@ -117,7 +117,7 @@ struct App : Program {
                 vertex_area /= 3.f;
                 auto laplacian = sum / (2.f * vertex_area);
                 float mean_curvature = length(laplacian) / 2.f;
-                color(v) = agl::vec3(1.f - 1.f / (1.f + mean_curvature / 3.f));
+                color(v) = agl::vec3(1.f - 1.f / (1.f + mean_curvature / 20.f));
                 normal(v) = -normalize(laplacian);
             }
         }

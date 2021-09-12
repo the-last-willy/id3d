@@ -29,5 +29,5 @@ void main() {
 
     float lambertian = abs(normal.z);
 
-    fragment_rgb = vec3(lambertian) * frag_color();
+    fragment_rgb = vec3(lambertian) * (normal * .5 + .5);
 }
