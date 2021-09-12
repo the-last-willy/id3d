@@ -148,7 +148,7 @@ struct App : Program {
 
     void ui() {
         ImGui::Begin("Settings");
-        ImGui::DragInt("Steps", &settings.steps, 5.f, 1, 2000, "%d");
+        ImGui::DragInt("Steps", &settings.steps, 5.f, 1, 1000, "%d");
         ImGui::DragFloat("Threshold", &settings.threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
         ImGui::End();
     }
