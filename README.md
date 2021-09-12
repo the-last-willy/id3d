@@ -13,7 +13,8 @@ Therefore I believe this to be a win-win situation; I get to continue enhancing 
 Some of these projects have been made in group.
 The link below will redirect you 
 
-[Meshes and Computational Geometry](wiki/chaine.md) with Yoan Parra 11505740
+[3D Image Synthesis](src/iehl) with Yoan Parra 11505740
+[Meshes and Computational Geometry](wiki/chaine) with Yoan Parra 11505740
 
 # Compatibility
 
