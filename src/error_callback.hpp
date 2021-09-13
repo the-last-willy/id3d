@@ -116,13 +116,13 @@ void error_callback(
         break;
     }
 
-    // std::cerr << id
-    // << ": " << _type
-    // << " of " << _severity
-    // << " severity, raised from " << _source
-    // << ": " << msg << std::endl;
+    std::cerr << id
+    << ": " << _type
+    << " of " << _severity
+    << " severity, raised from " << _source
+    << ": " << msg << std::endl;
 
-    // if(throwing) {
-    //     throw std::exception();
-    // }
+    if(throwing) {
+        throw std::exception();
+    }
 }

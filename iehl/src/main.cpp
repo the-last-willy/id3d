@@ -11,6 +11,7 @@
 
 // Local headers.
 
+#include "data/all.hpp"
 #include <local/all.hpp>
 #include "program/all.hpp"
 
@@ -23,7 +24,7 @@
 #include <GLFW/glfw3.h>
 
 #include <range/v3/view/indirect.hpp>
-#include <range/v3/view/take.hpp>
+#include <range/v3/view/map.hpp>
 
 // Standard library.
 
@@ -43,13 +44,20 @@ struct App : Program {
     tlw::View view = {};
     eng::PerspectiveProjection projection = {};
 
-    eng::RenderPass render_pass = {};
+    eng::RenderPass forward_ambient_render_pass;
     
     void init() override {
-        shader_compiler.root = local::src_folder;
+        shader_compiler.log_folder = "../../../logs/";
+        shader_compiler.root = "../../../iehl/src/shader/";
 
-        // database = format::gltf2::load(std::filesystem::path());
-        
+        database = format::gltf2::load("D:/data/sample/gltf2/box/Box/glTF/Box.gltf");
+
+        { // Render pass.
+            forward_ambient_render_pass = data::forward_ambient_render_pass(shader_compiler);
+            for(auto& m : database.meshes | ranges::views::values | ranges::views::indirect) {
+                add(forward_ambient_render_pass, m);
+            }
+        }
 
         projection.aspect_ratio = 16.f / 9.f;
     }
@@ -90,7 +98,15 @@ struct App : Program {
         glClearDepthf(1.f);
         glClear(GL_DEPTH_BUFFER_BIT);
  
-        
+        auto v = inverse(transform(view));
+        auto vp = transform(projection) * v;
+
+        forward_ambient_render_pass.uniforms["mvp_transform"]
+        = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+
+        { // Forward ambient lighting.
+            eng::render(forward_ambient_render_pass);
+        }
     }
 
     
