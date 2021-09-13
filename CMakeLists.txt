@@ -37,14 +37,13 @@ INTERFACE
 
 # Executables.
 
+add_subdirectory(iehl)
+
 add_executable(chaine src/chaine/main.cpp)
 target_link_libraries(chaine PRIVATE common)
 
 add_executable(galin src/galin/main.cpp)
 target_link_libraries(galin PRIVATE common)
-
-add_executable(iehl src/iehl/main.cpp)
-target_link_libraries(iehl PRIVATE common)
 
 add_executable(dear_imgui_demo src/dear_imgui_demo.cpp)
 target_link_libraries(dear_imgui_demo PRIVATE common)
