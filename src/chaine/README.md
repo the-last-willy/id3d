@@ -102,3 +102,5 @@ The *triangle mesh* is mainly intended for rendering has it can be directly uplo
 # UI
 
 # Usage
+
+The CMake target for this project is `chaine`.
