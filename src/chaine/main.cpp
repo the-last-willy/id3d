@@ -42,6 +42,9 @@ struct RenderSettings {
     bool show_triangles = true;
     bool show_vertices = false;
 
+    int selected_render_mode = 0;
+
+    float line_width = 1.f;
     float point_size = 1.f;
 };
 
@@ -55,8 +58,9 @@ struct App : Program {
 
     eng::RenderPass edge_pass;
     eng::RenderPass edge_pass2;
-    eng::RenderPass triangle_pass = {}; 
     eng::RenderPass vertex_pass = {};
+
+    std::vector<eng::RenderPass> triangle_passes = {};
 
     void init() override {
         shader_compiler.root = local::src_folder;
@@ -66,10 +70,16 @@ struct App : Program {
                 data::edge_program(shader_compiler));
             edge_pass2.program = std::make_shared<eng::Program>(
                 data::edge_program(shader_compiler));
-            triangle_pass.program = std::make_shared<eng::Program>(
-                data::triangle_program(shader_compiler));
             vertex_pass.program = std::make_shared<eng::Program>(
                 data::vertex_program(shader_compiler));
+
+            triangle_passes.resize(3);
+            triangle_passes[0].program = std::make_shared<eng::Program>(
+                data::triangle_program(shader_compiler));
+            triangle_passes[1].program = std::make_shared<eng::Program>(
+                data::mean_curvature_program(shader_compiler));
+            triangle_passes[2].program = std::make_shared<eng::Program>(
+                data::smooth_normal_program(shader_compiler));
         }
 
         auto off = format::off::read(local::root_folder + "/data/queen.off");
@@ -149,7 +159,7 @@ struct App : Program {
             add(edge_pass, *m);
         }
         { // Edge pass 2.
-            auto m = std::make_shared<eng::Mesh>(vertex_adjacency_mesh(face_vertex_mesh));
+            auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(face_vertex_mesh));
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
@@ -160,7 +170,9 @@ struct App : Program {
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
-            add(triangle_pass, *m);
+            for(auto& tp : triangle_passes) {
+                add(tp, *m);
+            }
         }
         { // Vertex pass.
             auto m = to_vertex_mesh(face_vertex_mesh);
@@ -212,6 +224,7 @@ struct App : Program {
         glClear(GL_DEPTH_BUFFER_BIT);
         
         if(render_settings.show_triangles) {
+            auto& triangle_pass = triangle_passes[render_settings.selected_render_mode];
             bind(*triangle_pass.program);
             for(std::size_t i = 0; i < size(triangle_pass.primitives); ++i) {
                 auto& p = *triangle_pass.primitives[i];
@@ -225,7 +238,7 @@ struct App : Program {
         }
         
         if(render_settings.show_edges) {
-            glLineWidth(5.f);
+            glLineWidth(render_settings.line_width);
             
             uniform(*edge_pass.program, "color", agl::vec3(1.f, 0.f, 0.f));
             bind(*edge_pass.program);
@@ -238,6 +251,21 @@ struct App : Program {
                 eng::render(p, va);
             }
             unbind(*edge_pass.program);
+        }
+        if(render_settings.show_edges) {
+            glLineWidth(render_settings.line_width);
+            
+            uniform(*edge_pass2.program, "color", agl::vec3(1.f, 0.f, 0.f));
+            bind(*edge_pass2.program);
+            for(std::size_t i = 0; i < size(edge_pass2.primitives); ++i) {
+                auto& p = *edge_pass2.primitives[i];
+                auto& va = edge_pass2.vertex_arrays[i];
+                bind(*p.material, *edge_pass2.program);
+                bind(va);
+                uniform(*edge_pass2.program, "mvp", transform(projection) * inverse(transform(view)));
+                eng::render(p, va);
+            }
+            unbind(*edge_pass2.program);
         }
         if(render_settings.show_vertices) {
             bind(*vertex_pass.program);
@@ -257,22 +285,21 @@ struct App : Program {
 
             ImGui::Checkbox("Show vertices", &render_settings.show_vertices);
 
+            ImGui::SliderFloat("Point size", &render_settings.point_size, 1.0f, 10.0f);
+
             ImGui::Separator();
 
             ImGui::Checkbox("Show edges", &render_settings.show_edges);
 
-            
+            ImGui::SliderFloat("Line width", &render_settings.line_width, 1.0f, 10.0f);
 
             ImGui::Separator();
 
             ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
 
-            ImGui::End();
+            auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
+            ImGui::Combo("Render mode", &render_settings.selected_render_mode, std::data(render_modes), size(render_modes));
 
-            ImGui::Begin("Point size");
-
-            ImGui::SliderFloat("Size", &render_settings.point_size, 1.0f, 10.0f);
-            
             ImGui::End();
         }
     }

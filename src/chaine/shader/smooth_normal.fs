@@ -25,9 +25,9 @@ vec3 frag_color() {
 }
 
 void main() {
-    vec3 normal = flat_normal();
+    vec3 normal = smooth_normal();
 
     float lambertian = abs(normal.z);
 
-    fragment_rgb = vec3(lambertian);
+    fragment_rgb = normal * .5 + .5;
 }
