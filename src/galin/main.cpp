@@ -109,11 +109,11 @@ struct App : Program {
         }
         {
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::pi / 2.f))[2].xyz();
+                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
                 view.position = view.position - direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_D)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::pi / 2.f))[2].xyz();
+                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
                 view.position = view.position + direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_S)) {

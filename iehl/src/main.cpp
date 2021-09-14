@@ -31,6 +31,8 @@
 
 //
 
+using namespace iehl;
+
 struct DirectionalLight {
     agl::Vec3 direction = {};
     agl::Mat4 transform = {};
@@ -62,7 +64,7 @@ struct GltfProgram : Program {
     eng::ShaderCompiler shader_compiler = {};
 
     // glTF file.
-    format::gltf2::Content scene = {};
+    format::gltf2::Content database = {};
 
     // Default sampler.
     agl::Sampler default_sampler;
@@ -77,47 +79,42 @@ struct GltfProgram : Program {
     tlw::PerspectiveProjection projection = {};
     tlw::View view = {};
 
-    agl::engine::RenderPass ambient_light_pass;
+    agl::engine::RenderPass ambient_pass;
+    agl::engine::RenderPass blinn_phong_pass;
     
     void init() override {
         { // Shader compiler.
             shader_compiler.log_folder = "logs/";
-            shader_compiler.root = "iehl/src/shader/";
+            shader_compiler.root = "iehl/src/shader";
         }
 
-        { // Ambient light pass.
-            auto& program = *(ambient_light_pass.program = std::make_shared<eng::Program>());
-            load(program, shader_compiler, {
-                {
-                    agl::vertex_shader_tag,
-                    "/forward/ambient.vs"
-                }, {
-                    agl::fragment_shader_tag,
-                    "/forward/ambient.fs"
-                }
-            });
-            program.capabilities.emplace_back(agl::Capability::cull_face, []() {
-                glCullFace(GL_BACK); });
-            program.capabilities.emplace_back(agl::Capability::depth_test, []() {
-                glDepthFunc(GL_LESS); });
-        }
-        load_model(*this, files[0]);
+        
 
+        database = format::gltf2::load(
+            "D:/data/gltf_sample_models/Box/glTF/Box.gltf");
+
+        { // Render passes
+            ambient_pass = data::forward_ambient_render_pass(shader_compiler);
+            blinn_phong_pass = data::forward_blinn_phong_render_pass(shader_compiler);
+        }
         {
-            for(auto& m : scene.meshes | ranges::views::values) {
-                subscribe(ambient_light_pass, m);
+            for(auto& m : database.meshes | ranges::views::values) {
+                subscribe(ambient_pass, m);
+            }
+            for(auto& m : database.meshes | ranges::views::values) {
+                subscribe(blinn_phong_pass, m);
             }
         }
 
         { // Camera.
             // SCENE CAMERA DISABLED>
-            if constexpr(true /* empty(scene.cameras) */) {
+            if constexpr(true /* empty(database.cameras) */) {
                 auto& c = *(active_camera = std::make_shared<eng::Camera>());
                 if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
                     pp->aspect_ratio = 16.f / 9.f;
                 }
             } else {
-                active_camera = scene.cameras.begin()->second;
+                active_camera = database.cameras.begin()->second;
             }
         }
     }
@@ -155,75 +152,36 @@ struct GltfProgram : Program {
     }
 
     void render() override {
+        clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
         auto inv_v = transform(view);
         auto v = inverse(inv_v);
 
         auto vp = transform(*active_camera) * v;
 
-        { // Ambient light pass.
-            ambient_light_pass.uniforms["mvp_transform"] = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
-            agl::engine::render(ambient_light_pass);
+        auto normal_transform = transpose(inverse(v));
+
+        auto light_position = (vp * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
+        auto view_position = (vp * vec4(view.position, 1.f)).xyz();
+
+        if constexpr(false) { // Ambient pass.
+            ambient_pass.uniforms["mvp_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+            agl::engine::render(ambient_pass);
+        }
+        if constexpr(true) { // Blinn Phong pass.
+            blinn_phong_pass.uniforms["light_position"]
+            = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
+            blinn_phong_pass.uniforms["mvp_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+            blinn_phong_pass.uniforms["normal_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(normal_transform);
+            blinn_phong_pass.uniforms["view_position"]
+            = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
+            agl::engine::render(blinn_phong_pass);
         }
     }
 };
-
-inline
-void load_model(GltfProgram& program, const std::string& filepath) {
-    tinygltf::TinyGLTF loader;
-    tinygltf::Model model;
-
-    std::string err;
-    std::string warn;
-
-    bool ret = loader.LoadASCIIFromFile(
-        &model, &err, &warn, 
-        filepath
-        );
-
-    if (!warn.empty()) {
-        std::cerr << "Warning: " << warn << std::endl;
-    }
-
-    if (!err.empty()) {
-        std::cerr << "Error: " << err << std::endl;
-    }
-
-    if (!ret) {
-        std::cerr << "Failed to open GLTF file." << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    program.scene = format::gltf2::fill(model);
-
-    { // Normalizing cameras.
-        for(auto& c : program.scene.cameras | ranges::views::values | ranges::views::indirect) {
-            if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
-                pp->aspect_ratio = 16.f / 9.f;
-            }
-        }
-    }
-
-    { // Normalizing materials.
-        for(auto& mesh : program.scene.meshes | ranges::views::values | ranges::views::indirect)
-        for(auto& primitive : mesh.primitives | ranges::views::indirect) {
-            if(!primitive.material) {
-                primitive.material = std::make_shared<eng::Material>();
-            }
-
-            auto& m = *primitive.material;
-
-            m.program.program = program.ambient_light_pass.program->program;
-        }
-    }
-
-    { // Vertex attribute plumbing.
-        for(auto& mesh : program.scene.meshes | ranges::views::values | ranges::views::indirect)
-        for(auto& primitive : mesh.primitives | ranges::views::indirect) {
-            bind(primitive, *primitive.material);
-        }
-    }
-}
 
 void throwing_main() {
     auto p = GltfProgram();
