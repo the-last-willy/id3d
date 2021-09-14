@@ -1,7 +1,7 @@
-#version 450 core
+#version 450
 
-out vec3 fragment_rgb;
+out vec3 fragment_color;
 
 void main() {
-    fragment_rgb = vec3(1.);
+    fragment_color = vec3(1.);
 }

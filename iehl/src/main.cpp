@@ -11,12 +11,11 @@
 
 // Local headers.
 
-#include "data/all.hpp"
+#include <agl/standard/all.hpp>
 #include <local/all.hpp>
+#include "data/all.hpp"
+#include "agl/format/gltf2/all.hpp"
 #include "program/all.hpp"
-
-#include <agl/all.hpp>
-#include <agl/format/gltf2/all.hpp>
 
 // External libraries.
 
@@ -32,34 +31,95 @@
 
 //
 
-namespace iehl {}
+struct DirectionalLight {
+    agl::Vec3 direction = {};
+    agl::Mat4 transform = {};
 
-using namespace iehl;
+    std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
+};
 
-struct App : Program {
+struct SpotLight {
+    agl::Vec3 direction = {};
+    agl::Mat4 transform = {};
+
+    std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
+};
+
+struct PointLight {
+    agl::Vec3 position = {};
+};
+
+struct GltfProgram;
+
+inline
+void load_model(GltfProgram& program, const std::string& filepath);
+
+struct GltfProgram : Program {
+    std::vector<std::string> files = {
+        "D:/data/sample/gltf2/box/Box/glTF/Box.gltf",
+    };
+
     eng::ShaderCompiler shader_compiler = {};
 
-    format::gltf2::Content database;
+    // glTF file.
+    format::gltf2::Content scene = {};
 
+    // Default sampler.
+    agl::Sampler default_sampler;
+
+    // Ambient lighting.
+    eng::Material ambient_light_mat = {};
+
+    // Active camera.
+    std::shared_ptr<eng::Camera> active_camera = {};
+
+    // Player camera.
+    tlw::PerspectiveProjection projection = {};
     tlw::View view = {};
-    eng::PerspectiveProjection projection = {};
 
-    eng::RenderPass forward_ambient_render_pass;
+    agl::engine::RenderPass ambient_light_pass;
     
     void init() override {
-        shader_compiler.log_folder = "../../../logs/";
-        shader_compiler.root = "../../../iehl/src/shader/";
+        { // Shader compiler.
+            shader_compiler.log_folder = "logs/";
+            shader_compiler.root = "iehl/src/shader/";
+        }
 
-        database = format::gltf2::load("D:/data/sample/gltf2/box/Box/glTF/Box.gltf");
+        { // Ambient light pass.
+            auto& program = *(ambient_light_pass.program = std::make_shared<eng::Program>());
+            load(program, shader_compiler, {
+                {
+                    agl::vertex_shader_tag,
+                    "/forward/ambient.vs"
+                }, {
+                    agl::fragment_shader_tag,
+                    "/forward/ambient.fs"
+                }
+            });
+            program.capabilities.emplace_back(agl::Capability::cull_face, []() {
+                glCullFace(GL_BACK); });
+            program.capabilities.emplace_back(agl::Capability::depth_test, []() {
+                glDepthFunc(GL_LESS); });
+        }
+        load_model(*this, files[0]);
 
-        { // Render pass.
-            forward_ambient_render_pass = data::forward_ambient_render_pass(shader_compiler);
-            for(auto& m : database.meshes | ranges::views::values | ranges::views::indirect) {
-                add(forward_ambient_render_pass, m);
+        {
+            for(auto& m : scene.meshes | ranges::views::values) {
+                subscribe(ambient_light_pass, m);
             }
         }
 
-        projection.aspect_ratio = 16.f / 9.f;
+        { // Camera.
+            // SCENE CAMERA DISABLED>
+            if constexpr(true /* empty(scene.cameras) */) {
+                auto& c = *(active_camera = std::make_shared<eng::Camera>());
+                if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
+                    pp->aspect_ratio = 16.f / 9.f;
+                }
+            } else {
+                active_camera = scene.cameras.begin()->second;
+            }
+        }
     }
 
     void update(float) override {
@@ -76,45 +136,98 @@ struct App : Program {
         }
         {
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::pi / 2.f))[2].xyz();
-                view.position = view.position - direction / 100.f;
+                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+                view.position = view.position - direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_D)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::pi / 2.f))[2].xyz();
-                view.position = view.position + direction / 100.f;
+                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+                view.position = view.position + direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_S)) {
                 auto direction = rotation(view)[2].xyz();
-                view.position = view.position - direction / 100.f;
+                view.position = view.position - direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_W)) {
                 auto direction = rotation(view)[2].xyz();
-                view.position = view.position + direction / 100.f;
+                view.position = view.position + direction / 10.f;
             }
         }
     }
 
     void render() override {
-        glClearDepthf(1.f);
-        glClear(GL_DEPTH_BUFFER_BIT);
- 
-        auto v = inverse(transform(view));
-        auto vp = transform(projection) * v;
 
-        forward_ambient_render_pass.uniforms["mvp_transform"]
-        = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+        auto inv_v = transform(view);
+        auto v = inverse(inv_v);
 
-        { // Forward ambient lighting.
-            eng::render(forward_ambient_render_pass);
+        auto vp = transform(*active_camera) * v;
+
+        { // Ambient light pass.
+            ambient_light_pass.uniforms["mvp_transform"] = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+            agl::engine::render(ambient_light_pass);
+        }
+    }
+};
+
+inline
+void load_model(GltfProgram& program, const std::string& filepath) {
+    tinygltf::TinyGLTF loader;
+    tinygltf::Model model;
+
+    std::string err;
+    std::string warn;
+
+    bool ret = loader.LoadASCIIFromFile(
+        &model, &err, &warn, 
+        filepath
+        );
+
+    if (!warn.empty()) {
+        std::cerr << "Warning: " << warn << std::endl;
+    }
+
+    if (!err.empty()) {
+        std::cerr << "Error: " << err << std::endl;
+    }
+
+    if (!ret) {
+        std::cerr << "Failed to open GLTF file." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    program.scene = format::gltf2::fill(model);
+
+    { // Normalizing cameras.
+        for(auto& c : program.scene.cameras | ranges::views::values | ranges::views::indirect) {
+            if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
+                pp->aspect_ratio = 16.f / 9.f;
+            }
         }
     }
 
-    
-};
+    { // Normalizing materials.
+        for(auto& mesh : program.scene.meshes | ranges::views::values | ranges::views::indirect)
+        for(auto& primitive : mesh.primitives | ranges::views::indirect) {
+            if(!primitive.material) {
+                primitive.material = std::make_shared<eng::Material>();
+            }
+
+            auto& m = *primitive.material;
+
+            m.program.program = program.ambient_light_pass.program->program;
+        }
+    }
+
+    { // Vertex attribute plumbing.
+        for(auto& mesh : program.scene.meshes | ranges::views::values | ranges::views::indirect)
+        for(auto& primitive : mesh.primitives | ranges::views::indirect) {
+            bind(primitive, *primitive.material);
+        }
+    }
+}
 
 void throwing_main() {
-    auto a = App();
-    run(a);
+    auto p = GltfProgram();
+    run(p);
 }
 
 int main() {
