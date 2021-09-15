@@ -91,7 +91,9 @@ struct GltfProgram : Program {
         
 
         database = format::gltf2::load(
-            "D:/data/gltf_sample_models/Box/glTF/Box.gltf");
+            // "D:/data/gltf_sample_models/Sponza/glTF/Sponza.gltf"
+            "D:/data/gltf_sample_models/Box/glTF/Box.gltf"
+            );
 
         { // Render passes
             ambient_pass = data::forward_ambient_render_pass(shader_compiler);
