@@ -27,4 +27,4 @@ target_link_libraries(
     dear_imgui
 PRIVATE
     glfw
-)   
+)

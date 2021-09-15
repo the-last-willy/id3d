@@ -70,6 +70,7 @@ struct Window {
         }
     
         glfwMakeContextCurrent(window);
+        glfwSwapInterval(1);
 
         if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
             std::cerr << "Failed to initialize OpenGL context." << std::endl;;

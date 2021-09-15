@@ -17,6 +17,8 @@ void error_callback(
 {
     (void) length;
     (void) data;
+    (void) id;
+    (void) msg;
 
     const char* _source;
     const char* _type;
@@ -106,6 +108,7 @@ void error_callback(
         case GL_DEBUG_SEVERITY_NOTIFICATION:
         _severity = "NOTIFICATION";
         throwing = false;
+        return;
         break;
 
         default:

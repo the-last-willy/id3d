@@ -12,13 +12,16 @@ auto vertex_program(const eng::ShaderCompiler& sc) {
         {
             agl::vertex_shader_tag,
             "chaine/shader/vertex.vs"
-        },
-        {     
+        }, {     
             agl::fragment_shader_tag,
             "chaine/shader/vertex.fs"
         }
     });
-    p.capabilities.emplace_back(agl::Capability::program_point_size);
+    p.capabilities.emplace_back(
+        agl::Capability::depth_test,
+        []() { glDepthFunc(GL_LESS); });
+    p.capabilities.emplace_back(
+        agl::Capability::program_point_size);
     return p;
 }
 
