@@ -184,7 +184,7 @@ struct GltfProgram : Program {
 
         { // Object uniforms.
             object->uniforms["mvp_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+            = std::make_shared<eng::Uniform<agl::Mat4>>(vp * object_model_transform);
         }
 
         if constexpr(false) { // Ambient pass.
