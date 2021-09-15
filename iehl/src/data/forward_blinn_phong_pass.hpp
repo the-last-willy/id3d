@@ -17,10 +17,12 @@ auto forward_blinn_phong_render_pass(eng::ShaderCompiler& sc) {
             "/forward/blinn_phong.fs"
         }
     });
+    program.capabilities.emplace_back(agl::Capability::blend, []() {
+        glBlendFunc(GL_ONE, GL_ONE); });
     program.capabilities.emplace_back(agl::Capability::cull_face, []() {
         glCullFace(GL_FRONT); });
     program.capabilities.emplace_back(agl::Capability::depth_test, []() {
-        glDepthFunc(GL_LESS); });
+        glDepthFunc(GL_LEQUAL); });
     return rp;
 }
 

@@ -95,7 +95,8 @@ struct GltfProgram : Program {
 
         database = format::gltf2::load(
             // "D:/data/gltf_sample_models/Sponza/glTF/Sponza.gltf"
-            "D:/data/gltf_sample_models/Box/glTF/Box.gltf");
+            // "D:/data/gltf_sample_models/Box/glTF/Box.gltf"
+            "D:/data/gltf_sample_models/BoxTextured/glTF/BoxTextured.gltf");
 
         { // First object in model.
             object = std::make_shared<agl::engine::MeshInstance>(
@@ -187,7 +188,7 @@ struct GltfProgram : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp * object_model_transform);
         }
 
-        if constexpr(false) { // Ambient pass.
+        if constexpr(true) { // Ambient pass.
             agl::engine::render(ambient_pass);
         }
         if constexpr(true) { // Blinn Phong pass.
