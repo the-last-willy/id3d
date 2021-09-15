@@ -81,31 +81,41 @@ struct GltfProgram : Program {
 
     agl::engine::RenderPass ambient_pass;
     agl::engine::RenderPass blinn_phong_pass;
+
+    std::shared_ptr<agl::engine::MeshInstance> object;
+    agl::Mat4 object_model_transform;
     
+    float time = 0.f;
+
     void init() override {
         { // Shader compiler.
             shader_compiler.log_folder = "logs/";
             shader_compiler.root = "iehl/src/shader";
         }
 
-        
-
         database = format::gltf2::load(
             // "D:/data/gltf_sample_models/Sponza/glTF/Sponza.gltf"
-            "D:/data/gltf_sample_models/Box/glTF/Box.gltf"
-            );
+            "D:/data/gltf_sample_models/Box/glTF/Box.gltf");
+
+        { // First object in model.
+            object = std::make_shared<agl::engine::MeshInstance>(
+                begin(database.meshes)->second);
+        }
 
         { // Render passes
             ambient_pass = data::forward_ambient_render_pass(shader_compiler);
             blinn_phong_pass = data::forward_blinn_phong_render_pass(shader_compiler);
         }
         {
-            for(auto& m : database.meshes | ranges::views::values) {
-                subscribe(ambient_pass, m);
-            }
-            for(auto& m : database.meshes | ranges::views::values) {
-                subscribe(blinn_phong_pass, m);
-            }
+            subscribe(ambient_pass, object);
+            subscribe(blinn_phong_pass, object);
+            // for(auto& m : database.meshes | ranges::views::values) {
+            //     subscribe(ambient_pass, m);
+            // }
+            // for(auto& m : database.meshes | ranges::views::values) {
+            //     subscribe(blinn_phong_pass, m);
+            // }
+
         }
 
         { // Camera.
@@ -121,7 +131,10 @@ struct GltfProgram : Program {
         }
     }
 
-    void update(float) override {
+    void update(float dt) override {
+        { // Increment time.
+            time += dt;
+        }
         if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
@@ -133,7 +146,7 @@ struct GltfProgram : Program {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             previous_cursor_pos = current_cursor_pos;
         }
-        {
+        { // Camera controls.
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
                 auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
                 view.position = view.position - direction / 10.f;
@@ -151,6 +164,9 @@ struct GltfProgram : Program {
                 view.position = view.position + direction / 10.f;
             }
         }
+        { // Update object.
+            object_model_transform = agl::translation(std::cos(time), 0.f, 0.f);
+        }
     }
 
     void render() override {
@@ -166,16 +182,17 @@ struct GltfProgram : Program {
         auto light_position = (vp * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
         auto view_position = (vp * vec4(view.position, 1.f)).xyz();
 
-        if constexpr(false) { // Ambient pass.
-            ambient_pass.uniforms["mvp_transform"]
+        { // Object uniforms.
+            object->uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+        }
+
+        if constexpr(false) { // Ambient pass.
             agl::engine::render(ambient_pass);
         }
         if constexpr(true) { // Blinn Phong pass.
             blinn_phong_pass.uniforms["light_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
-            blinn_phong_pass.uniforms["mvp_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
             blinn_phong_pass.uniforms["normal_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(normal_transform);
             blinn_phong_pass.uniforms["view_position"]
