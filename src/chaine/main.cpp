@@ -63,7 +63,8 @@ struct App : Program {
     std::vector<eng::RenderPass> triangle_passes = {};
 
     void init() override {
-        shader_compiler.root = local::src_folder;
+        shader_compiler.log_folder = "logs/";
+        shader_compiler.root = "src/";
 
         { // Render passes.
             edge_pass.program = std::make_shared<eng::Program>(
@@ -82,7 +83,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read(local::root_folder + "/data/queen.off");
+        auto off = format::off::read("data/queen.off");
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
