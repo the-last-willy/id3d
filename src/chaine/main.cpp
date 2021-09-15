@@ -299,7 +299,8 @@ struct App : Program {
             ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
 
             auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
-            ImGui::Combo("Render mode", &render_settings.selected_render_mode, std::data(render_modes), size(render_modes));
+            ImGui::Combo("Render mode", &render_settings.selected_render_mode,
+                std::data(render_modes), static_cast<int>(size(render_modes)));
 
             ImGui::End();
         }
