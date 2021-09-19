@@ -37,10 +37,8 @@ INTERFACE
 
 # Executables.
 
+add_subdirectory(chaine)
 add_subdirectory(iehl)
-
-add_executable(chaine src/chaine/main.cpp)
-target_link_libraries(chaine PRIVATE common)
 
 add_executable(galin src/galin/main.cpp)
 target_link_libraries(galin PRIVATE common)
