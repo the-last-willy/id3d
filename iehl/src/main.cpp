@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
 
 // Disabled warnings.
 
@@ -11,10 +12,12 @@
 
 // Local headers.
 
+#include <agl/format/gltf2/all.hpp>
+#include <agl/format/wavefront/all.hpp>
 #include <agl/standard/all.hpp>
+
 #include <local/all.hpp>
 #include "data/all.hpp"
-#include "agl/format/gltf2/all.hpp"
 #include "program/all.hpp"
 
 // External libraries.
@@ -57,14 +60,10 @@ inline
 void load_model(GltfProgram& program, const std::string& filepath);
 
 struct GltfProgram : Program {
-    std::vector<std::string> files = {
-        "D:/data/sample/gltf2/box/Box/glTF/Box.gltf",
-    };
-
     eng::ShaderCompiler shader_compiler = {};
 
     // glTF file.
-    format::gltf2::Content database = {};
+    agl::format::wavefront::Content database = {};
 
     // Default sampler.
     agl::Sampler default_sampler;
@@ -81,9 +80,6 @@ struct GltfProgram : Program {
 
     agl::engine::RenderPass ambient_pass;
     agl::engine::RenderPass blinn_phong_pass;
-
-    std::shared_ptr<agl::engine::MeshInstance> object;
-    agl::Mat4 object_model_transform;
     
     float time = 0.f;
 
@@ -93,30 +89,23 @@ struct GltfProgram : Program {
             shader_compiler.root = "iehl/src/shader";
         }
 
-        database = format::gltf2::load(
+        database = agl::format::wavefront::load(
             // "D:/data/gltf_sample_models/Sponza/glTF/Sponza.gltf"
             // "D:/data/gltf_sample_models/Box/glTF/Box.gltf"
-            "D:/data/gltf_sample_models/BoxTextured/glTF/BoxTextured.gltf");
-
-        { // First object in model.
-            object = std::make_shared<agl::engine::MeshInstance>(
-                begin(database.meshes)->second);
-        }
+            "D:/data/bistro/exterior.obj",
+            "D:/data/bistro/");
 
         { // Render passes
             ambient_pass = data::forward_ambient_render_pass(shader_compiler);
             blinn_phong_pass = data::forward_blinn_phong_render_pass(shader_compiler);
         }
         {
-            subscribe(ambient_pass, object);
-            subscribe(blinn_phong_pass, object);
-            // for(auto& m : database.meshes | ranges::views::values) {
-            //     subscribe(ambient_pass, m);
-            // }
-            // for(auto& m : database.meshes | ranges::views::values) {
+            for(auto& m : database.meshes) {
+                subscribe(ambient_pass, m);
+            }
+            // for(auto& m : database.meshes) {
             //     subscribe(blinn_phong_pass, m);
             // }
-
         }
 
         { // Camera.
@@ -126,8 +115,6 @@ struct GltfProgram : Program {
                 if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
                     pp->aspect_ratio = 16.f / 9.f;
                 }
-            } else {
-                active_camera = database.cameras.begin()->second;
             }
         }
     }
@@ -165,9 +152,7 @@ struct GltfProgram : Program {
                 view.position = view.position + direction / 10.f;
             }
         }
-        { // Update object.
-            object_model_transform = agl::translation(std::cos(time), 0.f, 0.f);
-        }
+
     }
 
     void render() override {
@@ -183,15 +168,14 @@ struct GltfProgram : Program {
         auto light_position = (vp * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
         auto view_position = (vp * vec4(view.position, 1.f)).xyz();
 
-        { // Object uniforms.
-            object->uniforms["mvp_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(vp * object_model_transform);
-        }
-
         if constexpr(true) { // Ambient pass.
+            for(auto& s : ambient_pass.subscriptions) {
+                s.mesh->uniforms["mvp_transform"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+            }
             agl::engine::render(ambient_pass);
         }
-        if constexpr(true) { // Blinn Phong pass.
+        if constexpr(false) { // Blinn Phong pass.
             blinn_phong_pass.uniforms["light_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
             blinn_phong_pass.uniforms["normal_transform"]
