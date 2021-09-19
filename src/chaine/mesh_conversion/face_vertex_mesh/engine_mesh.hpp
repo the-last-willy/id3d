@@ -39,7 +39,6 @@ eng::Mesh triangle_adjacency_mesh(face_vertex_mesh::Mesh& m) {
         accessor.buffer_view_byte_stride = agl::Stride<GLsizei>(4);
         accessor.component_count = agl::Size<GLint>(1);
         accessor.component_type = GL_UNSIGNED_INT;
-        
     }
     auto position_accessor = eng::Accessor();
     {
