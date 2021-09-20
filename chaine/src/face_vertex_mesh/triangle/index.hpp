@@ -1,6 +1,6 @@
 #pragma once
 
-#include "index.hpp"
+#include "generic_index.hpp"
 
 namespace chaine::face_vertex_mesh {
 

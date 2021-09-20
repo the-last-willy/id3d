@@ -1,9 +1,8 @@
 #pragma once
 
 #include "geometry.hpp"
-#include "topology.hpp"
 
-#include <stdexcept>
+#include "face_vertex_mesh/topology/mesh.hpp"
 
 namespace chaine::face_vertex_mesh {
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "index.hpp"
+#include "mesh.hpp"
 #include "proxy.hpp"
 
 #include "face_vertex_mesh/triangle/proxy.hpp"

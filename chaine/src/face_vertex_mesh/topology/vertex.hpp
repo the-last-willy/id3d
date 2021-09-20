@@ -6,6 +6,8 @@ namespace chaine::face_vertex_mesh {
 
 struct VertexTopology {
     TriangleIndex triangle;
+
+    bool is_ghost = false;
 };
 
 }

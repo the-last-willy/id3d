@@ -62,7 +62,30 @@ face_vertex_mesh::Mesh to_face_vertex_mesh(triangle_mesh::Mesh mesh) {
                 }
             }
         }
+        // // Ghost topology.
+        // if(not empty(edge_adjacency)) {
+        //     { // Make ghost vertex.
+        //         // We don't care about its geometry. Should it be removed ?
+        //         resize_vertices(fvmesh.geometry, vertex_count(mesh) + 1);
+        //         fvmesh.topology.vertices.resize(vertex_count(mesh) + 1); 
+        //         fvmesh.topology.vertices.back().is_ghost = true;
+        //     }
+        //     { // Make ghost triangle with remaining edges.
+        //         fvmesh.topology.triangles.reserve(triangle_count(mesh) + size(edge_adjacency));
+        //         auto ghost_vertex = VertexIndex(vertex_count(mesh) - 1);
+        //         for(auto e : edge_adjacency) {
+        //             auto& t = fvmesh.topology.triangles.emplace_back();
+        //             t.triangles[0] = e.second.triangle;
+        //             t.triangles[1] = ;
+        //             t.triangles[2] = ;
+        //             t.vertices[0] = ghost_vertex;
+        //             t.vertices[1] = ;
+        //             t.vertices[2] = ;
+        //         }
+        //     }
+        // }
     }
     return fvmesh;
 }
+
 }

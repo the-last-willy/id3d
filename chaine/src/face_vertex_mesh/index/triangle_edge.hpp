@@ -9,7 +9,7 @@ namespace chaine::face_vertex_mesh {
 struct TriangleEdgeIndexTraits {
     using Value = std::array<TriangleIndex, 2>;
 
-    static constexpr Value default_value = 0;
+    static constexpr Value default_value;
 };
 
 using TriangleEdgeIndex = Index<TriangleEdgeIndexTraits>;

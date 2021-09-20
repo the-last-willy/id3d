@@ -1,7 +1,7 @@
 #pragma once
 
-#include "face_vertex_mesh/triangle/topology.hpp"
-#include "face_vertex_mesh/vertex/topology.hpp"
+#include "triangle.hpp"
+#include "vertex.hpp"
 
 #include <vector>
 
