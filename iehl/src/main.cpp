@@ -1,8 +1,14 @@
 // Definitions.
 
 #define GLFW_INCLUDE_NONE
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
+#undef STB_IMAGE_IMPLEMENTATION
+#undef STB_IMAGE_WRITE_IMPLEMENTATION
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
 
