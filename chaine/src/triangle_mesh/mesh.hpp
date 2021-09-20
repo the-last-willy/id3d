@@ -3,7 +3,7 @@
 #include "geometry.hpp"
 #include "topology.hpp"
 
-namespace chaine::triangle_mesh {
+namespace triangle_mesh {
 
 struct Mesh {
     Geometry geometry;

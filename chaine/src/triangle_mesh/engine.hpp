@@ -6,7 +6,7 @@
 
 #include <range/v3/view/enumerate.hpp>
 
-namespace chaine::triangle_mesh {
+namespace triangle_mesh {
 
 inline
 auto triangle_mesh(const Mesh& m) {
