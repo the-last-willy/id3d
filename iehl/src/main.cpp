@@ -96,10 +96,8 @@ struct GltfProgram : Program {
         }
 
         database = agl::format::wavefront::load(
-            // "D:/data/gltf_sample_models/Sponza/glTF/Sponza.gltf"
-            // "D:/data/gltf_sample_models/Box/glTF/Box.gltf"
-            "D:/data/bistro/exterior.obj",
-            "D:/data/bistro/");
+            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            "C:/Users/Willy/Desktop/data/bistro-small/");
 
         { // Render passes
             ambient_pass = data::forward_ambient_render_pass(shader_compiler);
