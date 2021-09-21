@@ -3,7 +3,7 @@
 #include <agl/engine/program.hpp>
 #include <agl/engine/shader.hpp>
 
-namespace chaine::data {
+namespace data {
 
 inline
 auto triangle_program(const eng::ShaderCompiler& sc) {

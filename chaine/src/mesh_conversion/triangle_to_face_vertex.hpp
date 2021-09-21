@@ -1,13 +1,13 @@
 #pragma once
 
-#include "face_vertex_mesh/all.hpp"
+#include "face_vertex/all.hpp"
 #include "triangle_mesh/all.hpp"
 
 namespace chaine {
 
 inline
-face_vertex_mesh::Mesh to_face_vertex_mesh(triangle_mesh::Mesh tm) {
-    face_vertex_mesh::Mesh fvm;
+face_vertex::Mesh to_face_vertex_mesh(triangle_mesh::Mesh tm) {
+    face_vertex::Mesh fvm;
     { // Copy data from 'triangle_mesh' to 'face_vertex_mesh'.
         fvm.geometry.vertex_positions = tm.geometry.vertex_positions;
         fvm.topology.triangles.resize(size(tm.topology.triangles));
@@ -22,11 +22,11 @@ face_vertex_mesh::Mesh to_face_vertex_mesh(triangle_mesh::Mesh tm) {
         auto& topology = fvm.topology;
 
         struct FaceVertex {
-            face_vertex_mesh::TriangleIndex triangle;
+            face_vertex::TriangleIndex triangle;
             uint32_t relative_vertex;
         };
 
-        std::map<face_vertex_mesh::EdgeIndex, FaceVertex> edge_connectivity;
+        std::map<face_vertex::EdgeIndex, FaceVertex> edge_connectivity;
 
         for(std::size_t i = 0; i < size(topology.triangles); ++i) {
             auto& triangle = topology.triangles

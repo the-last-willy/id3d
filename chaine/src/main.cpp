@@ -123,7 +123,7 @@ struct App : Program {
                             sum += aik * (uk - ui);
                         }
                     }
-                    vertex_area += face_vertex_mesh::area(t);
+                    vertex_area += face_vertex::area(t);
                 }
                 vertex_area /= 3.f;
                 auto laplacian = sum / (2.f * vertex_area);

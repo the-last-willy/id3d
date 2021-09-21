@@ -6,7 +6,7 @@
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/transform.hpp>
 
-namespace chaine::triangle_mesh {
+namespace triangle_mesh {
 
 struct VertexProxy {
     const Mesh& mesh;

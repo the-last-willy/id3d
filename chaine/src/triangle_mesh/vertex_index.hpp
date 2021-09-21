@@ -2,7 +2,7 @@
 
 #include "generic_index.hpp"
 
-namespace chaine::triangle_mesh {
+namespace triangle_mesh {
 
 struct VertexIndexTraits {
     using Value = uint32_t;

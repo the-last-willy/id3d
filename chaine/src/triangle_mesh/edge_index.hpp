@@ -2,7 +2,7 @@
 
 #include "vertex_index.hpp"
 
-namespace chaine::triangle_mesh {
+namespace triangle_mesh {
 
 struct EdgeIndex {
     VertexIndex head, tail;

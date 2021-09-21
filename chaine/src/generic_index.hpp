@@ -1,7 +1,5 @@
 #pragma once
 
-namespace chaine {
-
 template<typename T>
 concept IndexTraits
 = requires {
@@ -36,6 +34,4 @@ bool operator==(Index<I> i0, Index<I> i1) {
 template<typename I> constexpr
 auto operator<=>(Index<I> i0, Index<I> i1) {
     return i0.value <=> i1.value;
-}
-
 }

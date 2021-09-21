@@ -11,6 +11,9 @@
 [submodule "lib/range_v3/range_v3"]
 	path = lib/range_v3/range_v3
 	url = https://github.com/ericniebler/range-v3.git
+[submodule "lib/stb/stb"]
+	path = lib/stb/stb
+	url = https://github.com/nothings/stb.git
 [submodule "lib/tinygltf/tinygltf"]
 	path = lib/tinygltf/tinygltf
 	url = https://github.com/syoyo/tinygltf.git

@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace chaine::triangle_mesh {
+namespace triangle_mesh {
 
 struct Topology {
     std::vector<agl::Uvec3> triangle_indices = {};

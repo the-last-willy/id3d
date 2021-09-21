@@ -1,8 +1,14 @@
 // Definitions.
 
 #define GLFW_INCLUDE_NONE
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
+#undef STB_IMAGE_IMPLEMENTATION
+#undef STB_IMAGE_WRITE_IMPLEMENTATION
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
 
@@ -90,24 +96,16 @@ struct GltfProgram : Program {
         }
 
         database = agl::format::wavefront::load(
-            // "D:/data/gltf_sample_models/Sponza/glTF/Sponza.gltf"
-            // "D:/data/gltf_sample_models/Box/glTF/Box.gltf"
-            //"D:/data/bistro/exterior.obj"
-            "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
-            //"D:/data/bistro/"
-            "C:/Users/yoanp/Documents/bistro-small");
+            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            "C:/Users/Willy/Desktop/data/bistro-small/");
 
         { // Render passes
-            ambient_pass = data::forward_ambient_render_pass(shader_compiler);
-            blinn_phong_pass = data::forward_blinn_phong_render_pass(shader_compiler);
+            ambient_pass = data::wavefront::forward_ambient_render_pass(shader_compiler);
         }
-        {
+        { // Render passes subscriptions.
             for(auto& m : database.meshes) {
                 subscribe(ambient_pass, m);
             }
-            // for(auto& m : database.meshes) {
-            //     subscribe(blinn_phong_pass, m);
-            // }
         }
 
         { // Camera.
