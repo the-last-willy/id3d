@@ -1,10 +1,3 @@
-// Definitions.
-
-#define GLFW_INCLUDE_NONE
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define TINYGLTF_IMPLEMENTATION
-
 // Disabled warnings.
 
 #pragma warning(disable : 4005 4996)

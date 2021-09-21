@@ -1,17 +1,3 @@
-// Definitions.
-
-#define GLFW_INCLUDE_NONE
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image.h>
-#include <stb_image_write.h>
-#undef STB_IMAGE_IMPLEMENTATION
-#undef STB_IMAGE_WRITE_IMPLEMENTATION
-
-#define TINYGLTF_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
-
 // Disabled warnings.
 
 #pragma warning(disable : 4005 4996)
@@ -108,12 +94,9 @@ struct GltfProgram : Program {
         }
 
         { // Camera.
-            // SCENE CAMERA DISABLED>
-            if constexpr(true /* empty(database.cameras) */) {
-                auto& c = *(camera = std::make_shared<eng::Camera>());
-                if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
-                    pp->aspect_ratio = 16.f / 9.f;
-                }
+            auto& c = *(camera = std::make_shared<eng::Camera>());
+            if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
+                pp->aspect_ratio = 16.f / 9.f;
             }
         }
     }
