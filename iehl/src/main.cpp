@@ -78,10 +78,9 @@ struct GltfProgram : Program {
     eng::Material ambient_light_mat = {};
 
     // Active camera.
-    std::shared_ptr<eng::Camera> active_camera = {};
+    std::shared_ptr<eng::Camera> camera = {};
 
     // Player camera.
-    tlw::PerspectiveProjection projection = {};
     tlw::View view = {};
 
     agl::engine::RenderPass ambient_pass;
@@ -96,8 +95,8 @@ struct GltfProgram : Program {
         }
 
         database = agl::format::wavefront::load(
-            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            "C:/Users/Willy/Desktop/data/bistro-small/");
+            "D:/data/bistro/exterior.obj",
+            "D:/data/bistro/");
 
         { // Render passes
             ambient_pass = data::wavefront::forward_ambient_render_pass(shader_compiler);
@@ -111,7 +110,7 @@ struct GltfProgram : Program {
         { // Camera.
             // SCENE CAMERA DISABLED>
             if constexpr(true /* empty(database.cameras) */) {
-                auto& c = *(active_camera = std::make_shared<eng::Camera>());
+                auto& c = *(camera = std::make_shared<eng::Camera>());
                 if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
                     pp->aspect_ratio = 16.f / 9.f;
                 }
@@ -126,8 +125,8 @@ struct GltfProgram : Program {
         if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
-            view.yaw += d[0] / 500.f;
-            view.pitch += d[1] / 500.f;
+            view.yaw -= d[0] / 500.f;
+            view.pitch -= d[1] / 500.f;
 
             previous_cursor_pos = current_cursor_pos;
         } else {
@@ -145,11 +144,11 @@ struct GltfProgram : Program {
             }
             if(glfwGetKey(window.window, GLFW_KEY_S)) {
                 auto direction = rotation(view)[2].xyz();
-                view.position = view.position - direction / 10.f;
+                view.position = view.position + direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_W)) {
                 auto direction = rotation(view)[2].xyz();
-                view.position = view.position + direction / 10.f;
+                view.position = view.position - direction / 10.f;
             }
         }
 
@@ -161,7 +160,7 @@ struct GltfProgram : Program {
         auto inv_v = transform(view);
         auto v = inverse(inv_v);
 
-        auto vp = transform(*active_camera) * v;
+        auto vp = transform(*camera) * v;
 
         auto normal_transform = transpose(inverse(v));
 
