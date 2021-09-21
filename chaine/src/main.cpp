@@ -83,7 +83,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("data/queen.off");
+        auto off = format::off::read("data/cubecc1.off");
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
