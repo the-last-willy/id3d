@@ -146,14 +146,22 @@ struct GltfProgram : Program {
         auto light_position = (vp_tr * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
         auto view_position = (vp_tr * vec4(camera->view.position, 1.f)).xyz();
 
-        {
-            // auto cbb = agl::engine::bounding_box();
+        for(auto& s : ambient_pass.subscriptions) {
+            s.mesh->uniforms["mvp_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+        }
+        if constexpr(true) { // Frustrum culling.
+            auto frustrum = agl::engine::bounding_box(*camera);
+            int count = 0;
+            for(auto& s : ambient_pass.subscriptions) {
+                auto bb = bounding_box(*s.mesh);
+                if(are_intersecting(bb, frustrum)) {
+                    count += 1;
+                }
+            }
+            std::cout << "frustrum culling=" << count << std::endl;
         }
         if constexpr(true) { // Ambient pass.
-            for(auto& s : ambient_pass.subscriptions) {
-                s.mesh->uniforms["mvp_transform"]
-                = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
-            }
             agl::engine::render(ambient_pass);
         }
         if constexpr(false) { // Blinn Phong pass.
