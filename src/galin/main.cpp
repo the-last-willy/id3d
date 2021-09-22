@@ -48,7 +48,7 @@ struct App : Program {
 
     eng::ShaderCompiler shader_compiler = {};
 
-    tlw::View view = {};
+    agl::engine::View view = {};
 
     agl::VertexArray empty_vertex_array = agl::create(agl::vertex_array_tag);
     eng::Program program = {};

@@ -46,7 +46,7 @@ struct App : Program {
 
     eng::ShaderCompiler shader_compiler = {};
 
-    tlw::View view = {};
+    agl::engine::View view = {};
     eng::PerspectiveProjection projection = {};
 
     eng::RenderPass edge_pass;
