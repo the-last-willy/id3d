@@ -66,9 +66,6 @@ struct GltfProgram : Program {
     // Active camera.
     std::shared_ptr<eng::Camera> camera = {};
 
-    // Player camera.
-    tlw::View view = {};
-
     agl::engine::RenderPass ambient_pass;
     agl::engine::RenderPass blinn_phong_pass;
     
@@ -108,8 +105,8 @@ struct GltfProgram : Program {
         if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
-            view.yaw -= d[0] / 500.f;
-            view.pitch -= d[1] / 500.f;
+            camera->view.yaw -= d[0] / 500.f;
+            camera->view.pitch -= d[1] / 500.f;
 
             previous_cursor_pos = current_cursor_pos;
         } else {
@@ -118,20 +115,22 @@ struct GltfProgram : Program {
         }
         { // Camera controls.
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                view.position = view.position - direction / 10.f;
+                auto direction = (rotation(camera->view)
+                * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+                camera->view.position = camera->view.position - direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_D)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                view.position = view.position + direction / 10.f;
+                auto direction = (rotation(camera->view)
+                * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+                camera->view.position = camera->view.position + direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_S)) {
-                auto direction = rotation(view)[2].xyz();
-                view.position = view.position + direction / 10.f;
+                auto direction = rotation(camera->view)[2].xyz();
+                camera->view.position = camera->view.position + direction / 10.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_W)) {
-                auto direction = rotation(view)[2].xyz();
-                view.position = view.position - direction / 10.f;
+                auto direction = rotation(camera->view)[2].xyz();
+                camera->view.position = camera->view.position - direction / 10.f;
             }
         }
 
@@ -140,20 +139,20 @@ struct GltfProgram : Program {
     void render() override {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
-        auto inv_v = transform(view);
-        auto v = inverse(inv_v);
+        auto vp_tr = agl::engine::view_to_camera_transform(*camera);
 
-        auto vp = transform(*camera) * v;
+        auto normal_tr = agl::engine::normal_transform(*camera);
 
-        auto normal_transform = transpose(inverse(v));
+        auto light_position = (vp_tr * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
+        auto view_position = (vp_tr * vec4(camera->view.position, 1.f)).xyz();
 
-        auto light_position = (vp * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
-        auto view_position = (vp * vec4(view.position, 1.f)).xyz();
-
+        {
+            // auto cbb = agl::engine::bounding_box();
+        }
         if constexpr(true) { // Ambient pass.
             for(auto& s : ambient_pass.subscriptions) {
                 s.mesh->uniforms["mvp_transform"]
-                = std::make_shared<eng::Uniform<agl::Mat4>>(vp);
+                = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             }
             agl::engine::render(ambient_pass);
         }
@@ -161,7 +160,7 @@ struct GltfProgram : Program {
             blinn_phong_pass.uniforms["light_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
             blinn_phong_pass.uniforms["normal_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(normal_transform);
+            = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
             blinn_phong_pass.uniforms["view_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
             agl::engine::render(blinn_phong_pass);
