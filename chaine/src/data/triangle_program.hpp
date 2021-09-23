@@ -19,7 +19,7 @@ auto triangle_program(const eng::ShaderCompiler& sc) {
     });
     p.capabilities.emplace_back(
         agl::Capability::cull_face, 
-        []() { glCullFace(GL_FRONT); });
+        []() { glCullFace(GL_BACK); });
     p.capabilities.emplace_back(
         agl::Capability::depth_test, 
         []() { glDepthFunc(GL_LESS); });
