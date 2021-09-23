@@ -12,8 +12,13 @@ If the results are interesting they might be moved into their own projects.
 # Projects
 
 - [3D Image Synthesis (iehl)](iehl)
-- [Geometric Modelling: Implicit modelling (galin)](galin)
+- [Implicit modelling (galin)](galin)
 - [Meshes and Computational Geometry (chaine)](chaine)
+
+Upcoming projects:
+- Digital terrain modelling (galin2)
+- GPU programming (iehl2)
+- Animation (meyer/zara) ???
 
 Some of these projects have been made in group.
 
