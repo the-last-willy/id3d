@@ -46,8 +46,7 @@ struct App : Program {
 
     eng::ShaderCompiler shader_compiler = {};
 
-    agl::engine::View view = {};
-    eng::PerspectiveProjection projection = {};
+    eng::Camera camera;
 
     eng::RenderPass edge_pass;
     eng::RenderPass edge_pass2;
@@ -76,7 +75,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("data/cubecc1.off");
+        auto off = format::off::read("data/queen.off");
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
@@ -176,17 +175,19 @@ struct App : Program {
             add(vertex_pass, *m);
         }
 
-        projection.aspect_ratio = 16.f / 9.f;
-        projection.z_near = 0.01f;
-        projection.z_far = 100.f;
+        { // Camera.
+            if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
+                pp->aspect_ratio = 16.f / 9.f;
+            }
+        }
     }
 
     void update(float) override {
         if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
-            view.yaw += d[0] / 500.f;
-            view.pitch += d[1] / 500.f;
+            camera.view.yaw -= d[0] / 500.f;
+            camera.view.pitch -= d[1] / 500.f;
 
             previous_cursor_pos = current_cursor_pos;
         } else {
@@ -195,20 +196,20 @@ struct App : Program {
         }
         {
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                view.position = view.position - direction / 100.f;
+                auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+                camera.view.position = camera.view.position - direction / 100.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_D)) {
-                auto direction = (rotation(view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                view.position = view.position + direction / 100.f;
+                auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+                camera.view.position = camera.view.position + direction / 100.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_S)) {
-                auto direction = rotation(view)[2].xyz();
-                view.position = view.position - direction / 100.f;
+                auto direction = rotation(camera.view)[2].xyz();
+                camera.view.position = camera.view.position + direction / 100.f;
             }
             if(glfwGetKey(window.window, GLFW_KEY_W)) {
-                auto direction = rotation(view)[2].xyz();
-                view.position = view.position + direction / 100.f;
+                auto direction = rotation(camera.view)[2].xyz();
+                camera.view.position = camera.view.position - direction / 100.f;
             }
         }
     }
@@ -225,7 +226,7 @@ struct App : Program {
                 auto& va = triangle_pass.vertex_arrays[i];
                 bind(*p.material, *triangle_pass.program);
                 bind(va);
-                uniform(*triangle_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                uniform(*triangle_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
                 eng::render(p, va);
             }
             unbind(*triangle_pass.program);
@@ -241,7 +242,7 @@ struct App : Program {
                 auto& va = edge_pass.vertex_arrays[i];
                 bind(*p.material, *edge_pass.program);
                 bind(va);
-                uniform(*edge_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                uniform(*edge_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
                 eng::render(p, va);
             }
             unbind(*edge_pass.program);
@@ -256,7 +257,7 @@ struct App : Program {
                 auto& va = edge_pass2.vertex_arrays[i];
                 bind(*p.material, *edge_pass2.program);
                 bind(va);
-                uniform(*edge_pass2.program, "mvp", transform(projection) * inverse(transform(view)));
+                uniform(*edge_pass2.program, "mvp", agl::engine::view_to_camera_transform(camera));
                 eng::render(p, va);
             }
             unbind(*edge_pass2.program);
@@ -268,7 +269,7 @@ struct App : Program {
                 auto& va = vertex_pass.vertex_arrays[i];
                 bind(*p.material, *vertex_pass.program);
                 bind(va);
-                uniform(*vertex_pass.program, "mvp", transform(projection) * inverse(transform(view)));
+                uniform(*vertex_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
                 uniform(*vertex_pass.program, "point_size", render_settings.point_size);
                 eng::render(p, va);
             }
