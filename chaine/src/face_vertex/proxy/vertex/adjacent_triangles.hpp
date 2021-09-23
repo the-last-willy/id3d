@@ -1,6 +1,8 @@
 #pragma once
 
+#include "index.hpp"
 #include "proxy.hpp"
+#include "topology.hpp"
 
 namespace face_vertex {
 

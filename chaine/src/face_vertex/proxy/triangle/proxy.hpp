@@ -1,8 +1,7 @@
 #pragma once
 
-#include "index.hpp"
-
-#include "face_vertex/mesh.hpp"
+#include "face_vertex/index/triangle.hpp"
+#include "face_vertex/mesh/mesh.hpp"
 
 namespace face_vertex {
 
