@@ -1,10 +1,3 @@
-// Definitions.
-
-#define GLFW_INCLUDE_NONE
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define TINYGLTF_IMPLEMENTATION
-
 // Disabled warnings.
 
 #pragma warning(disable : 4005 4996)
@@ -53,7 +46,7 @@ struct App : Program {
 
     eng::ShaderCompiler shader_compiler = {};
 
-    tlw::View view = {};
+    agl::engine::View view = {};
     eng::PerspectiveProjection projection = {};
 
     eng::RenderPass edge_pass;

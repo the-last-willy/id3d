@@ -4,9 +4,13 @@ INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/stb
 )
 
-add_library(stb_image INTERFACE)
+add_library(stb_image)
+target_sources(stb_image
+PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/stb_image.c
+)
 target_link_libraries(stb_image 
-INTERFACE
+PUBLIC
     stb_common
 )
 
@@ -16,7 +20,7 @@ PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/stb_image_resize.c
 )
 target_link_libraries(stb_image_resize
-PRIVATE
+PUBLIC
     stb_common
 )
 

@@ -18,7 +18,7 @@ auto forward_ambient_render_pass(eng::ShaderCompiler& sc) {
         }
     });
     program.capabilities.emplace_back(agl::Capability::cull_face, []() {
-        glCullFace(GL_FRONT); });
+        glCullFace(GL_BACK); });
     program.capabilities.emplace_back(agl::Capability::depth_test, []() {
         glDepthFunc(GL_LEQUAL); });
     return rp;
