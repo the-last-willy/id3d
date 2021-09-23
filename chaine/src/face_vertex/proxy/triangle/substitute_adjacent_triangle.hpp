@@ -12,11 +12,10 @@ inline
 void substitute_adjacent_triangle(
     TriangleProxy tp,
     TriangleIndex before,
-    TriangleIndex after) {
-
-}
+    TriangleIndex after)
+{
     for(uint32_t i = 0; i < adjacent_triangle_count(tp); ++i) {
-        if(adjacent_triangle(tp, i) == before) {
+        if(index(adjacent_triangle(tp, i)) == before) {
             topology(tp).triangles[i] = after;
         }
     }
