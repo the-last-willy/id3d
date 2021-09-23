@@ -96,15 +96,19 @@ struct GltfProgram : Program {
         }
 
         database = agl::format::wavefront::load(
-            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            "C:/Users/Willy/Desktop/data/bistro-small/");
+            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            // "C:/Users/Willy/Desktop/data/bistro-small/");
+            "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+            "C:/Users/yoanp/Documents/bistro-small/");
 
         { // Render passes
             ambient_pass = data::wavefront::forward_ambient_render_pass(shader_compiler);
+            blinn_phong_pass = data::wavefront::forward_blinn_phong_pass(shader_compiler);
         }
         { // Render passes subscriptions.
             for(auto& m : database.meshes) {
                 subscribe(ambient_pass, m);
+                subscribe(blinn_phong_pass, m);
             }
         }
 
@@ -175,7 +179,7 @@ struct GltfProgram : Program {
             }
             agl::engine::render(ambient_pass);
         }
-        if constexpr(false) { // Blinn Phong pass.
+        if constexpr(true) { // Blinn Phong pass.
             blinn_phong_pass.uniforms["light_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
             blinn_phong_pass.uniforms["normal_transform"]
