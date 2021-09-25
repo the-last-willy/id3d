@@ -77,12 +77,29 @@ struct GltfProgram : Program {
         try {
             ambient_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::forward_ambient_program(shader_compiler));
+            ambient_pass.subscriptions.clear();
+            for(auto& m : database.meshes) {
+                subscribe(ambient_pass, m);
+            }
             ambient_pass_loaded = true;
         } catch(...) {
             ambient_pass.program.reset();
             std::cerr << "AMBIENT SHADERS FAILED TO COMPILE." << std::endl << std::endl;
             ambient_pass_loaded = false;
         }
+        // try {
+        //     blinn_phong_pass.program = std::make_shared<eng::Program>(
+        //         data::wavefront::forward_blinn_phong_program(shader_compiler));
+        //         ambient_pass.subscriptions.clear();
+        //     for(auto& m : database.meshes) {
+        //         subscribe(blinn_phong_pass, m);
+        //     }
+        //     blinn_phong_pass_loaded = true;
+        // } catch(...) {
+        //     blinn_phong_pass.program.reset();
+        //     std::cerr << "BLINN PHONG SHADERS FAILED TO COMPILE." << std::endl << std::endl;
+        //     blinn_phong_pass_loaded = false;
+        // }
     }
 
     void init() override {
@@ -94,14 +111,11 @@ struct GltfProgram : Program {
         database = agl::format::wavefront::load(
             "D:/data/bistro/exterior.obj",
             "D:/data/bistro/");
+            // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+            // "C:/Users/yoanp/Documents/bistro-small/");
 
         { // Render passes.
             reload_shaders();
-        }
-        { // Render passes subscriptions.
-            for(auto& m : database.meshes) {
-                subscribe(ambient_pass, m);
-            }
         }
 
         { // Camera.
@@ -181,7 +195,7 @@ struct GltfProgram : Program {
         if(ambient_pass_loaded) { // Ambient pass.
             agl::engine::render(ambient_pass);
         }
-        if constexpr(false) { // Blinn Phong pass.
+        if(blinn_phong_pass_loaded) { // Blinn Phong pass.
             blinn_phong_pass.uniforms["light_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
             blinn_phong_pass.uniforms["normal_transform"]

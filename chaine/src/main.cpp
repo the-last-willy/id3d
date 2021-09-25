@@ -75,7 +75,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("data/queen.off");
+        auto off = format::off::read("data/cubecc1.off");
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
@@ -94,62 +94,67 @@ struct App : Program {
         }
 
         auto face_vertex_mesh = to_face_vertex_mesh(mesh);
-        for(uint32_t i = 0; i < 100; ++i) {
-            auto tp = proxy(
-                face_vertex_mesh,
-                face_vertex::TriangleIndex(i));
-            auto vep = proxy(
-                face_vertex_mesh,
-                face_vertex::TriangleEdgeIndex(std::array{
-                    index(tp), 
-                    index(adjacent_triangle(tp, 0))}));
-        }
+        // for(uint32_t i = 0; i < 100; ++i) {
+        //     auto tp = proxy(
+        //         face_vertex_mesh,
+        //         face_vertex::TriangleIndex(i));
+        //     auto vep = proxy(
+        //         face_vertex_mesh,
+        //         face_vertex::TriangleEdgeIndex(std::array{
+        //             index(tp), 
+        //             index(adjacent_triangle(tp, 0))}));
+        // }
 
-        { // Compute Laplacian.
-            for(auto v : vertices(face_vertex_mesh)) {
-                auto vertex_area = 0.f;
-                auto sum = agl::vec3(0.f);
-                for(auto t : adjacent_triangles(v)) {
-                    for(uint32_t i = 0; i < 3; ++i) {
-                        if(index(vertex(t, i)) == index(v)) {
-                            auto ui = position(vertex(t, i));
-                            auto uj = position(vertex(t, (i + 1) % vertex_count(t)));
-                            auto uk = position(vertex(t, (i + 2) % vertex_count(t)));
-                            auto triangle_area = length(cross(ui - uk, uj - uk));
-                            auto aij = dot(ui - uk, uj - uk) / triangle_area;
-                            auto aik = dot(ui - uj, uk - uj) / triangle_area;
-                            sum += aij * (uj - ui);
-                            sum += aik * (uk - ui);
-                        }
-                    }
-                    vertex_area += face_vertex::area(t);
-                }
-                vertex_area /= 3.f;
-                auto laplacian = sum / (2.f * vertex_area);
-                float mean_curvature = length(laplacian) / 2.f;
-                color(v) = agl::vec3(1.f - 1.f / (1.f + mean_curvature / 20.f));
-                normal(v) = -normalize(laplacian);
-            }
-        }
-        { // Flip incorrect normals.
-            for(auto&& t : triangles(face_vertex_mesh)) {
-                auto v0 = vertex(t, 0);
-                auto v1 = vertex(t, 1);
-                auto v2 = vertex(t, 2);
-                auto tn = normalize(cross(
-                    position(v1) - position(v0),
-                    position(v2) - position(v0)));
-                if(dot(normal(v0), tn) < 0.f) {
-                    normal(v0) = -normal(v0);
-                }
-                if(dot(normal(v1), tn) < 0.f) {
-                    normal(v1) = -normal(v1);
-                }
-                if(dot(normal(v2), tn) < 0.f) {
-                    normal(v2) = -normal(v2);
-                }
-            }
-        }
+        // for(auto v : vertices(face_vertex_mesh)) {
+        //     color(v) = normalize(position(v)) * .5f + .5f;
+        // }
+        split(face_vertex_mesh);
+
+        // { // Compute Laplacian.
+        //     for(auto v : vertices(face_vertex_mesh)) {
+        //         auto vertex_area = 0.f;
+        //         auto sum = agl::vec3(0.f);
+        //         for(auto t : adjacent_triangles(v)) {
+        //             for(uint32_t i = 0; i < 3; ++i) {
+        //                 if(index(vertex(t, i)) == index(v)) {
+        //                     auto ui = position(vertex(t, i));
+        //                     auto uj = position(vertex(t, (i + 1) % vertex_count(t)));
+        //                     auto uk = position(vertex(t, (i + 2) % vertex_count(t)));
+        //                     auto triangle_area = length(cross(ui - uk, uj - uk));
+        //                     auto aij = dot(ui - uk, uj - uk) / triangle_area;
+        //                     auto aik = dot(ui - uj, uk - uj) / triangle_area;
+        //                     sum += aij * (uj - ui);
+        //                     sum += aik * (uk - ui);
+        //                 }
+        //             }
+        //             vertex_area += face_vertex::area(t);
+        //         }
+        //         vertex_area /= 3.f;
+        //         auto laplacian = sum / (2.f * vertex_area);
+        //         float mean_curvature = length(laplacian) / 2.f;
+        //         color(v) = agl::vec3(1.f - 1.f / (1.f + mean_curvature / 20.f));
+        //         normal(v) = -normalize(laplacian);
+        //     }
+        // }
+        // { // Flip incorrect normals.
+        //     for(auto&& t : triangles(face_vertex_mesh)) {
+        //         auto v0 = vertex(t, 0);
+        //         auto v1 = vertex(t, 1);
+        //         auto v2 = vertex(t, 2);
+        //         auto tn = normalize(cross(
+        //             position(v1) - position(v0),
+        //             position(v2) - position(v0)));
+        //         if(dot(normal(v0), tn) < 0.f) {
+        //             normal(v0) = -normal(v0);
+        //         }
+        //         if(dot(normal(v1), tn) < 0.f) {
+        //             normal(v1) = -normal(v1);
+        //         }
+        //         if(dot(normal(v2), tn) < 0.f) {
+        //             normal(v2) = -normal(v2);
+        //         }
+        //     }
+        // }
 
         { // Edge pass.
             auto m = triangle_mesh::edge_mesh(mesh);
@@ -241,25 +246,25 @@ struct App : Program {
             unbind(*triangle_pass.program);
         }
         
+        // if(render_settings.show_edges) {
+        //     glLineWidth(render_settings.line_width);
+            
+        //     uniform(*edge_pass.program, "color", agl::vec3(1.f, 0.f, 0.f));
+        //     bind(*edge_pass.program);
+        //     for(std::size_t i = 0; i < size(edge_pass.primitives); ++i) {
+        //         auto& p = *edge_pass.primitives[i];
+        //         auto& va = edge_pass.vertex_arrays[i];
+        //         bind(*p.material, *edge_pass.program);
+        //         bind(va);
+        //         uniform(*edge_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
+        //         eng::render(p, va);
+        //     }
+        //     unbind(*edge_pass.program);
+        // }
         if(render_settings.show_edges) {
             glLineWidth(render_settings.line_width);
             
-            uniform(*edge_pass.program, "color", agl::vec3(1.f, 0.f, 0.f));
-            bind(*edge_pass.program);
-            for(std::size_t i = 0; i < size(edge_pass.primitives); ++i) {
-                auto& p = *edge_pass.primitives[i];
-                auto& va = edge_pass.vertex_arrays[i];
-                bind(*p.material, *edge_pass.program);
-                bind(va);
-                uniform(*edge_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
-                eng::render(p, va);
-            }
-            unbind(*edge_pass.program);
-        }
-        if(render_settings.show_edges) {
-            glLineWidth(render_settings.line_width);
-            
-            uniform(*edge_pass2.program, "color", agl::vec3(1.f, 0.f, 0.f));
+            uniform(*edge_pass2.program, "color", agl::vec3(0.f, 1.f, 0.f));
             bind(*edge_pass2.program);
             for(std::size_t i = 0; i < size(edge_pass2.primitives); ++i) {
                 auto& p = *edge_pass2.primitives[i];

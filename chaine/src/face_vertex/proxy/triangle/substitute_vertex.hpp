@@ -20,6 +20,7 @@ void substitute_vertex(
     for(uint32_t i = 0; i < adjacent_triangle_count(tp); ++i) {
         if(index(vertex(tp, i)) == before) {
             topology(tp).vertices[i] = after;
+            return;
         }
     }
     throw std::logic_error("Not a triangle vertex.");
