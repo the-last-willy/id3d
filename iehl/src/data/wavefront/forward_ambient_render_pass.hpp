@@ -1,5 +1,7 @@
 #pragma once
 
+#include "forward_ambient_program.hpp"
+
 #include <agl/engine/all.hpp>
 
 namespace iehl::data::wavefront {
@@ -7,20 +9,7 @@ namespace iehl::data::wavefront {
 inline
 auto forward_ambient_render_pass(eng::ShaderCompiler& sc) {
     auto rp = agl::engine::RenderPass();
-    auto& program = *(rp.program = std::make_shared<eng::Program>());
-    load(program, sc, {
-        {
-            agl::vertex_shader_tag,
-            "/wavefront/forward_ambient.vs"
-        }, {
-            agl::fragment_shader_tag,
-            "/wavefront/forward_ambient.fs"
-        }
-    });
-    program.capabilities.emplace_back(agl::Capability::cull_face, []() {
-        glCullFace(GL_BACK); });
-    program.capabilities.emplace_back(agl::Capability::depth_test, []() {
-        glDepthFunc(GL_LEQUAL); });
+    rp.program = std::make_shared<eng::Program>(forward_ambient_program(sc));
     return rp;
 }
 

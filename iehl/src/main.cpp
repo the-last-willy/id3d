@@ -66,10 +66,24 @@ struct GltfProgram : Program {
     // Active camera.
     std::shared_ptr<eng::Camera> camera = {};
 
+    bool ambient_pass_loaded = false;
     agl::engine::RenderPass ambient_pass;
+    bool blinn_phong_pass_loaded = false;
     agl::engine::RenderPass blinn_phong_pass;
     
     float time = 0.f;
+
+    void reload_shaders() {
+        try {
+            ambient_pass.program = std::make_shared<eng::Program>(
+                data::wavefront::forward_ambient_program(shader_compiler));
+            ambient_pass_loaded = true;
+        } catch(...) {
+            ambient_pass.program.reset();
+            std::cerr << "AMBIENT SHADERS FAILED TO COMPILE." << std::endl << std::endl;
+            ambient_pass_loaded = false;
+        }
+    }
 
     void init() override {
         { // Shader compiler.
@@ -81,8 +95,8 @@ struct GltfProgram : Program {
             "D:/data/bistro/exterior.obj",
             "D:/data/bistro/");
 
-        { // Render passes
-            ambient_pass = data::wavefront::forward_ambient_render_pass(shader_compiler);
+        { // Render passes.
+            reload_shaders();
         }
         { // Render passes subscriptions.
             for(auto& m : database.meshes) {
@@ -132,6 +146,9 @@ struct GltfProgram : Program {
                 auto direction = rotation(camera->view)[2].xyz();
                 camera->view.position = camera->view.position - direction / 10.f;
             }
+            if(glfwGetKey(window.window, GLFW_KEY_R)) {
+                reload_shaders();
+            }
         }
 
     }
@@ -150,7 +167,7 @@ struct GltfProgram : Program {
             s.mesh->uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
         }
-        if constexpr(true) { // Frustrum culling.
+        if constexpr(false) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
             int count = 0;
             for(auto& s : ambient_pass.subscriptions) {
@@ -161,7 +178,7 @@ struct GltfProgram : Program {
             }
             std::cout << "frustrum culling=" << count << std::endl;
         }
-        if constexpr(true) { // Ambient pass.
+        if(ambient_pass_loaded) { // Ambient pass.
             agl::engine::render(ambient_pass);
         }
         if constexpr(false) { // Blinn Phong pass.
