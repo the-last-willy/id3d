@@ -94,9 +94,16 @@ struct App : Program {
         }
 
         auto face_vertex_mesh = to_face_vertex_mesh(mesh);
-        // for(auto v : vertices(face_vertex_mesh)) {
-        //     color(v) = normalize(position(v)) * .5f + .5f;
-        // }
+        for(uint32_t i = 0; i < 100; ++i) {
+            auto tp = proxy(
+                face_vertex_mesh,
+                face_vertex::TriangleIndex(i));
+            auto vep = proxy(
+                face_vertex_mesh,
+                face_vertex::TriangleEdgeIndex(std::array{
+                    index(tp), 
+                    index(adjacent_triangle(tp, 0))}));
+        }
 
         { // Compute Laplacian.
             for(auto v : vertices(face_vertex_mesh)) {
@@ -178,6 +185,8 @@ struct App : Program {
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
                 pp->aspect_ratio = 16.f / 9.f;
+                pp->z_far = 10.f;
+                pp->z_near = 0.01f;
             }
         }
     }
