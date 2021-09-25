@@ -17,6 +17,7 @@ void substitute_adjacent_triangle(
     for(uint32_t i = 0; i < adjacent_triangle_count(tp); ++i) {
         if(index(adjacent_triangle(tp, i)) == before) {
             topology(tp).triangles[i] = after;
+            return;
         }
     }
     throw std::logic_error("Not an adjacent triangle.");

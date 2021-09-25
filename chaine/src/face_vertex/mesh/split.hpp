@@ -6,57 +6,40 @@
 namespace face_vertex {
 
 void split(face_vertex::Mesh& fvmesh) {
-    auto& topology = fvmesh.topology;
     for(auto triangle : triangles(fvmesh)) {
-        auto p = barycenter(triangle);
-        topology.vertices.emplace_back(p);
-        auto i2 = index(vertex(triangle, 2));
-        auto p_index = TriangleIndex(topology.vertices.size() - 1);
-        topology(triangle).vertices[2] = p_index;
+        auto p = create_vertex(fvmesh);
+        position(p) = barycenter(triangle);
+        //std::cout << "(" << position(p)[0] << ", " << position(p)[1] << ", " << position(p)[2] << ")" << std::endl;
+        auto vt2 = vertex(triangle, 2);
+        substitute_vertex(triangle, vertex(triangle, 2), p);
         //create first triangle
-        TriangleTopology t1;
-        t1.vertices[0] = topology.vertices[index(vertex(triangle, 1))];
-        t1.vertices[1] = topology.vertices[i2];
-        t1.vertices[2] = topology.vertices[p_index];
-        //create second triangle
-        TriangleTopology t2;
-        t2.vertices[0] = topology.vertices[index(vertex(triangle, 0))];
-        t2.vertices[1] = topology.vertices[p_index];
-        t2.vertices[2] = topology.vertices[i2];
+        auto t0 = create_triangle(fvmesh);
+        topology(t0).vertices[0] = vertex(triangle, 1);
+        topology(t0).vertices[1] = vt2;
+        topology(t0).vertices[2] = p;
+        // //create second triangle
+        auto t1 = create_triangle(fvmesh);
+        topology(t1).vertices[0] = vertex(triangle, 0);
+        topology(t1).vertices[1] = p;
+        topology(t1).vertices[2] = vt2;
 
-        topology.triangles.emplace_back(t1);
-        topology.triangles.emplace_back(t2);
+        // //adjacent
+        auto old_adjacent0 = adjacent_triangle(triangle, 0);
+        auto old_adjacent1 = adjacent_triangle(triangle, 1);
 
-        //adjacent
-        //give triangle index not triangle topology
-        auto t1_index = topology.triangles.size() - 2;
-        auto t2_index = topology.triangles.size() - 1;
-
-        auto old_adjacent1 = topology(triangle).triangles[vertex(triangles(1))];
-        auto old_adjacent2 = topology(triangle).triangles[vertex(triangles(2))];
-
-        //Base triangle
-        substitue_adjacent_triangle(triangle, old_adjacent1, t1_index);
-        substitue_adjacent_triangle(triangle, old_adjacent2, t2_index);
-        face_vertex::topology(t1).triangles[vertex(triangle(1))] = index(triangle);
-        face_vertex::topology(t2).triangles[vertex(triangle(2))] = index(triangle);
+        // //Base triangle
+        substitute_adjacent_triangle(triangle, old_adjacent0, t0);
+        substitute_adjacent_triangle(triangle, old_adjacent1, t1);
+        topology(t0).triangles[0] = triangle;
+        topology(t1).triangles[0] = triangle;
         //old adjacent
-        substitue_adjacent_triangle(topology.triangles[old_adjacent1], triangle, t1_index);
-        substitue_adjacent_triangle(topology.triangles[old_adjacent2], triangle, t2_index);
-        ace_vertex::topology(t1).triangles[vertex(triangle(1))] = old_adjacent1;
-        face_vertex::topology(t2).triangles[vertex(triangle(2))] = old_adjacent2;
+        substitute_adjacent_triangle(old_adjacent0, triangle, t0);
+        substitute_adjacent_triangle(old_adjacent1, triangle, t1);
+        topology(t0).triangles[1] = old_adjacent0;
+        topology(t1).triangles[2] = old_adjacent1;
 
-        face_vertex::topology(t1).triangles[vertex(triangle(0))] = t2_index;
-        face_vertex::topology(t2).triangles[vertex(triangle(0))] = t1_index;
-
-        // face_vertex::topology(t1).triangles[vertex(triangle(2))] = face_vertex::topology(triangle).triangles[vertex(triangle(0))];
-        // face_vertex::topology(t1).triangles[vertex(triangle(1))] = face_vertex::topology(triangle).triangles[vertex(triangle(1))];
-
-        // face_vertex::topology(triangle).triangles[vertex(triangle(0))] = t1_index;
-        // face_vertex::topology(t1).triangles[vertex(triangle(1))] = index(triangle);
-
-        // face_vertex::topology(triangle).triangles[vertex(triangle(1))] = t2_index;
-        // face_vertex::topology(t2).triangles[vertex(triangle(2))] = index(triangle);
+        topology(t0).triangles[2] = t1;
+        topology(t1).triangles[1] = t0;
     }
 }
 
