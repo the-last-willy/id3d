@@ -14,7 +14,7 @@ inline
 auto triangles(Mesh& m) {
     return ranges::views::ints(uint32_t(0), triangle_count(m))
     | ranges::views::transform([&m] (auto i) {
-        return proxy(m, TriangleIndex{i}); });
+        return proxy(m, TriangleIndex(i)); });
 }
 
 }

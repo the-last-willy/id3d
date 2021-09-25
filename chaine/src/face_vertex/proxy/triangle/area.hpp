@@ -3,6 +3,8 @@
 #include "proxy.hpp"
 #include "vertex.hpp"
 
+#include "face_vertex/proxy/vertex/position.hpp"
+
 #include <agl/all.hpp>
 
 namespace face_vertex {

@@ -5,8 +5,8 @@
 namespace face_vertex {
 
 inline
-TriangleEdgeIndex index(TriangleEdgeProxy tep) {
-    return tep.index;
+VertexIndex index(VertexProxy vp) {
+    return vp.index;
 }
 
 }
