@@ -21,4 +21,9 @@ uint32_t vertex_count(const Mesh& m) {
     return static_cast<uint32_t>(size(m.topology.vertices));
 }
 
+inline
+Geometry& geometry(Mesh& m) {
+    return m.geometry;
+}
+
 }
