@@ -21,3 +21,5 @@ void substitute_adjacent_triangle(
     }
     throw std::logic_error("Not an adjacent triangle.");
 }
+
+}

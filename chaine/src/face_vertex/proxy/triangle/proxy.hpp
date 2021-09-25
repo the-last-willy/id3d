@@ -9,10 +9,10 @@ struct TriangleProxy {
     Mesh* mesh;
     TriangleIndex index;
 
-    // constexpr
-    // operator TriangleIndex() const noexcept {
-    //     return index;
-    // }
+    constexpr
+    operator TriangleIndex() const noexcept {
+        return index;
+    }
 };
 
 inline

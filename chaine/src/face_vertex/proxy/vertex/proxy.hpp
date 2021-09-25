@@ -8,6 +8,11 @@ namespace face_vertex {
 struct VertexProxy {
     Mesh& mesh;
     VertexIndex index;
+
+    constexpr
+    operator VertexIndex() const noexcept {
+        return index;
+    }
 };
 
 inline
