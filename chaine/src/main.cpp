@@ -75,7 +75,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("data/queen.off");
+        auto off = format::off::read("data/cubecc1.off");
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
@@ -97,6 +97,7 @@ struct App : Program {
         // for(auto v : vertices(face_vertex_mesh)) {
         //     color(v) = normalize(position(v)) * .5f + .5f;
         // }
+        //split(face_vertex_mesh);
 
         { // Compute Laplacian.
             for(auto v : vertices(face_vertex_mesh)) {
