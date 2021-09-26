@@ -26,8 +26,6 @@
 
 //
 
-using namespace iehl;
-
 struct DirectionalLight {
     agl::Vec3 direction = {};
     agl::Mat4 transform = {};
@@ -113,6 +111,19 @@ struct GltfProgram : Program {
             "D:/data/bistro/");
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
             // "C:/Users/yoanp/Documents/bistro-small/");
+
+        { // Normalize data.
+            auto default_emissive = std::make_shared<eng::Texture>(
+                data::uniform_texture(agl::vec3(0.f)));
+            for(auto&& m : database.meshes | ranges::views::indirect) {
+                for(auto&& p : m.primitives | ranges::views::indirect) {
+                    auto&& m = *p.material;
+                    if(not m.textures.contains("map_Ke")) {
+                        m.textures["map_Ke"] = default_emissive;
+                    }
+                }
+            }
+        }
 
         { // Render passes.
             reload_shaders();

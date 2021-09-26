@@ -2,7 +2,7 @@
 
 #include <agl/engine/all.hpp>
 
-namespace iehl::data::wavefront {
+namespace data::wavefront {
 
 inline
 eng::Program forward_blinn_phong_program(eng::ShaderCompiler& sc) {

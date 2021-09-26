@@ -2,7 +2,7 @@
 
 #include <agl/engine/all.hpp>
 
-namespace iehl::data::wavefront {
+namespace data::wavefront {
 
 inline
 auto forward_ambient_program(eng::ShaderCompiler& sc) {
