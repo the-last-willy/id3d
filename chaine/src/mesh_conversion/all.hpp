@@ -1,5 +1,7 @@
 #pragma once
 
+#include "face_vertex/engine/edges.hpp"
+#include "face_vertex/engine/vertices.hpp"
 #include "face_vertex/engine/triangles.hpp"
 #include "face_vertex/engine/vertices.hpp"
 #include "face_vertex/engine_mesh.hpp"
