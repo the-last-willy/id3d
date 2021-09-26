@@ -99,6 +99,7 @@ void error_callback(
 
         case GL_DEBUG_SEVERITY_MEDIUM:
         _severity = "MEDIUM";
+        return;
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
