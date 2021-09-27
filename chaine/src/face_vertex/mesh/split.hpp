@@ -2,6 +2,7 @@
 
 #include "face_vertex/index/all.hpp"
 #include "face_vertex/proxy/triangle/all.hpp"
+#include "face_vertex/proxy/vertex/all.hpp"
 
 namespace face_vertex {
 
@@ -44,19 +45,22 @@ namespace face_vertex {
 // }
 
 VertexProxy split(TriangleProxy triangle) {
-	auto p = create_vertex(mesh(triangle));
-	auto vt2 = vertex(triangle, 2);
-	substitute_vertex(triangle, vertex(triangle, 2), p);
-	//create first triangle
-	auto t0 = create_triangle(mesh(triangle));
-	topology(t0).vertices[0] = vertex(triangle, 1);
-	topology(t0).vertices[1] = vt2;
-	topology(t0).vertices[2] = p;
-	// //create second triangle
-	auto t1 = create_triangle(mesh(triangle));
-	topology(t1).vertices[0] = vertex(triangle, 0);
-	topology(t1).vertices[1] = p;
-	topology(t1).vertices[2] = vt2;
+        auto p = create_vertex(mesh(triangle));
+        auto vt2 = vertex(triangle, 2);
+        substitute_vertex(triangle, vertex(triangle, 2), p);
+        //Set adjacent triangle of vertex
+        topology(p).triangle = triangle;
+        topology(vertex(triangle, 2)).triangle = adjacent_triangle(triangle, 0);
+        //create first triangle
+        auto t0 = create_triangle(mesh(triangle));
+        topology(t0).vertices[0] = vertex(triangle, 1);
+        topology(t0).vertices[1] = vt2;
+        topology(t0).vertices[2] = p;
+        // //create second triangle
+        auto t1 = create_triangle(mesh(triangle));
+        topology(t1).vertices[0] = vertex(triangle, 0);
+        topology(t1).vertices[1] = p;
+        topology(t1).vertices[2] = vt2;
 
 	// //adjacent
 	auto old_adjacent0 = adjacent_triangle(triangle, 0);
