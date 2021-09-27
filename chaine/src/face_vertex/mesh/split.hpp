@@ -2,6 +2,7 @@
 
 #include "face_vertex/index/all.hpp"
 #include "face_vertex/proxy/triangle/all.hpp"
+#include "face_vertex/proxy/vertex/all.hpp"
 
 namespace face_vertex {
 
@@ -47,6 +48,9 @@ VertexProxy split(TriangleProxy triangle) {
         auto p = create_vertex(mesh(triangle));
         auto vt2 = vertex(triangle, 2);
         substitute_vertex(triangle, vertex(triangle, 2), p);
+        //Set adjacent triangle of vertex
+        topology(p).triangle = triangle;
+        topology(vertex(triangle, 2)).triangle = adjacent_triangle(triangle, 0);
         //create first triangle
         auto t0 = create_triangle(mesh(triangle));
         topology(t0).vertices[0] = vertex(triangle, 1);
