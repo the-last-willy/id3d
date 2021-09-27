@@ -21,4 +21,3 @@ target_link_libraries(chaine3d
 PRIVATE
     common
 )
-

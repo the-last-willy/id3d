@@ -112,19 +112,55 @@ struct App : Program {
 
         mesh = face_vertex::Mesh();
         {
+            auto gv = create_vertex(mesh);
+            topology(gv).is_ghost = true;
+
             auto v0 = create_vertex(mesh);
-            position(v0) = agl::vec3(0.f, 0.f, 0.f);
+            position(v0) = agl::vec3(-1.f, -1.f, 0.f);
             
             auto v1 = create_vertex(mesh);
-            position(v1) = agl::vec3(0.f, 1.f, 0.f);
+            position(v1) = agl::vec3(1.f, -1.f, 0.f);
 
             auto v2 = create_vertex(mesh);
-            position(v2) = agl::vec3(1.f, 0.f, 0.f);
+            position(v2) = agl::vec3(-1.f, 1.f, 0.f);
+
+            auto gt0 = create_triangle(mesh);
+            topology(gt0).is_ghost = true;
+
+            auto gt1 = create_triangle(mesh);
+            topology(gt1).is_ghost = true;
+
+            auto gt2 = create_triangle(mesh);
+            topology(gt2).is_ghost = true;;
 
             auto t = create_triangle(mesh);
             topology(t).vertices[0] = v0;
             topology(t).vertices[1] = v1;
             topology(t).vertices[2] = v2;
+            // topology(t).triangles[0] = gt0;
+            // topology(t).triangles[1] = gt1;
+            // topology(t).triangles[2] = gt2;
+
+            // topology(gt0).vertices[0] = gv;
+            // topology(gt0).vertices[1] = v2;
+            // topology(gt0).vertices[2] = v1;
+            // topology(gt0).triangles[0] = t;
+            // topology(gt0).triangles[1] = gt2;
+            // topology(gt0).triangles[2] = gt1;
+            
+            // topology(gt1).vertices[0] = gv;
+            // topology(gt1).vertices[1] = v0;
+            // topology(gt1).vertices[2] = v2;
+            // topology(gt1).triangles[0] = t;
+            // topology(gt1).triangles[1] = gt0;
+            // topology(gt1).triangles[2] = gt2;
+
+            // topology(gt2).vertices[0] = gv;
+            // topology(gt2).vertices[1] = v1;
+            // topology(gt2).vertices[2] = v0;
+            // topology(gt2).triangles[0] = t;
+            // topology(gt2).triangles[1] = gt1;
+            // topology(gt2).triangles[2] = gt0;
         }
 
         refresh_mesh();
@@ -145,13 +181,9 @@ struct App : Program {
                 xpos = 2.f * xpos / window.width() - 1.f;
                 ypos = -2.f * ypos / window.height() + 1.f;
                 
-                auto v = create_vertex(mesh);
-                position(v) = (transform(camera) * agl::vec4(xpos, ypos, 0.f, 1.f)).xyz();
+                auto pos = (transform(camera) * agl::vec4(xpos, ypos, 0.f, 1.f)).xyz();
 
-                auto t = create_triangle(mesh);
-                topology(t).vertices[0] = face_vertex::VertexIndex(0);
-                topology(t).vertices[1] = face_vertex::VertexIndex(1);
-                topology(t).vertices[2] = v;
+                insert_vertex(mesh, pos);
 
                 refresh_mesh();
             }
