@@ -108,7 +108,6 @@ struct App : Program {
         // for(auto v : vertices(face_vertex_mesh)) {
         //     color(v) = normalize(position(v)) * .5f + .5f;
         // }
-        split(face_vertex_mesh);
 
         // { // Compute Laplacian.
         //     for(auto v : vertices(face_vertex_mesh)) {
