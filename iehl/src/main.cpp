@@ -195,7 +195,7 @@ struct GltfProgram : Program {
         if constexpr(false) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
             int count = 0;
-            for(auto& s : ambient_pass.subscriptions) {
+            for(auto& s : blinn_phong_pass.subscriptions) {
                 auto bb = bounding_box(*s.mesh);
                 if(are_intersecting(bb, frustrum)) {
                     count += 1;
