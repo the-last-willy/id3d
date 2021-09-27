@@ -87,8 +87,8 @@ struct GltfProgram : Program {
         }
         // try {
         //     blinn_phong_pass.program = std::make_shared<eng::Program>(
-        //         data::wavefront::forward_blinn_phong_program(shader_compiler));
-        //         ambient_pass.subscriptions.clear();
+        //         data::wavefront::forward_ambient_program(shader_compiler));
+        //         blinn_phong_pass.subscriptions.clear();
         //     for(auto& m : database.meshes) {
         //         subscribe(blinn_phong_pass, m);
         //     }
@@ -107,10 +107,10 @@ struct GltfProgram : Program {
         }
 
         database = agl::format::wavefront::load(
-            "D:/data/bistro/exterior.obj",
-            "D:/data/bistro/");
-            // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
-            // "C:/Users/yoanp/Documents/bistro-small/");
+            // "D:/data/bistro/exterior.obj",
+            // "D:/data/bistro/");
+            "D:/data/bistro-small/exterior.obj",
+            "D:/data/bistro-small/");
 
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
@@ -207,12 +207,12 @@ struct GltfProgram : Program {
             agl::engine::render(ambient_pass);
         }
         if(blinn_phong_pass_loaded) { // Blinn Phong pass.
-            blinn_phong_pass.uniforms["light_position"]
-            = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
-            blinn_phong_pass.uniforms["normal_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
-            blinn_phong_pass.uniforms["view_position"]
-            = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
+            // blinn_phong_pass.uniforms["light_position"]
+            // = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
+            // blinn_phong_pass.uniforms["normal_transform"]
+            // = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
+            // blinn_phong_pass.uniforms["view_position"]
+            // = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
             agl::engine::render(blinn_phong_pass);
         }
     }
