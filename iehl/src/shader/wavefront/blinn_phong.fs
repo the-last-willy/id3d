@@ -4,6 +4,12 @@
 uniform vec4 baseColorFactor = vec4(1.);
 uniform sampler2D baseColorTexture;
 
+uniform vec4 Kd;
+uniform vec3 Ks;
+uniform sampler2D map_Kd;
+uniform sampler2D map_Ke;
+uniform sampler2D map_Ks;
+
 uniform vec3 light_position;
 uniform vec3 view_position;
 
@@ -29,9 +35,11 @@ void main() {
     vec3 h = normalize(l + v);
 
     vec3 albedo = baseColorFactor.xyz * texture(baseColorTexture, vertex_texcoords).xyz;
-
+    if(texture(map_Kd, vertex_texcoords).a < .5)
+        discard;
+    vec3 ambient = .5 * texture(map_Kd, vertex_texcoords).xyz + texture(map_Ke, vertex_texcoords).xyz;
     float lambertian = max(dot(l, n), 0.);
     float specular = pow(blinn_phong_specular(h, n), 90.);
 
-    fragment_color = (lambertian * .5) * albedo + vec3(specular);
+    fragment_color = ambient + (lambertian * .5) * albedo + vec3(specular);
 }

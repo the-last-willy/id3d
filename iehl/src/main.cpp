@@ -72,32 +72,32 @@ struct GltfProgram : Program {
     float time = 0.f;
 
     void reload_shaders() {
-        try {
-            ambient_pass.program = std::make_shared<eng::Program>(
-                data::wavefront::forward_ambient_program(shader_compiler));
-            ambient_pass.subscriptions.clear();
-            for(auto& m : database.meshes) {
-                subscribe(ambient_pass, m);
-            }
-            ambient_pass_loaded = true;
-        } catch(...) {
-            ambient_pass.program.reset();
-            std::cerr << "AMBIENT SHADERS FAILED TO COMPILE." << std::endl << std::endl;
-            ambient_pass_loaded = false;
-        }
         // try {
-        //     blinn_phong_pass.program = std::make_shared<eng::Program>(
+        //     ambient_pass.program = std::make_shared<eng::Program>(
         //         data::wavefront::forward_ambient_program(shader_compiler));
-        //         blinn_phong_pass.subscriptions.clear();
+        //     ambient_pass.subscriptions.clear();
         //     for(auto& m : database.meshes) {
-        //         subscribe(blinn_phong_pass, m);
+        //         subscribe(ambient_pass, m);
         //     }
-        //     blinn_phong_pass_loaded = true;
+        //     ambient_pass_loaded = true;
         // } catch(...) {
-        //     blinn_phong_pass.program.reset();
-        //     std::cerr << "BLINN PHONG SHADERS FAILED TO COMPILE." << std::endl << std::endl;
-        //     blinn_phong_pass_loaded = false;
+        //     ambient_pass.program.reset();
+        //     std::cerr << "AMBIENT SHADERS FAILED TO COMPILE." << std::endl << std::endl;
+        //     ambient_pass_loaded = false;
         // }
+        try {
+            blinn_phong_pass.program = std::make_shared<eng::Program>(
+                data::wavefront::forward_blinn_phong_program(shader_compiler));
+                blinn_phong_pass.subscriptions.clear();
+            for(auto& m : database.meshes) {
+                subscribe(blinn_phong_pass, m);
+            }
+            blinn_phong_pass_loaded = true;
+        } catch(...) {
+            blinn_phong_pass.program.reset();
+            std::cerr << "BLINN PHONG SHADERS FAILED TO COMPILE." << std::endl << std::endl;
+            blinn_phong_pass_loaded = false;
+        }
     }
 
     void init() override {
@@ -188,7 +188,7 @@ struct GltfProgram : Program {
         auto light_position = (vp_tr * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
         auto view_position = (vp_tr * vec4(camera->view.position, 1.f)).xyz();
 
-        for(auto& s : ambient_pass.subscriptions) {
+        for(auto& s : blinn_phong_pass.subscriptions) {
             s.mesh->uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
         }

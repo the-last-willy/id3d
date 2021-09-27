@@ -16,8 +16,8 @@ eng::Program forward_blinn_phong_program(eng::ShaderCompiler& sc) {
             "/wavefront/blinn_phong.fs"
         }
     });
-    p.capabilities.emplace_back(agl::Capability::blend, []() {
-        glBlendFunc(GL_ONE, GL_ONE); });
+    // p.capabilities.emplace_back(agl::Capability::blend, []() {
+    //     glBlendFunc(GL_ONE, GL_ONE); });
     p.capabilities.emplace_back(agl::Capability::cull_face, []() {
         glCullFace(GL_BACK); });
     p.capabilities.emplace_back(agl::Capability::depth_test, []() {
