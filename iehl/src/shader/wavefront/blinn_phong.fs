@@ -35,7 +35,8 @@ void main() {
     vec3 h = normalize(l + v);
 
     vec3 albedo = baseColorFactor.xyz * texture(baseColorTexture, vertex_texcoords).xyz;
-
+    if(texture(map_Kd, vertex_texcoords).a < .5)
+        discard;
     vec3 ambient = .5 * texture(map_Kd, vertex_texcoords).xyz + texture(map_Ke, vertex_texcoords).xyz;
     float lambertian = max(dot(l, n), 0.);
     float specular = pow(blinn_phong_specular(h, n), 90.);
