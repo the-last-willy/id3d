@@ -12,6 +12,8 @@
 #include "data/all.hpp"
 #include "program/all.hpp"
 
+#include "gizmo/gizmo.hpp"
+
 // External libraries.
 
 #include <glad/glad.h>
@@ -68,6 +70,8 @@ struct GltfProgram : Program {
     agl::engine::RenderPass ambient_pass;
     bool blinn_phong_pass_loaded = false;
     agl::engine::RenderPass blinn_phong_pass;
+
+    Gizmo gizmo;
     
     float time = 0.f;
 
@@ -115,11 +119,11 @@ struct GltfProgram : Program {
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
                 data::uniform_texture(agl::vec3(0.f)));
-            for(auto&& m : database.meshes | ranges::views::indirect) {
-                for(auto&& p : m.primitives | ranges::views::indirect) {
-                    auto&& m = *p.material;
-                    if(not m.textures.contains("map_Ke")) {
-                        m.textures["map_Ke"] = default_emissive;
+            for(auto&& me : database.meshes | ranges::views::indirect) {
+                for(auto&& p : me.primitives | ranges::views::indirect) {
+                    auto&& ma = *p.material;
+                    if(not ma.textures.contains("map_Ke")) {
+                        ma.textures["map_Ke"] = default_emissive;
                     }
                 }
             }
