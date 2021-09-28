@@ -239,7 +239,7 @@ struct App : Program {
                 auto& va = triangle_pass.vertex_arrays[i];
                 bind(*p.material, *triangle_pass.program);
                 bind(va);
-                uniform(*triangle_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
+                uniform(*triangle_pass.program, "mvp", agl::engine::world_to_clip(camera));
                 eng::render(p, va);
             }
             unbind(*triangle_pass.program);
@@ -255,7 +255,7 @@ struct App : Program {
                 auto& va = edge_pass.vertex_arrays[i];
                 bind(*p.material, *edge_pass.program);
                 bind(va);
-                uniform(*edge_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
+                uniform(*edge_pass.program, "mvp", agl::engine::world_to_clip(camera));
                 eng::render(p, va);
             }
             unbind(*edge_pass.program);
@@ -270,7 +270,7 @@ struct App : Program {
                 auto& va = edge_pass2.vertex_arrays[i];
                 bind(*p.material, *edge_pass2.program);
                 bind(va);
-                uniform(*edge_pass2.program, "mvp", agl::engine::view_to_camera_transform(camera));
+                uniform(*edge_pass2.program, "mvp", agl::engine::world_to_clip(camera));
                 eng::render(p, va);
             }
             unbind(*edge_pass2.program);
@@ -282,7 +282,7 @@ struct App : Program {
                 auto& va = vertex_pass.vertex_arrays[i];
                 bind(*p.material, *vertex_pass.program);
                 bind(va);
-                uniform(*vertex_pass.program, "mvp", agl::engine::view_to_camera_transform(camera));
+                uniform(*vertex_pass.program, "mvp", agl::engine::world_to_clip(camera));
                 uniform(*vertex_pass.program, "point_size", render_settings.point_size);
                 eng::render(p, va);
             }
