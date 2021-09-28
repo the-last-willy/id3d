@@ -4,6 +4,12 @@ This project is made by:
 - Willy Jacquet
 - Yoan Parra
 
+# Code architecture
+
+## Geometry / Topology orthogonality
+
+## Data / semantics orthogonality
+
 # Mesh interface
 
 A **mesh** is composed of two things: a **geometry** and a **topology**.
@@ -99,8 +105,17 @@ The *triangle mesh* is mainly intended for rendering has it can be directly uplo
 
 # Rendering
 
-# UI
-
 # Usage
 
-The CMake target for this project is `chaine`.
+Two applications are provided for this project.
+Both of them have to be built and executed in the project root `id3d` (and not `id3d/chaine`).
+
+An help window is provided inside the applications.
+
+## 2D interface
+
+The CMake target is `chaine2d`.
+
+## 3D interface
+
+The CMake target is `chaine3d`.
