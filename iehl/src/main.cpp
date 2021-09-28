@@ -72,19 +72,19 @@ struct GltfProgram : Program {
     float time = 0.f;
 
     void reload_shaders() {
-        // try {
-        //     ambient_pass.program = std::make_shared<eng::Program>(
-        //         data::wavefront::forward_ambient_program(shader_compiler));
-        //     ambient_pass.subscriptions.clear();
-        //     for(auto& m : database.meshes) {
-        //         subscribe(ambient_pass, m);
-        //     }
-        //     ambient_pass_loaded = true;
-        // } catch(...) {
-        //     ambient_pass.program.reset();
-        //     std::cerr << "AMBIENT SHADERS FAILED TO COMPILE." << std::endl << std::endl;
-        //     ambient_pass_loaded = false;
-        // }
+        try {
+            ambient_pass.program = std::make_shared<eng::Program>(
+                data::wavefront::forward_ambient_program(shader_compiler));
+            ambient_pass.subscriptions.clear();
+            for(auto& m : database.meshes) {
+                subscribe(ambient_pass, m);
+            }
+            ambient_pass_loaded = true;
+        } catch(...) {
+            ambient_pass.program.reset();
+            std::cerr << "AMBIENT SHADERS FAILED TO COMPILE." << std::endl << std::endl;
+            ambient_pass_loaded = false;
+        }
         try {
             blinn_phong_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::forward_blinn_phong_program(shader_compiler));
@@ -181,40 +181,46 @@ struct GltfProgram : Program {
     void render() override {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
-        auto vp_tr = agl::engine::view_to_camera_transform(*camera);
+        auto vp_tr = agl::engine::world_to_clip(*camera);
 
         auto normal_tr = agl::engine::normal_transform(*camera);
 
         auto light_position = (vp_tr * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
         auto view_position = (vp_tr * vec4(camera->view.position, 1.f)).xyz();
 
-        for(auto& s : blinn_phong_pass.subscriptions) {
+        for(auto& s : ambient_pass.subscriptions) {
             s.mesh->uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
         }
-        if constexpr(false) { // Frustrum culling.
+        // for(auto& s : blinn_phong_pass.subscriptions) {
+        //     s.mesh->uniforms["mvp_transform"]
+        //     = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+        // }
+        if constexpr(true) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
             int count = 0;
-            for(auto& s : blinn_phong_pass.subscriptions) {
+            for(auto& s : ambient_pass.subscriptions) {
                 auto bb = bounding_box(*s.mesh);
+                s.mesh->enabled = false;
                 if(are_intersecting(bb, frustrum)) {
+                    s.mesh->enabled = true;
                     count += 1;
                 }
             }
-            std::cout << "frustrum culling=" << count << std::endl;
+            std::cout << count << std::endl;
         }
         if(ambient_pass_loaded) { // Ambient pass.
             agl::engine::render(ambient_pass);
         }
-        if(blinn_phong_pass_loaded) { // Blinn Phong pass.
-            // blinn_phong_pass.uniforms["light_position"]
-            // = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
-            // blinn_phong_pass.uniforms["normal_transform"]
-            // = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
-            // blinn_phong_pass.uniforms["view_position"]
-            // = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
-            agl::engine::render(blinn_phong_pass);
-        }
+        // if(blinn_phong_pass_loaded) { // Blinn Phong pass.
+        //     // blinn_phong_pass.uniforms["light_position"]
+        //     // = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
+        //     // blinn_phong_pass.uniforms["normal_transform"]
+        //     // = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
+        //     // blinn_phong_pass.uniforms["view_position"]
+        //     // = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
+        //     agl::engine::render(blinn_phong_pass);
+        // }
     }
 };
 
