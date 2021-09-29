@@ -109,8 +109,8 @@ struct GltfProgram : Program {
         database = agl::format::wavefront::load(
             // "D:/data/bistro/exterior.obj",
             // "D:/data/bistro/");
-            "D:/data/bistro-small/exterior.obj",
-            "D:/data/bistro-small/");
+            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            "C:/Users/Willy/Desktop/data/bistro-small/");
 
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
@@ -198,6 +198,7 @@ struct GltfProgram : Program {
         // }
         if constexpr(true) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
+            
             int count = 0;
             for(auto& s : ambient_pass.subscriptions) {
                 auto bb = bounding_box(*s.mesh);
@@ -207,7 +208,7 @@ struct GltfProgram : Program {
                     count += 1;
                 }
             }
-            std::cout << count << std::endl;
+            // std::cout << count << std::endl;
         }
         if(ambient_pass_loaded) { // Ambient pass.
             agl::engine::render(ambient_pass);
