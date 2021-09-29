@@ -1,5 +1,10 @@
 #include "shadertoy_prefix.fs"
 
+struct SDF_Info {
+    vec3 color;
+    float distance;
+};
+
 #include "sdf/all.glsl"
 
 uniform mat4 view_transform;
@@ -90,6 +95,7 @@ vec3 rotateZ(vec3 p, float a) {
 }
 
 #include "scene/kame_house.glsl"
+#include "scene/orrery.glsl"
 
 // Trace ray using ray marching
 // o : ray origin
@@ -137,7 +143,7 @@ float SphereTrace(vec3 o, vec3 u, float rB, out bool h, out int s) {
     {
         s = i;
         vec3 p = o + t * u;
-        float v = kame_house_distance(p);
+        float v = kame_house(p).distance;
         // Hit object
         if (v < 0.)
         {
@@ -213,17 +219,16 @@ void mainImage(out vec4 color, in vec2 pxy) {
     // Shade background
     vec3 rgb = background(rd);
 
-    vec3 ldir = normalize(sun_position() - pos);
-
     if(hit) {
-        vec3 n = orrery_normal(pos);
-        rgb = n * .5 + .5;
+        vec3 n = kame_house_normal(pos);
 
-        // vec3 hdir = normalize(-rd + ldir);
+        float lambertian = max(dot(-rd, n), 0.);
 
-        float lambertian = max(dot(n, ldir), 0.);
+        float brightness = .5 * lambertian + .5;
 
-        rgb *= .8 * lambertian + .2;
+        vec3 color = kame_house(pos).color;
+
+        rgb = vec3(brightness * color);
     }
 
     // render_mode();
