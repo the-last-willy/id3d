@@ -1,6 +1,6 @@
-#include "galin/shader/shadertoy_prefix.fs"
+#include "shadertoy_prefix.fs"
 
-#include "galin/shader/sdf/all.glsl"
+#include "sdf/all.glsl"
 
 uniform mat4 view_transform;
 
@@ -89,7 +89,7 @@ vec3 rotateZ(vec3 p, float a) {
     return vec3(ca * p.x + sa * p.y, -sa * p.x + ca * p.y, p.z);
 }
 
-#include "galin/shader/scene/orrery.glsl"
+#include "scene/orrery.glsl"
 
 // Trace ray using ray marching
 // o : ray origin
@@ -231,4 +231,4 @@ void mainImage(out vec4 color, in vec2 pxy) {
     color = vec4(rgb, 1.);
 }
 
-#include "galin/shader/shadertoy_suffix.fs"
+#include "shadertoy_suffix.fs"

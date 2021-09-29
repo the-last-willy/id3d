@@ -1,6 +1,6 @@
-#include "galin/shader/shadertoy_prefix.fs"
+#include "shadertoy_prefix.fs"
 
-#include "galin/shader/sdf/all.glsl"
+#include "sdf/all.glsl"
 
 // Common
 
@@ -391,4 +391,4 @@ void mainImage(out vec4 color,in vec2 pxy)
   color=vec4(rgb,1.);
 }
 
-#include "galin/shader/shadertoy_suffix.fs"
+#include "shadertoy_suffix.fs"

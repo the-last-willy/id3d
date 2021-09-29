@@ -60,15 +60,16 @@ struct App : Program {
     void load_shader() {
         try {
             { // Render pass.
-                shader_compiler.root = local::src_folder;
+                shader_compiler.log_folder = "logs/";
+                shader_compiler.root = "galin/src/shader/";
                 load(program, shader_compiler, {
                     {
                         agl::vertex_shader_tag,
-                        "galin/shader/shadertoy.vs"
+                        "shadertoy.vs"
                     },
                     {
                         agl::fragment_shader_tag,
-                        "galin/shader/main.glsl"
+                        "main.glsl"
                     }
                 });
             }
