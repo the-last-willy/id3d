@@ -143,7 +143,7 @@ float SphereTrace(vec3 o, vec3 u, float rB, out bool h, out int s) {
     {
         s = i;
         vec3 p = o + t * u;
-        float v = kame_house(p).distance;
+        float v = scene_distance(p);
         // Hit object
         if (v < 0.)
         {
@@ -220,15 +220,17 @@ void mainImage(out vec4 color, in vec2 pxy) {
     vec3 rgb = background(rd);
 
     if(hit) {
-        vec3 n = kame_house_normal(pos);
+        vec3 n = scene_normal(pos);
 
         float lambertian = max(dot(-rd, n), 0.);
 
         float brightness = .5 * lambertian + .5;
 
-        vec3 color = kame_house(pos).color;
+        rgb = vec3(brightness);
 
-        rgb = vec3(brightness * color);
+        // vec3 color = kame_house(pos).color;
+
+        // rgb = vec3(brightness * color);
     }
 
     // render_mode();

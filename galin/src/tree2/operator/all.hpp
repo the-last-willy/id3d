@@ -1,4 +1,6 @@
 #pragma once
 
-#include "intersection.hpp"
-#include "Union.hpp"
+#include "rotated/all.hpp"
+#include "scaled/all.hpp"
+#include "transformed/all.hpp"
+#include "translated/all.hpp"

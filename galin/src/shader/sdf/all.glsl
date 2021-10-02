@@ -1,5 +1,6 @@
 #include "sdf/operator/all.glsl"
 #include "sdf/primitive2/circle.glsl"
+#include "sdf/primitive3/cube.glsl"
 #include "sdf/primitive3/plane.glsl"
 #include "sdf/primitive3/point.glsl"
 #include "sdf/primitive3/square_toroid.glsl"

@@ -5,12 +5,12 @@
 #include <array>
 #include <sstream>
 
-struct Cube : Node<> {};
+struct Plane : Node<> {};
 
 inline
-std::string glsl_expression(const Cube&, const std::string& arg) {
+std::string glsl_expression(const Plane&, const std::string& arg) {
     auto ss = std::stringstream();
-    ss << "sdf_cube(" 
+    ss << "sdf_plane(" 
     << arg <<  ")";
     return ss.str();
 }

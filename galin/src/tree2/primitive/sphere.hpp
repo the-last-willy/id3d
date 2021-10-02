@@ -1,20 +1,23 @@
 #pragma once
 
+#include "tree2/node/node.hpp"
+
 #include <array>
 #include <sstream>
 
-struct Sphere {
-    std::array<float, 3> position = {0.f, 0.f, 0.f};
+struct Sphere : Node<> {
     float radius = 1.f;
+
+    Sphere(float radius)
+        : radius(radius)
+    {}
 };
 
 inline
-std::string glsl_expr(const Sphere& p, const std::string& arg) {
+std::string glsl_expression(const Sphere& p, const std::string& arg) {
     auto ss = std::stringstream();
-    ss << "length(" << arg
-    << " - vec3(" << p.position[0]
-    << ", " << p.position[1]
-    << ", " << p.position[2]
-    <<  ")) - " << p.radius;
+    ss << "(length(" 
+    << arg <<  ") - " 
+    << p.radius << ")";
     return ss.str();
 }
