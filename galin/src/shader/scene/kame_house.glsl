@@ -62,15 +62,15 @@ struct ColoredDistance {
 };
 
 float house_distance(vec3 position) {
-        return (sdf_cube(((position - vec3(0, 0, 7)) / 5)) * 5);
+        return (sdf_cube(((position - vec3(0, 7, 0)) / 5)) * 5);
 }
 
 float island_distance(vec3 position) {
-        return (length((position - vec3(0, 0, -45))) - 50);
+        return (length((position - vec3(0, -45, 0))) - 50);
 }
 
 float sea_distance(vec3 position) {
-        return sdf_plane(position);
+        return sdf_plane(position.xzy);
 }
 
 float scene_distance(vec3 position) {

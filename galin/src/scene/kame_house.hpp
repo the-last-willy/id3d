@@ -8,21 +8,22 @@ inline
 auto house() {
     return Object(
         "house",
-        Translated(Scaled(Cube(), 5.f), std::array{0.f, 0.f, 7.f}), 
+        Translated(Scaled(Cube(), 5.f), std::array{0.f, 7.f, 0.f}), 
         Constant(std::array{0.f, 0.f, 0.f}));
 }
 
 inline
 auto island() {
     auto s = Sphere(50.f);
-    auto ts = Translated(s, std::array{0.f, 0.f, -45.f});
+    auto ts = Translated(s, std::array{0.f, -45.f, 0.f});
     return Object("island", ts, Constant(std::array{0.f, 0.f, 0.f}));
 }
 
 inline
 auto sea() {
-    auto p = Plane();
-    return Object("sea", p, Constant(std::array{0.f, 0.f, 0.f}));
+    return Object("sea",
+        Swizzled(Plane(), {0, 2, 1}), 
+        Constant(std::array{0.f, 0.f, 0.f}));
 }
 
 inline
