@@ -4,7 +4,11 @@ This project is an attempt to merge a few of my (Willy Jacquet) master's degree 
 
 I spent a great amount of time developping a [collection of libraries for graphics programming](https://github.com/the-last-willy/abstractgl).
 
-Therefore I believe this to be a win-win situation; I get to continue enhancing my library with tools encountered in classes and I avoid doing things I have already done. This will require more work out of me - as I need to maintain and adapt a larger codebase - but I expect the end results to be greatly enhanced.
+Therefore I believe this to be a win-win situation;
+I get to continue enhancing my library with tools encountered in classes and I avoid doing things I have already done.
+This will require more work out of me -
+as I need to maintain and adapt a larger codebase -
+but I expect the end results to be greatly enhanced.
 
 When this project is done (as it is limited in time), the emerging modules will be moved to AbstractGL.
 If the results are interesting they might be moved into their own projects.
