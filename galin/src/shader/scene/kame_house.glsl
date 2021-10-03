@@ -61,6 +61,10 @@ struct ColoredDistance {
     vec3 color;
 };
 
+ColoredDistance closest_color(ColoredDistance cd0, ColoredDistance cd1) {
+    return (cd0.distance < cd1.distance) ? cd0 : cd1;
+}
+
 float house_distance(vec3 position) {
         return (sdf_cube(((position - vec3(0, 7, 0)) / 5)) * 5);
 }
@@ -73,8 +77,12 @@ float sea_distance(vec3 position) {
         return sdf_plane(position.xzy);
 }
 
+ColoredDistance scene_color(vec3 position) {
+    return closest_color(ColoredDistance((length(position) - 1), vec3(1, 0, 0)), ColoredDistance((length(position) - 2), vec3(0, 1, 0)));
+}
+
 float scene_distance(vec3 position) {
-        return min(house_distance(position), min(island_distance(position), sea_distance(position)));
+    return min((length(position) - 1), (length(position) - 2));
 }
 
 vec3 scene_normal(in vec3 p) {

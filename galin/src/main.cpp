@@ -11,7 +11,6 @@
 
 // Local headers.
 
-#include "all.hpp"
 #include "error_callback.hpp"
 
 

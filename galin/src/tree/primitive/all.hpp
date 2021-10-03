@@ -1,3 +1,6 @@
 #pragma once
 
-#include "point.hpp"
+#include "cube.hpp"
+#include "line_segment.hpp"
+#include "plane.hpp"
+#include "sphere.hpp"

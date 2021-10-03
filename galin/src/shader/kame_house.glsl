@@ -228,9 +228,9 @@ void mainImage(out vec4 color, in vec2 pxy) {
 
         rgb = vec3(brightness);
 
-        // vec3 color = kame_house(pos).color;
+        vec3 color = scene_color(pos).color;
 
-        // rgb = vec3(brightness * color);
+        rgb = vec3(brightness * color);
     }
 
     // render_mode();

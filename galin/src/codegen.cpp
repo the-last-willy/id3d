@@ -1,5 +1,5 @@
 #include "scene/kame_house.hpp"
-#include "tree2/all.hpp"
+#include "tree/all.hpp"
 
 #include <iostream>
 #include <set>
@@ -7,33 +7,41 @@
 struct Writer {
     std::set<std::string> visited;
 
-    template<typename... N, typename... Ts>
-    void operator()(const Node<N...>& n, const Ts&... ts) {
-        if constexpr(sizeof...(N) > 0) {
-            auto f = [this](const auto&... args) { this->operator()(args...); };
-            std::apply(f, n.children);
-        } else {
-            (void) n;
-        }
-        if constexpr(sizeof...(Ts) > 0) {
-            operator()(ts...);
+    template<typename T>
+    void operator()(const T&) {
+        std::cout << "// Skipped " << typeid(T).name() << std::endl << std::endl;
+    }
+
+    template<typename... C>
+    void operator()(const Colored<C...>& c) {
+        operator()(c.any);
+    }
+
+    template<typename... C>
+    void operator()(const Combination<C...>& c) {
+        // Hardcoded arity.
+        if constexpr(std::tuple_size_v<decltype(c.operands)> == 0) {
+            static_assert(false, "Not implemented.");
+        } else if constexpr(std::tuple_size_v<decltype(c.operands)> == 1) {
+            operator()(std::get<0>(c.operands));
+        } else if constexpr(std::tuple_size_v<decltype(c.operands)> == 2) {
+            operator()(std::get<0>(c.operands));
+            operator()(std::get<1>(c.operands));
         }
     }
 
-    template<typename... O, typename... Ts>
-    void operator()(const Object<O...>& o, const Ts&... ts) {
-        operator()(static_cast<const Node<O...>&>(o));
-        std::cout << glsl_distance_function_definition(o) << std::endl;
-        if constexpr(sizeof...(Ts) > 0) {
-            operator()(ts...);
-        }
+    template<typename O>
+    void operator()(const Object<O>& o) {
+        operator()(o.content);
+        std::cout << colored_distance_glsl_function_definition(o) << std::endl;
+        std::cout << distance_glsl_function_definition(o) << std::endl;
     }
 };
 
 void throwing_main() {
-    auto scene = kame_house::kame_house();
+    auto s = kame_house::scene();
     auto writer = Writer();
-    writer(scene);
+    writer(s);
 }
 
 int main() {
