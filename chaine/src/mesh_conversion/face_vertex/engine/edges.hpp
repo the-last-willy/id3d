@@ -6,100 +6,30 @@
 
 inline
 auto edges_mesh(face_vertex::Mesh& m) {
-    // auto index_accessor = eng::Accessor();
-    // {
-    //     auto& accessor = index_accessor;
-
-    //     {
-    //         auto buffer_ptr = std::make_shared<eng::Buffer>();
-    //         auto& buffer = *buffer_ptr;
-
-    //         buffer.opengl = create(agl::buffer_tag);
-    //         storage(
-    //             buffer.opengl,
-    //             6 * triangle_count(m) * sizeof(uint32_t), 
-    //             GL_MAP_WRITE_BIT);
-    //         auto mapping = map<uint32_t>(buffer.opengl, GL_WRITE_ONLY);
-    //         for(auto&& [i, tr] : ranges::views::enumerate(triangles(m))) {
-    //             auto& to = topology(tr);
-    //             mapping[6 * i + 0] = to.vertices[0];
-    //             mapping[6 * i + 1] = to.vertices[1];
-    //             mapping[6 * i + 2] = to.vertices[1];
-    //             mapping[6 * i + 3] = to.vertices[2];
-    //             mapping[6 * i + 4] = to.vertices[2];
-    //             mapping[6 * i + 5] = to.vertices[0];
-    //         }
-    //         unmap(buffer.opengl);
-
-    //         accessor.buffer = buffer_ptr;
-    //     }
-
-    //     accessor.buffer_view_byte_stride = agl::Stride<GLsizei>(4);
-    //     accessor.component_count = agl::Size<GLint>(1);
-    //     accessor.component_type = GL_UNSIGNED_INT;
-        
-    // }
-    // auto position_accessor = eng::Accessor();
-    // {
-    //     auto& accessor = position_accessor;
-    //     {
-    //         auto buffer_ptr = std::make_shared<eng::Buffer>();
-    //         auto& buffer = *buffer_ptr;
-            
-    //         buffer.opengl = create(agl::buffer_tag);
-    //         storage(
-    //             buffer.opengl,
-    //             vertex_count(m) * sizeof(agl::Vec3), 
-    //             GL_MAP_WRITE_BIT);
-    //         auto mapping = map<agl::Vec3>(buffer.opengl, GL_WRITE_ONLY);
-    //         for(auto&& [i, v] : ranges::views::enumerate(vertices(m))) {
-    //             mapping[i] = position(v);
-    //         }
-    //         unmap(buffer.opengl);
-
-    //         accessor.buffer = buffer_ptr;
-    //     }
-
-    //     accessor.buffer_view_byte_stride = agl::Stride<GLsizei>(12);
-    //     accessor.component_count = agl::Size<GLint>(3);
-    //     accessor.component_type = GL_FLOAT;
-    // }
-    auto position_accessor = eng::Accessor();
+    auto primitive = std::make_shared<eng::Primitive>();
     {
-        auto& accessor = position_accessor;
-        {
-            auto buffer_ptr = std::make_shared<eng::Buffer>();
-            auto& buffer = *buffer_ptr;
-            
-            buffer.opengl = create(agl::buffer_tag);
-            storage(
-                buffer.opengl,
-                vertex_count(m) * sizeof(agl::Vec3), 
-                GL_MAP_WRITE_BIT);
-            auto mapping = map<agl::Vec3>(buffer.opengl, GL_WRITE_ONLY);
-            for(auto&& [i, v] : ranges::views::enumerate(vertices(m))) {
-                mapping[i] = position(v);
-            }
-            unmap(buffer.opengl);
+        primitive->draw_mode = agl::DrawMode::lines;
+        primitive->draw_type = agl::DrawType::unsigned_int;
+    }
+    {
+        auto positions = std::vector<agl::Vec3>();
+        for(auto&& t : triangles(m)) {
+            if(not is_ghost(t)) {
+                positions.push_back(position(vertex(t, 0)));
+                positions.push_back(position(vertex(t, 1)));
 
-            accessor.buffer = buffer_ptr;
+                positions.push_back(position(vertex(t, 1)));
+                positions.push_back(position(vertex(t, 2)));
+
+                positions.push_back(position(vertex(t, 2)));
+                positions.push_back(position(vertex(t, 0)));
+            }
         }
 
-        accessor.buffer_view_byte_stride = agl::Stride<GLsizei>(12);
-        accessor.component_count = agl::Size<GLint>(3);
-        accessor.component_type = GL_FLOAT;
+        primitive->attributes["POSITION"]
+        = agl::engine::accessor(std::span(positions));
+        primitive->primitive_count
+        = agl::Count<GLsizei>(static_cast<GLsizei>(size(positions)));
     }
-    
-    auto primitive_ptr = std::make_shared<eng::Primitive>();
-    {
-        auto& primitive = *primitive_ptr;
-        primitive.attributes["POSITION"] = std::move(position_accessor);
-        primitive.draw_mode = agl::DrawMode::lines;
-        primitive.draw_type = agl::DrawType::unsigned_int;
-        // primitive.indices = std::move(index_accessor);
-        primitive.primitive_count = agl::Count<GLsizei>(6 * triangle_count(m));
-        primitive.vertex_array = agl::vertex_array();
-    }
-
-    return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive_ptr)}));
+    return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive)}));
 }
