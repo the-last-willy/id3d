@@ -11,7 +11,7 @@
 namespace chaine {
 
 inline
-auto to_triangle_mesh(face_vertex::Mesh& m) {
+auto triangles_mesh(face_vertex::Mesh& m) {
     auto index_accessor = eng::Accessor();
     {
         auto& accessor = index_accessor;
@@ -52,7 +52,7 @@ auto to_triangle_mesh(face_vertex::Mesh& m) {
         primitive.indices = std::move(index_accessor);
         primitive.primitive_count = agl::Count<GLsizei>(GLsizei(3 * triangle_count(m)));
     }
-    return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive_ptr)}));
+    return eng::Mesh({std::move(primitive_ptr)});
 }
 
 }

@@ -48,44 +48,35 @@ struct App : Program {
 
     eng::Camera camera;
 
-    eng::RenderPass edge_pass;
-    eng::RenderPass edge_pass2;
-    eng::RenderPass vertex_pass = {};
+    agl::engine::RenderPass edge_pass;
+    agl::engine::RenderPass edge_pass2;
+    agl::engine::RenderPass vertex_pass = {};
 
-    std::vector<eng::RenderPass> triangle_passes = {};
+    eng::RenderPass triangle_pass = {};
 
     face_vertex::Mesh mesh;
 
     void refresh_mesh() {
         { // Edge pass.
-            auto m = edges_mesh(mesh);
-            for(auto& p : m->primitives) {
-                p->material = std::make_shared<eng::Material>();
-            }
-            add(edge_pass, *m);
+            auto m = std::make_shared<eng::Mesh>(edges_mesh(mesh));
+            edge_pass.subscriptions.clear();
+            subscribe(edge_pass, m);
         }
         { // Edge pass 2.
             auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(mesh));
-            for(auto& p : m->primitives) {
-                p->material = std::make_shared<eng::Material>();
-            }
-            add(edge_pass2, *m);
+            edge_pass2.subscriptions.clear();
+            subscribe(edge_pass2, m);
         }
         { // Triangle pass.
-            auto m = to_triangle_mesh(mesh);
+            auto m = std::make_shared<eng::Mesh>(triangles_mesh(mesh));
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
-            for(auto& tp : triangle_passes) {
-                add(tp, *m);
-            }
+            add(triangle_pass, *m);
         }
         { // Vertex pass.
-            auto m = to_vertex_mesh(mesh);
-            for(auto& p : m->primitives | ranges::views::indirect) {
-                p.material = std::make_shared<eng::Material>();
-            }
-            add(vertex_pass, *m);
+            auto m = std::make_shared<eng::Mesh>(vertices_mesh(mesh));
+            subscribe(vertex_pass, m);
         }
     }
 
@@ -100,14 +91,8 @@ struct App : Program {
                 data::edge_program(shader_compiler));
             vertex_pass.program = std::make_shared<eng::Program>(
                 data::vertex_program(shader_compiler));
-
-            triangle_passes.resize(3);
-            triangle_passes[0].program = std::make_shared<eng::Program>(
+            triangle_pass.program = std::make_shared<eng::Program>(
                 data::triangle_program(shader_compiler));
-            triangle_passes[1].program = std::make_shared<eng::Program>(
-                data::mean_curvature_program(shader_compiler));
-            triangle_passes[2].program = std::make_shared<eng::Program>(
-                data::smooth_normal_program(shader_compiler));
         }
 
         mesh = face_vertex::Mesh();
@@ -137,30 +122,30 @@ struct App : Program {
             topology(t).vertices[0] = v0;
             topology(t).vertices[1] = v1;
             topology(t).vertices[2] = v2;
-            // topology(t).triangles[0] = gt0;
-            // topology(t).triangles[1] = gt1;
-            // topology(t).triangles[2] = gt2;
+            topology(t).triangles[0] = gt0;
+            topology(t).triangles[1] = gt1;
+            topology(t).triangles[2] = gt2;
 
-            // topology(gt0).vertices[0] = gv;
-            // topology(gt0).vertices[1] = v2;
-            // topology(gt0).vertices[2] = v1;
-            // topology(gt0).triangles[0] = t;
-            // topology(gt0).triangles[1] = gt2;
-            // topology(gt0).triangles[2] = gt1;
+            topology(gt0).vertices[0] = gv;
+            topology(gt0).vertices[1] = v2;
+            topology(gt0).vertices[2] = v1;
+            topology(gt0).triangles[0] = t;
+            topology(gt0).triangles[1] = gt2;
+            topology(gt0).triangles[2] = gt1;
             
-            // topology(gt1).vertices[0] = gv;
-            // topology(gt1).vertices[1] = v0;
-            // topology(gt1).vertices[2] = v2;
-            // topology(gt1).triangles[0] = t;
-            // topology(gt1).triangles[1] = gt0;
-            // topology(gt1).triangles[2] = gt2;
+            topology(gt1).vertices[0] = gv;
+            topology(gt1).vertices[1] = v0;
+            topology(gt1).vertices[2] = v2;
+            topology(gt1).triangles[0] = t;
+            topology(gt1).triangles[1] = gt0;
+            topology(gt1).triangles[2] = gt2;
 
-            // topology(gt2).vertices[0] = gv;
-            // topology(gt2).vertices[1] = v1;
-            // topology(gt2).vertices[2] = v0;
-            // topology(gt2).triangles[0] = t;
-            // topology(gt2).triangles[1] = gt1;
-            // topology(gt2).triangles[2] = gt0;
+            topology(gt2).vertices[0] = gv;
+            topology(gt2).vertices[1] = v1;
+            topology(gt2).vertices[2] = v0;
+            topology(gt2).triangles[0] = t;
+            topology(gt2).triangles[1] = gt1;
+            topology(gt2).triangles[2] = gt0;
         }
 
         refresh_mesh();
@@ -213,7 +198,6 @@ struct App : Program {
         glClear(GL_DEPTH_BUFFER_BIT);
         
         if(render_settings.show_triangles) {
-            auto& triangle_pass = triangle_passes[render_settings.selected_render_mode];
             bind(*triangle_pass.program);
             for(std::size_t i = 0; i < size(triangle_pass.primitives); ++i) {
                 auto& p = *triangle_pass.primitives[i];
@@ -230,44 +214,20 @@ struct App : Program {
             glLineWidth(render_settings.line_width);
             
             uniform(*edge_pass.program, "color", agl::vec3(1.f, 0.f, 0.f));
-            bind(*edge_pass.program);
-            for(std::size_t i = 0; i < size(edge_pass.primitives); ++i) {
-                auto& p = *edge_pass.primitives[i];
-                auto& va = edge_pass.vertex_arrays[i];
-                bind(*p.material, *edge_pass.program);
-                bind(va);
-                uniform(*edge_pass.program, "mvp", agl::engine::world_to_clip(camera));
-                eng::render(p, va);
-            }
-            unbind(*edge_pass.program);
+            uniform(*edge_pass.program, "mvp", agl::engine::world_to_clip(camera));
+            agl::engine::render(edge_pass);
         }
         if(render_settings.show_edges) {
             glLineWidth(render_settings.line_width);
             
             uniform(*edge_pass2.program, "color", agl::vec3(0.f, 1.f, 0.f));
-            bind(*edge_pass2.program);
-            for(std::size_t i = 0; i < size(edge_pass2.primitives); ++i) {
-                auto& p = *edge_pass2.primitives[i];
-                auto& va = edge_pass2.vertex_arrays[i];
-                bind(*p.material, *edge_pass2.program);
-                bind(va);
-                uniform(*edge_pass2.program, "mvp", agl::engine::world_to_clip(camera));
-                eng::render(p, va);
-            }
-            unbind(*edge_pass2.program);
+            uniform(*edge_pass2.program, "mvp", agl::engine::world_to_clip(camera));
+            agl::engine::render(edge_pass2);
         }
         if(render_settings.show_vertices) {
-            bind(*vertex_pass.program);
-            for(std::size_t i = 0; i < size(vertex_pass.primitives); ++i) {
-                auto& p = *vertex_pass.primitives[i];
-                auto& va = vertex_pass.vertex_arrays[i];
-                bind(*p.material, *vertex_pass.program);
-                bind(va);
-                uniform(*vertex_pass.program, "mvp", agl::engine::world_to_clip(camera));
-                uniform(*vertex_pass.program, "point_size", render_settings.point_size);
-                eng::render(p, va);
-            }
-            unbind(*vertex_pass.program);
+            uniform(*vertex_pass.program, "mvp", agl::engine::world_to_clip(camera));
+            uniform(*vertex_pass.program, "point_size", render_settings.point_size);
+            agl::engine::render(edge_pass2);
         }
         { // UI
             ImGui::Begin("Settings");
@@ -313,3 +273,4 @@ int main() {
     }
     return -1;
 }
+

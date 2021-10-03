@@ -9,7 +9,7 @@
 namespace chaine {
 
 inline
-auto to_vertex_mesh(face_vertex::Mesh& m) {
+auto vertices_mesh(face_vertex::Mesh& m) {
     auto primitive_ptr = std::make_shared<eng::Primitive>();
     {
         auto& primitive = *primitive_ptr;
@@ -22,7 +22,7 @@ auto to_vertex_mesh(face_vertex::Mesh& m) {
         primitive.primitive_count = agl::Count<GLsizei>(GLsizei(vertex_count(m)));
     }
 
-    return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive_ptr)}));
+    return eng::Mesh({std::move(primitive_ptr)});
 }
 
 }

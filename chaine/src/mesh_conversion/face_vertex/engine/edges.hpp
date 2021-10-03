@@ -31,5 +31,5 @@ auto edges_mesh(face_vertex::Mesh& m) {
         primitive->primitive_count
         = agl::Count<GLsizei>(static_cast<GLsizei>(size(positions)));
     }
-    return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive)}));
+    return eng::Mesh({std::move(primitive)});
 }
