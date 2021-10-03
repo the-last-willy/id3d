@@ -1,5 +1,6 @@
 #pragma once
 
+#include "index.hpp"
 #include "proxy.hpp"
 
 namespace face_vertex {

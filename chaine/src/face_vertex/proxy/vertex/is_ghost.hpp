@@ -7,6 +7,7 @@ namespace face_vertex {
 
 inline
 auto is_ghost(VertexProxy vp) {
+    auto t = topology(vp);
     return topology(vp).is_ghost;
 }
 

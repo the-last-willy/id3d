@@ -13,6 +13,7 @@
 #include "opposite_adjacent_triangle.hpp"
 #include "opposite_vertex.hpp"
 #include "proxy.hpp"
+#include "relative_index.hpp"
 #include "substitute_adjacent_triangle.hpp"
 #include "substitute_vertex.hpp"
 #include "topology.hpp"
