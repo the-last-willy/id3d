@@ -1,12 +1,13 @@
 #pragma once
 
+#include "mesh.hpp"
 #include "proxy.hpp"
 
 namespace face_vertex {
 
 inline
 auto& position(VertexProxy vp) {
-    return vp.mesh.geometry.vertex_positions[vp.index];
+    return mesh(vp).geometry.vertex_positions[vp.index];
 }
 
 }

@@ -6,7 +6,7 @@
 namespace face_vertex {
 
 struct VertexProxy {
-    Mesh& mesh;
+    Mesh* mesh;
     VertexIndex index;
 
     constexpr
@@ -17,7 +17,7 @@ struct VertexProxy {
 
 inline
 VertexProxy proxy(Mesh& m, VertexIndex vi) {
-    return VertexProxy{m, vi};
+    return VertexProxy{&m, vi};
 }
 
 }

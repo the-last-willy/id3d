@@ -6,7 +6,7 @@ namespace face_vertex {
 
 inline
 Mesh& mesh(VertexProxy vp) {
-    return vp.mesh;
+    return *vp.mesh;
 }
 
 }
