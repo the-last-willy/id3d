@@ -9,7 +9,7 @@ uniform mat4 transform = mat4(
     0., 0., 0., 1.);
 
 void main() {
-    if(gl_PrimitiveID == 0) {
+    if(gl_VertexID == 0) {
         gl_Position = transform * vec4(position0, 1.);
     } else {
         gl_Position = transform * vec4(position1, 1.);

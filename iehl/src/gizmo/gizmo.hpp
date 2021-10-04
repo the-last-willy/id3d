@@ -9,26 +9,30 @@ eng::Program line_segment_program() {
     const auto fragment_shader_source = std::string(
         "#version 450 core\n"
         "uniform vec3 color = vec3(1.);\n"
-        "out vec3 fragment_color = color;\n"
-        "void main {\n"
+        "out vec3 fragment_color;\n"
+        "void main() {\n"
         "    fragment_color = color;\n"
         "}\n");
         
     const auto vertex_shader_source = std::string(
         "#version 450 core\n"
-        "uniform vec3 positions[2];\n"
+        "\n"
+        "uniform vec3 position0;\n"
+        "uniform vec3 position1;\n"
         "uniform mat4 transform = mat4(\n"
         "    1., 0., 0., 0.,\n"
         "    0., 1., 0., 0.,\n"
         "    0., 0., 1., 0.,\n"
         "    0., 0., 0., 1.);\n"
+        "\n"
         "void main() {\n"
-        "    if(gl_PrimitiveID == 0) {\n"
+        "    if(gl_VertexID == 0) {\n"
         "        gl_Position = transform * vec4(position0, 1.);\n"
         "    } else {\n"
         "        gl_Position = transform * vec4(position1, 1.);\n"
         "    }\n"
-        "}\n");
+        "}\n"
+        "\n");
     auto p = eng::Program();
     load(p, {
         {
@@ -46,7 +50,6 @@ eng::Mesh line_segment_mesh() {
     auto me = eng::Mesh();
     auto& p = *(me.primitives.emplace_back(std::make_shared<eng::Primitive>()));
     p.draw_mode = agl::DrawMode::lines;
-    p.draw_type = agl::DrawType::unsigned_byte;
     p.primitive_count = agl::Count<GLsizei>(2);
     return me;
 }

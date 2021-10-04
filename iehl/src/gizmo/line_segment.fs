@@ -2,8 +2,8 @@
 
 uniform vec3 color = vec3(1.);
 
-out vec3 fragment_color = color;
+out vec3 fragment_color;
 
-void main {
+void main() {
     fragment_color = color;
 }
