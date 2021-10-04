@@ -4,6 +4,8 @@
 #include "proxy.hpp"
 #include "topology.hpp"
 
+#include "face_vertex/proxy/triangle/proxy.hpp"
+
 namespace face_vertex {
 
 template<typename I, typename S>
@@ -66,7 +68,7 @@ auto adjacent_triangles(VertexProxy vp) {
     auto it = VertexAdjacentTriangleIterator{
         .common_vertex = index(vp),
         .first_triangle = topology(vp).triangle,
-        .current_triangle = proxy(vp.mesh, topology(vp).triangle)};
+        .current_triangle = proxy(mesh(vp), topology(vp).triangle)};
     return IteratorAndSentinel{std::move(it), EmptySentinel()};
 }
 

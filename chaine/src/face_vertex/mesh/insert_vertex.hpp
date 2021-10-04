@@ -41,8 +41,8 @@ void insert_vertex(Mesh& m, agl::Vec3 pos) {
         auto p1 = position(v1).xy();
         auto p2 = position(v2).xy();
         if(orientation(p1, p2, pos.xy()) > 0.f) {
-            t1 = opposite_triangle(at, v1);
-            t2 = opposite_triangle(at, v2);
+            // t1 = opposite_triangle(at, v1);
+            // t2 = opposite_triangle(at, v2);
 
             auto s = split(at);
             position(s) = pos;
@@ -50,20 +50,20 @@ void insert_vertex(Mesh& m, agl::Vec3 pos) {
         }
     }
 
-    // Flip way 1.
-    while(true) {
-        auto ri = relative_index(t1, gv);
-        v1 = vertex(t1, ri + 1);
-        v12 = vertex(t1, ri + 2);
-        auto p1 = position(v1).xy();
-        auto p2 = position(v12).xy();
-        if(orientation(p1, p2, pos.xy()) > 0.f) {
-            flip(opposite_triangle_edge(t1, v12));
-            break;
-        } else {
-            break;
-        }
-    }
+    // // Flip way 1.
+    // while(true) {
+    //     auto ri = relative_index(t1, gv);
+    //     v1 = vertex(t1, ri + 1);
+    //     v12 = vertex(t1, ri + 2);
+    //     auto p1 = position(v1).xy();
+    //     auto p2 = position(v12).xy();
+    //     if(orientation(p1, p2, pos.xy()) > 0.f) {
+    //         flip(opposite_triangle_edge(t1, v12));
+    //         break;
+    //     } else {
+    //         break;
+    //     }
+    // }
 
     // // Flip way 2.
     // while(true) {
