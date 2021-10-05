@@ -143,7 +143,7 @@ float SphereTrace(vec3 o, vec3 u, float rB, out bool h, out int s) {
     {
         s = i;
         vec3 p = o + t * u;
-        float v = scene_distance(p);
+        float v = scene_sdf(p);
         // Hit object
         if (v < 0.)
         {
@@ -228,7 +228,7 @@ void mainImage(out vec4 color, in vec2 pxy) {
 
         rgb = vec3(brightness);
 
-        vec3 color = scene_color(pos).color;
+        vec3 color = scene_material(pos).color;
 
         rgb = vec3(brightness * color);
     }
