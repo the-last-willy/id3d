@@ -113,8 +113,10 @@ struct GltfProgram : Program {
         database = agl::format::wavefront::load(
             // "D:/data/bistro/exterior.obj",
             // "D:/data/bistro/");
-            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            "C:/Users/Willy/Desktop/data/bistro-small/");
+            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            // "C:/Users/Willy/Desktop/data/bistro-small/");
+            "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+            "C:/Users/yoanp/Documents/bistro-small/");
 
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
@@ -186,20 +188,20 @@ struct GltfProgram : Program {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
         auto vp_tr = agl::engine::world_to_clip(*camera);
-
+        auto v_tr = agl::engine::world_to_eye(*camera);
         auto normal_tr = agl::engine::normal_transform(*camera);
 
-        auto light_position = (vp_tr * agl::vec4(2.f, 2.f, 2.f, 1.f)).xyz();
-        auto view_position = (vp_tr * vec4(camera->view.position, 1.f)).xyz();
+        auto light_position = (v_tr * agl::vec4(0.f, 5.f, 0.f, 1.f)).xyz();
+        auto view_position = (v_tr * vec4(camera->view.position, 1.f)).xyz();
 
-        for(auto& s : ambient_pass.subscriptions) {
-            s.mesh->uniforms["mvp_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
-        }
-        // for(auto& s : blinn_phong_pass.subscriptions) {
+        // for(auto& s : ambient_pass.subscriptions) {
         //     s.mesh->uniforms["mvp_transform"]
         //     = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
         // }
+        for(auto& s : blinn_phong_pass.subscriptions) {
+            s.mesh->uniforms["mvp_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+        }
         if constexpr(true) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
             
@@ -217,15 +219,15 @@ struct GltfProgram : Program {
         if(ambient_pass_loaded) { // Ambient pass.
             agl::engine::render(ambient_pass);
         }
-        // if(blinn_phong_pass_loaded) { // Blinn Phong pass.
-        //     // blinn_phong_pass.uniforms["light_position"]
-        //     // = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
-        //     // blinn_phong_pass.uniforms["normal_transform"]
-        //     // = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
-        //     // blinn_phong_pass.uniforms["view_position"]
-        //     // = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
-        //     agl::engine::render(blinn_phong_pass);
-        // }
+        if(blinn_phong_pass_loaded) { // Blinn Phong pass.
+            blinn_phong_pass.uniforms["light_position"]
+            = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
+            blinn_phong_pass.uniforms["normal_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
+            blinn_phong_pass.uniforms["view_position"]
+            = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
+            agl::engine::render(blinn_phong_pass);
+        }
     }
 };
 
