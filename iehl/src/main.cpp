@@ -71,7 +71,7 @@ struct GltfProgram : Program {
     bool blinn_phong_pass_loaded = false;
     agl::engine::RenderPass blinn_phong_pass;
 
-    Gizmo gizmo;
+    // Gizmo gizmo;
     
     float time = 0.f;
 
