@@ -113,10 +113,11 @@ struct GltfProgram : Program {
         database = agl::format::wavefront::load(
             // "D:/data/bistro/exterior.obj",
             // "D:/data/bistro/");
-            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            // "C:/Users/Willy/Desktop/data/bistro-small/");
-            "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
-            "C:/Users/yoanp/Documents/bistro-small/");
+            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            "C:/Users/Willy/Desktop/data/bistro-small/");
+            // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+            // "C:/Users/yoanp/Documents/bistro-small/");
+            
 
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
@@ -191,8 +192,8 @@ struct GltfProgram : Program {
         auto v_tr = agl::engine::world_to_eye(*camera);
         auto normal_tr = agl::engine::normal_transform(*camera);
 
-        auto light_position = (v_tr * agl::vec4(0.f, 5.f, 0.f, 1.f)).xyz();
-        auto view_position = (v_tr * vec4(camera->view.position, 1.f)).xyz();
+        auto light_position = (agl::vec4(0.f, 0.f, 0.f, 1.f)).xyz();
+        auto view_position = (vec4(camera->view.position, 1.f)).xyz();
 
         // for(auto& s : ambient_pass.subscriptions) {
         //     s.mesh->uniforms["mvp_transform"]

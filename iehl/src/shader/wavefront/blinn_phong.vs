@@ -14,8 +14,8 @@ out vec2 vertex_texcoords;;
 void main() {
     vec4 position = mvp_transform * vec4(v, 1.);
 
-    vertex_normal = (normal_transform * vec4(vn, 0.)).xyz;
-    vertex_position = position.xyz;
+    vertex_normal = (vec4(vn, 0.)).xyz;
+    vertex_position = v;
     vertex_texcoords = vt;
 
     gl_Position = position;
