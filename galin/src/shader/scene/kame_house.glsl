@@ -80,7 +80,9 @@ float onion(in float f) {
 }
 
 SdfAndMaterial onion(in SdfAndMaterial sam) {
-
+    return SdfAndMaterial(
+        onion(sam.distance),
+        sam.color);
 }
 
 vec3 rotated_x(vec3 p, float a) {

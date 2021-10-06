@@ -7,6 +7,7 @@ struct SDF_Info {
 
 #include "sdf/all.glsl"
 
+uniform mat4 controls_transform;
 uniform mat4 view_transform;
 
 // subroutine vec3 RenderMode();

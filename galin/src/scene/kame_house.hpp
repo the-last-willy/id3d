@@ -68,35 +68,33 @@ SharedNode sea() {
 inline
 auto house_walls() {
     return shared<Object>("house_walls",
-        onion(
-            shared<Material>(std::array{1.f, 0.f, 0.f},
-                shared<Union>(Children{
-                    shared<Cube>(),
-                    shared<Translation>(std::array{0.f, 0.5f, 0.f},
-                        shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
-                            shared<RotatedZ>(pi / 4.f,
-                                shared<Cube>()
-                            )
-                        )
-                    ),
-                    shared<Translation>(std::array{-0.25f, 0.8f, 0.f},
-                        shared<UniformScaling>(1.f / 4.f,
-                            shared<RotatedY>(pi / 2.f,
-                                shared<Union>(Children{
-                                    shared<Cube>(),
-                                    shared<Translation>(std::array{0.f, 0.5f, 0.f},
-                                        shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
-                                            shared<RotatedZ>(pi / 4.f,
-                                                shared<Cube>()
-                                            )
-                                        )
-                                    )
-                                })
-                            )
+        shared<Material>(std::array{1.f, 0.f, 0.f},
+            shared<Union>(Children{
+                shared<Cube>(),
+                shared<Translation>(std::array{0.f, 0.5f, 0.f},
+                    shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
+                        shared<RotatedZ>(pi / 4.f,
+                            shared<Cube>()
                         )
                     )
-                })
-            )
+                )
+                // ,shared<Translation>(std::array{-0.25f, 0.8f, 0.f},
+                //     shared<UniformScaling>(1.f / 4.f,
+                //         shared<RotatedY>(pi / 2.f,
+                //             shared<Union>(Children{
+                //                 shared<Cube>(),
+                //                 shared<Translation>(std::array{0.f, 0.5f, 0.f},
+                //                     shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
+                //                         shared<RotatedZ>(pi / 4.f,
+                //                             shared<Cube>()
+                //                         )
+                //                     )
+                //                 )
+                //             })
+                //         )
+                //     )
+                // )
+            })
         )
     );
 }
@@ -126,7 +124,11 @@ auto house() {
 inline
 SharedNode scene() {
     return shared<Object>("scene",
-        house()
+        unionn(
+            sea(),
+            island(),
+            house()
+        )
     );
     // return shared<Object>("scene",
     //     shared<Union>(

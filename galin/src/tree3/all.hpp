@@ -36,6 +36,14 @@ using SharedNode = std::shared_ptr<Node>;
 struct Branch : Node {
     std::vector<SharedNode> children;
 
+    Branch() = default;
+
+    Branch(SharedNode child)
+        : children()
+    {
+        children.push_back(std::move(child));
+    }
+
     Branch(std::vector<SharedNode>&& children)
         : children(std::move(children))
     {}
@@ -87,6 +95,26 @@ struct Attraction : Branch {
             "attracted(\n" + s + ",\n" + glsl(intensity) + ")");
     }
 };
+
+// struct Controlling : Branch {
+//     Controlling(SharedNode child)
+//         : Branch(std::move(child))
+//     {}
+
+//     std::string sdf_only(const std::string& s) const override {
+//         return children.at(0)->sdf_only(
+//             "(controls_transform * vec4(" + s + ", 1.)).xyz");;
+//     }
+
+//     std::string sdf_and_material(const std::string& s) const override {
+//         return "(controls_transform * vec4(" + s + ", 1.)).xyz";
+//     }
+// };
+
+// inline
+// SharedNode controlled(SharedNode child) {
+//     return std::make_shared<Controlling>(std::move(child));
+// }
 
 struct Dilatation : Branch {
     float radius = 0.f;
@@ -387,6 +415,12 @@ struct Union : Branch {
     }
 };
 
+template<typename... SharedNodes>
+SharedNode unionn(SharedNodes... sns) {
+    return std::make_shared<Union>(
+        std::vector<SharedNode>{std::move(sns)...});
+}
+
 struct Leaf : Node {};
 
 struct Cube : Leaf {
@@ -394,6 +428,11 @@ struct Cube : Leaf {
         return "sdf_cube(" + s + ")";
     }
 };
+
+inline
+SharedNode cube() {
+    return std::make_shared<Cube>();
+}
 
 struct Ellipsoid : Leaf {
     std::array<float, 3> radiuses = {1.f, 1.f, 1.f};
