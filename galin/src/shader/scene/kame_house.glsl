@@ -61,19 +61,35 @@ struct SdfAndMaterial {
     vec3 color;
 };
 
+vec3 attracted(vec3 p, vec3 attractor, float intensity) {
+    return p - normalize(p - attractor) * intensity;
+}
+
+vec3 attracted(vec3 p, float intensity) {
+    return p - normalize(p) * intensity;
+}
+
 SdfAndMaterial mul(in SdfAndMaterial sam, float f) {
     return SdfAndMaterial(
         sam.distance * f,
         sam.color);
 }
 
+float onion(in float f) {
+    return abs(f);
+}
+
+SdfAndMaterial onion(in SdfAndMaterial sam) {
+
+}
+
 vec3 rotated_x(vec3 p, float a) {
-  float sa=sin(a);
-  float ca=cos(a);
-  return vec3(
-      p.x,
-      ca * p.y - sa * p.z,
-      sa * p.y + ca * p.z);
+    float sa=sin(a);
+    float ca=cos(a);
+    return vec3(
+        p.x,
+        ca * p.y - sa * p.z,
+        sa * p.y + ca * p.z);
 }
 
 vec3 rotated_y(vec3 p, float a) {
@@ -110,6 +126,12 @@ float sdf_ellipsoid(in vec3 p, in vec3 r) {
     float k0 = length(p/r);
     float k1 = length(p/(r*r));
     return k0*(k0-1.0)/k1;
+}
+
+float sdf_line_segment(vec3 a, vec3 b, vec3 p) {
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length( pa - ba*h );
 }
 
 float sdf_plane(vec3 position) {
@@ -158,101 +180,7 @@ vec3 translated(vec3 position, vec3 translation) {
 
 
 
-
-
-float sea_sdf(vec3 position) {
-    return (sdf_plane(position.yxz) - 0.5);
-}
-
-float palm_tree_sdf(vec3 position) {
-    return sdf_union(
-(line_sdf(
-vec3(2, 0, 2),
-vec3(5, 5, 5),
-position) - 1.),
-(sdf_point(translated(position, vec3(5, 5, 5))) - 1));
-}
-
-float island_sdf(vec3 position) {
-    return scaling_out((sdf_point(scaling_in(translated(position, vec3(0, -8, 0)), 10)) - 1), 10);     
-}
-
-float house_ground_floor_sdf(vec3 position) {
-    return sdf_cube(position);
-}
-
-float house_roof_sdf(vec3 position) {
-    return scaling_out(sdf_cube(rotated_z(scaling_in(translated(position, vec3(0, 0.5, 0)), vec3(0.707107, 1, 1)), 0.785398)), 1);
-}
-
-float house_sdf(vec3 position) {
-    return sdf_union(
-house_ground_floor_sdf(position),
-house_roof_sdf(position));
-}
-
-float scene_sdf(vec3 position) {
-    return sdf_union(
-sdf_union(
-sea_sdf(position),
-palm_tree_sdf(position)),
-sdf_union(
-island_sdf(position),
-house_sdf(translated(position, vec3(0, 2, 0)))));
-}
-
-SdfAndMaterial sea_material(vec3 position) {
-    return SdfAndMaterial(
-(sdf_plane(position.yxz) - 0.5),
-vec3(0, 0, 1));
-}
-
-SdfAndMaterial palm_tree_material(vec3 position) {
-    return sdf_union(
-SdfAndMaterial(
-(line_sdf(
-vec3(2, 0, 2),
-vec3(5, 5, 5),
-position) - 0.5),
-vec3(0.647059, 0.164706, 0.164706)),
-SdfAndMaterial(
-(sdf_point(translated(position, vec3(5, 5, 5))) - 1),
-vec3(0, 1, 0)));
-}
-
-SdfAndMaterial island_material(vec3 position) {
-    return SdfAndMaterial(
-scaling_out((sdf_point(scaling_in(translated(position, vec3(0, -8, 0)), 10)) - 1), 10),
-vec3(1, 1, 0));
-}
-
-SdfAndMaterial house_ground_floor_material(vec3 position) {
-    return SdfAndMaterial(
-sdf_cube(position),
-vec3(1, 0, 0));
-}
-
-SdfAndMaterial house_roof_material(vec3 position) {
-    return SdfAndMaterial(
-scaling_out(sdf_cube(rotated_z(scaling_in(translated(position, vec3(0, 0.5, 0)), vec3(0.707107, 1, 1)), 0.785398)), 1),
-vec3(1, 0, 0));
-}
-
-SdfAndMaterial house_material(vec3 position) {
-    return sdf_union(
-house_ground_floor_material(position),
-house_roof_material(position));
-}
-
-SdfAndMaterial scene_material(vec3 position) {
-    return sdf_union(
-sdf_union(
-sea_material(position),
-palm_tree_material(position)),
-sdf_union(
-island_material(position),
-house_material(translated(position, vec3(0, 2, 0)))));
-}
+#include "kame_house_gen.glsl"
 
 
 

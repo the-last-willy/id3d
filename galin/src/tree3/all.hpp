@@ -30,6 +30,7 @@ struct Node {
     virtual void dump_sdf_and_material(std::ostream&) const {}
 };
 
+using Children = std::vector<std::shared_ptr<Node>>;
 using SharedNode = std::shared_ptr<Node>;
 
 struct Branch : Node {
@@ -68,6 +69,25 @@ struct Branch : Node {
     }
 };
 
+struct Attraction : Branch {
+    float intensity = 1.f;
+
+    Attraction(float intensity, SharedNode child)
+        : Branch({std::move(child)})
+        , intensity(intensity)
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        return children.at(0)->sdf_only(
+            "attracted(\n" + s + ",\n" + glsl(intensity) + ")");
+    }
+
+    std::string sdf_and_material(const std::string& s) const override {
+        return children.at(0)->sdf_and_material(
+            "attracted(\n" + s + ",\n" + glsl(intensity) + ")");
+    }
+};
+
 struct Dilatation : Branch {
     float radius = 0.f;
 
@@ -82,6 +102,36 @@ struct Dilatation : Branch {
 
     std::string sdf_and_material(const std::string& s) const override {
         return "(" + children.at(0)->sdf_and_material(s) + " - " + glsl(radius) + ")";
+    }
+};
+
+struct Intersection : Branch {
+    Intersection(SharedNode sn0, SharedNode sn1)
+        : Branch({std::move(sn0), std::move(sn1)})
+    {}
+
+    Intersection(Children cn)
+        : Branch(std::move(cn))
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        auto r = children.at(0)->sdf_only(s);
+        for(std::size_t i = 1; i < size(children); ++i) {
+            r = "sdf_union(\n"
+            + children.at(i)->sdf_only(s) + ",\n"
+            + r + ")";
+        }
+        return r;
+    }
+
+    std::string sdf_and_material(const std::string& s) const override {
+        auto r = children.at(0)->sdf_and_material(s);
+        for(std::size_t i = 1; i < size(children); ++i) {
+            r = "sdf_union(\n"
+            + children.at(i)->sdf_and_material(s) + ",\n"
+            + r + ")";
+        }
+        return r;
     }
 };
 
@@ -131,6 +181,24 @@ struct Object : Branch {
         << "}\n\n";
     }
 };
+
+struct Onion : Branch {
+    Onion(SharedNode child)
+        : Branch({std::move(child)})
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        return "onion(" + children.at(0)->sdf_only(s) + ")";
+    }
+
+    std::string sdf_and_material(const std::string& s) const override {
+        return "onion(" + children.at(0)->sdf_and_material(s) + ")";
+    }
+};
+
+SharedNode onion(SharedNode sn) {
+    return std::make_shared<Onion>(std::move(sn));
+}
 
 struct RotatedX : Branch {
     float angle = 0.f;
@@ -294,16 +362,28 @@ struct Union : Branch {
         : Branch({std::move(sn0), std::move(sn1)})
     {}
 
+    Union(Children cn)
+        : Branch(std::move(cn))
+    {}
+
     std::string sdf_only(const std::string& s) const override {
-        return "sdf_union(\n"
-        + children.at(0)->sdf_only(s) + ",\n"
-        + children.at(1)->sdf_only(s) + ")";
+        auto r = children.at(0)->sdf_only(s);
+        for(std::size_t i = 1; i < size(children); ++i) {
+            r = "sdf_union(\n"
+            + children.at(i)->sdf_only(s) + ",\n"
+            + r + ")";
+        }
+        return r;
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return "sdf_union(\n"
-        + children.at(0)->sdf_and_material(s) + ",\n"
-        + children.at(1)->sdf_and_material(s) + ")";
+        auto r = children.at(0)->sdf_and_material(s);
+        for(std::size_t i = 1; i < size(children); ++i) {
+            r = "sdf_union(\n"
+            + children.at(i)->sdf_and_material(s) + ",\n"
+            + r + ")";
+        }
+        return r;
     }
 };
 
@@ -341,7 +421,7 @@ struct LineSegment : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "line_sdf(\n"
+        return "sdf_line_segment(\n"
         + glsl(position0) + ",\n"
         + glsl(position1) + ",\n"
         + s + ")";
