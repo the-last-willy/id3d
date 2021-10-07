@@ -66,63 +66,12 @@ SharedNode sea() {
 }
 
 inline
-auto house_walls() {
-    return shared<Object>("house_walls",
-        shared<Material>(std::array{1.f, 0.f, 0.f},
-            shared<Union>(Children{
-                shared<Cube>(),
-                shared<Translation>(std::array{0.f, 0.5f, 0.f},
-                    shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
-                        shared<RotatedZ>(pi / 4.f,
-                            shared<Cube>()
-                        )
-                    )
-                )
-                // ,shared<Translation>(std::array{-0.25f, 0.8f, 0.f},
-                //     shared<UniformScaling>(1.f / 4.f,
-                //         shared<RotatedY>(pi / 2.f,
-                //             shared<Union>(Children{
-                //                 shared<Cube>(),
-                //                 shared<Translation>(std::array{0.f, 0.5f, 0.f},
-                //                     shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
-                //                         shared<RotatedZ>(pi / 4.f,
-                //                             shared<Cube>()
-                //                         )
-                //                     )
-                //                 )
-                //             })
-                //         )
-                //     )
-                // )
-            })
-        )
-    );
-}
-
-inline
-auto house_roof() {
-    return shared<Object>("house_roof",
-        shared<Material>(std::array{1.f, 0.f, 0.f},
-            shared<Translation>(std::array{0.f, 0.5f, 0.f},
-                shared<Scaling>(std::array{1.f / std::sqrt(2.f), 1.f, 1.f},
-                    shared<RotatedZ>(pi / 4.f,
-                        shared<Cube>()
-                    )
-                )
-            )
-        )
-    );
-}
-
-inline
-auto house() {
-    return named("house",
-        controlled(
-            material(std::array{1.f, 0.f, 0.f},
+auto house_dormer_walls() {
+    return named("house_dormer_walls",
+        material(std::array{1.f, 0.f, 0.f},
+            scaled(1.f, 0.5f, 1.f,
                 unionn(
-                    scaled(1.f, 0.5f, 1.f,
-                        cube()
-                    ),
+                    cube(),
                     translated(0.f, 0.5f, 0.f,
                         scaled(1 / std::sqrt(2.f), 1.f, 1.f,
                             rotated_z(pi / 4.f,
@@ -134,9 +83,69 @@ auto house() {
             )
         )
     );
-    // return shared<Object>("house",
-    //     house_walls()
-    // );
+}
+
+inline
+auto house_doorstep() {
+    return named("house_doorstep",
+        material(std::array{1.f, 1.f, 1.f},
+            unionn(
+                cube(),
+                translated(0, 2.76f, 0, rotated_x(0, rotated_y(0, rotated_z(0, scaled(1, 1, 1, 
+                    cube()
+                ))))),
+                reflected(0,
+                    translated(0.37f, 1.17f, 0.4f, rotated_x(0, rotated_y(0, rotated_z(0, scaled(0.1f, 2.37f, 0.1f, 
+                        cube()
+                    )))))
+                )
+            )
+        )
+    );
+}
+
+inline
+auto house_walls() {
+    return named("house_walls",
+        unionn(
+            material(std::array{1.f, 0.f, 0.f},
+                scaled(1.f, 0.7f, 1.f,
+                    unionn(
+                        cube(),
+                        translated(0.f, 0.5f, 0.f,
+                            scaled(1 / std::sqrt(2.f), 1.2f, 1.f,
+                                rotated_z(pi / 4.f,
+                                    cube()
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            material(std::array{1.f, 1.f, 1.f},
+                reflected(0,
+                    translated(0.25f, 0.63f, 0, rotated_x(0, rotated_y(0, rotated_z(-0.87f, scaled(0.88f, 0.05f, 1, 
+                        cube()
+                    )))))
+                )
+            )
+        )
+    );
+}
+
+inline
+auto house() {
+    return named("house",
+        unionn(
+            house_walls(),
+            translated(0.12f, 0.68f, 0.f, rotated_x(0.f, rotated_y(pi / 2, rotated_z(0.f, scaled(0.26f, 0.45f, 0.24f, 
+                house_dormer_walls()
+            ))))),
+            translated(-0.25f, -0.27f, 0.65f, rotated_x(0, rotated_y(0, rotated_z(0, scaled(0.5f, 0.16f, 0.32f,
+                house_doorstep()
+            )))))
+        )
+    );
 }
 
 inline

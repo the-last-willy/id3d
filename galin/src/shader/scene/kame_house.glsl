@@ -16,6 +16,15 @@ vec3 controlled(vec3 p) {
     return (controls_transform * vec4(p, 1.f)).xyz;
 }
 
+float dilated(float d, float radius) {
+    return d - radius;
+}
+
+SdfAndMaterial dilated(SdfAndMaterial sam, float radius) {
+    sam.distance = dilated(sam.distance, radius);
+    return sam;
+}
+
 SdfAndMaterial mul(in SdfAndMaterial sam, float f) {
     return SdfAndMaterial(
         sam.distance * f,
@@ -30,6 +39,10 @@ SdfAndMaterial onion(in SdfAndMaterial sam) {
     return SdfAndMaterial(
         onion(sam.distance),
         sam.color);
+}
+
+vec3 reflected_x(vec3 p) {
+    return vec3(abs(p.x), p.yz);
 }
 
 vec3 rotated_x(vec3 p, float a) {

@@ -10,6 +10,8 @@ struct SDF_Info {
 uniform mat4 controls_transform;
 uniform mat4 view_transform;
 
+uniform float lipschitz = 1.f;
+
 // subroutine vec3 RenderMode();
 
 // subroutine(RenderMode) vec3 render_albedo() {
@@ -144,7 +146,7 @@ float SphereTrace(vec3 o, vec3 u, float rB, out bool h, out int s) {
     {
         s = i;
         vec3 p = o + t * u;
-        float v = scene_sdf(p);
+        float v = scene_sdf(p) / lipschitz;
         // Hit object
         if (v < 0.)
         {
