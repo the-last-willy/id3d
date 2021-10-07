@@ -39,6 +39,8 @@ struct Settings {
     int steps = 200;
     float threshold = 0.5;
 
+    float lipschitz = 1.f;
+
     agl::Vec3 controls_translation = agl::vec3(0.f);
     agl::Vec3 controls_rotation_xyz= agl::vec3(0.f);
     agl::Vec3 controls_scaling = agl::vec3(1.f);
@@ -151,6 +153,7 @@ struct App : Program {
                 static_cast<float>(window.width()),
                 static_cast<float>(window.height()),
                 0.f));
+            uniform(program, "lipschitz", settings.lipschitz);
             uniform(program, "view", inverse(transform(view)));
             uniform(program, "controls_transform", inverse(
                 agl::translation(settings.controls_translation)
@@ -165,7 +168,9 @@ struct App : Program {
         ImGui::Begin("Settings");
         ImGui::DragInt("Steps", &settings.steps, 5.f, 1, 1000, "%d");
         ImGui::DragFloat("Threshold", &settings.threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-
+        
+        ImGui::DragFloat("Lipschitz", &settings.lipschitz, 0.01f, .5f, 5.0f);
+        
         ImGui::DragFloat3(
             "Translation",
             data(settings.controls_translation.elements),
