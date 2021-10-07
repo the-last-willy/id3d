@@ -116,17 +116,33 @@ auto house_roof() {
 
 inline
 auto house() {
-    return shared<Object>("house",
-        house_walls()
+    return named("house",
+        controlled(
+            material(std::array{1.f, 0.f, 0.f},
+                unionn(
+                    scaled(1.f, 0.5f, 1.f,
+                        cube()
+                    ),
+                    translated(0.f, 0.5f, 0.f,
+                        scaled(1 / std::sqrt(2.f), 1.f, 1.f,
+                            rotated_z(pi / 4.f,
+                                cube()
+                            )
+                        )
+                    )
+                )
+            )
+        )
     );
+    // return shared<Object>("house",
+    //     house_walls()
+    // );
 }
 
 inline
 SharedNode scene() {
-    return shared<Object>("scene",
+    return named("scene",
         unionn(
-            sea(),
-            island(),
             house()
         )
     );

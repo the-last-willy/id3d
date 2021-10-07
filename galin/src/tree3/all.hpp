@@ -96,25 +96,24 @@ struct Attraction : Branch {
     }
 };
 
-// struct Controlling : Branch {
-//     Controlling(SharedNode child)
-//         : Branch(std::move(child))
-//     {}
+struct Controlled : Branch {
+    Controlled(SharedNode child)
+        : Branch(std::move(child))
+    {}
 
-//     std::string sdf_only(const std::string& s) const override {
-//         return children.at(0)->sdf_only(
-//             "(controls_transform * vec4(" + s + ", 1.)).xyz");;
-//     }
+    std::string sdf_only(const std::string& s) const override {
+        return children.at(0)->sdf_only("controlled(" + s + ")");
+    }
 
-//     std::string sdf_and_material(const std::string& s) const override {
-//         return "(controls_transform * vec4(" + s + ", 1.)).xyz";
-//     }
-// };
+    std::string sdf_and_material(const std::string& s) const override {
+        return children.at(0)->sdf_and_material("controlled(" + s + ")");
+    }
+};
 
-// inline
-// SharedNode controlled(SharedNode child) {
-//     return std::make_shared<Controlling>(std::move(child));
-// }
+inline
+SharedNode controlled(SharedNode child) {
+    return std::make_shared<Controlled>(std::move(child));
+}
 
 struct Dilatation : Branch {
     float radius = 0.f;
@@ -145,7 +144,7 @@ struct Intersection : Branch {
     std::string sdf_only(const std::string& s) const override {
         auto r = children.at(0)->sdf_only(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "sdf_union(\n"
+            r = "sdf_intersection(\n"
             + children.at(i)->sdf_only(s) + ",\n"
             + r + ")";
         }
@@ -155,7 +154,7 @@ struct Intersection : Branch {
     std::string sdf_and_material(const std::string& s) const override {
         auto r = children.at(0)->sdf_and_material(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "sdf_union(\n"
+            r = "sdf_intersection(\n"
             + children.at(i)->sdf_and_material(s) + ",\n"
             + r + ")";
         }
@@ -178,6 +177,11 @@ struct Material : Branch {
         + ")";
     }
 };
+
+inline
+SharedNode material(std::array<float, 3> color, SharedNode sn) {
+    return std::make_shared<Material>(color, std::move(sn));
+}
 
 struct Object : Branch {
     std::string name;
@@ -209,6 +213,11 @@ struct Object : Branch {
         << "}\n\n";
     }
 };
+
+inline
+SharedNode named(std::string name, SharedNode sn) {
+    return std::make_shared<Object>(std::move(name), std::move(sn));
+}
 
 struct Onion : Branch {
     Onion(SharedNode child)
@@ -247,6 +256,11 @@ struct RotatedX : Branch {
     }
 };
 
+inline
+SharedNode rotated_x(float angle, SharedNode sn) {
+    return std::make_shared<RotatedX>(angle, std::move(sn));
+}
+
 struct RotatedY : Branch {
     float angle = 0.f;
 
@@ -265,6 +279,11 @@ struct RotatedY : Branch {
             "rotated_y(" + s + ", " + glsl(angle) + ")");
     }
 };
+
+inline
+SharedNode rotated_y(float angle, SharedNode sn) {
+    return std::make_shared<RotatedY>(angle, std::move(sn));
+}
 
 struct RotatedZ : Branch {
     float angle = 0.f;
@@ -285,6 +304,11 @@ struct RotatedZ : Branch {
     }
 };
 
+inline
+SharedNode rotated_z(float angle, SharedNode sn) {
+    return std::make_shared<RotatedZ>(angle, std::move(sn));
+}
+
 struct Scaling : Branch {
     std::array<float, 3> scaling = {1.f, 1.f, 1.f};
 
@@ -294,9 +318,9 @@ struct Scaling : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        auto ms = 0.f;
+        auto ms = scaling[0];
         for(auto sc : scaling) {
-            ms = std::max(ms, std::abs(sc));
+            ms = std::min(ms, std::abs(sc));
         }
         return "scaling_out("
         + children.at(0)->sdf_only(
@@ -305,9 +329,9 @@ struct Scaling : Branch {
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        auto ms = 0.f;
+        auto ms = scaling[0];
         for(auto sc : scaling) {
-            ms = std::max(ms, std::abs(sc));
+            ms = std::min(ms, std::abs(sc));
         }
         return "scaling_out("
         + children.at(0)->sdf_and_material(
@@ -315,6 +339,11 @@ struct Scaling : Branch {
         + ", " + glsl(ms) + ")";
     }
 };
+
+inline
+SharedNode scaled(float x, float y, float z, SharedNode sn) {
+    return std::make_shared<Scaling>(std::array{x, y, z}, std::move(sn));
+}
 
 struct Swizzling : Branch {
     std::array<int, 3> swizzling = {0, 1, 2};
@@ -361,6 +390,11 @@ struct Translation : Branch {
             "translated(" + s + ", " + glsl(translation) + ")");
     }
 };
+
+inline
+SharedNode translated(float x, float y, float z, SharedNode sn) {
+    return std::make_shared<Translation>(std::array{x, y, z}, std::move(sn));
+}
 
 struct UniformScaling : Branch {
     float scaling = 1.f;
@@ -447,6 +481,19 @@ struct Ellipsoid : Leaf {
         + glsl(radiuses) + ")";
     }
 };
+
+struct Half : Leaf {
+    int axis = 0;
+
+    std::string sdf_only(const std::string& s) const override {
+        auto r = s + "[" + glsl(s) + "]";
+    }
+};
+
+inline
+SharedNode half(int axis) {
+    return std::make_shared<Half>(axis);
+}
 
 struct LineSegment : Leaf {
     std::array<float, 3> position0;
