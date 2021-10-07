@@ -39,7 +39,9 @@ struct Settings {
     int steps = 200;
     float threshold = 0.5;
 
-    std::vector<agl::SubroutineIndex> subroutines;
+    agl::Vec3 controls_translation = agl::vec3(0.f);
+    agl::Vec3 controls_rotation_xyz= agl::vec3(0.f);
+    agl::Vec3 controls_scaling = agl::vec3(1.f);
 };
 
 struct App : Program {
@@ -76,17 +78,6 @@ struct App : Program {
         } catch(...) {
             shader_loaded = false;
         }
-        if(shader_loaded) {
-            uniform(program, "iResolution", agl::vec3(
-                static_cast<float>(window.width()),
-                static_cast<float>(window.height()),
-                0.f));
-            { // Subroutines.
-                settings.subroutines.resize(
-                    active_subroutine_uniform_locations(
-                        program.program, agl::fragment_shader_tag));
-            }
-        }
     }
 
     void init() override {
@@ -95,17 +86,18 @@ struct App : Program {
 
     void update(float dt) override {
         time += dt;
+        if(not ImGui::GetIO().WantCaptureMouse) {
+            if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
+                glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
+                view.yaw += d[0] / 500.f;
+                view.pitch += d[1] / 500.f;
 
-        if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
-            glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
-            view.yaw += d[0] / 500.f;
-            view.pitch += d[1] / 500.f;
-
-            previous_cursor_pos = current_cursor_pos;
-        } else {
-            glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            previous_cursor_pos = current_cursor_pos;
+                previous_cursor_pos = current_cursor_pos;
+            } else {
+                glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                previous_cursor_pos = current_cursor_pos;
+            }
         }
         {
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
@@ -130,6 +122,20 @@ struct App : Program {
                 load_shader();
             }
         }
+        { // Output controls.
+            if(glfwGetKey(window.window, GLFW_KEY_ENTER)) {
+                std::cout << "translated("
+                << settings.controls_translation[0] << ", "
+                << settings.controls_translation[1] << ", "
+                << settings.controls_translation[2] << ", rotation_x("
+                << settings.controls_rotation_xyz[0] <<  ", rotation_y("
+                << settings.controls_rotation_xyz[1] <<  ", rotation_z("
+                << settings.controls_rotation_xyz[2] << ", scaling("
+                << settings.controls_scaling[0] << ", "
+                << settings.controls_scaling[1] << ", "
+                << settings.controls_scaling[2] << ", )))))" << std::endl;
+            }
+        }
 
         if(shader_loaded) {
             double xpos, ypos;
@@ -141,8 +147,17 @@ struct App : Program {
                 static_cast<float>(pressed),
                 0.f
             ));
-
+            uniform(program, "iResolution", agl::vec3(
+                static_cast<float>(window.width()),
+                static_cast<float>(window.height()),
+                0.f));
             uniform(program, "view", inverse(transform(view)));
+            uniform(program, "controls_transform", inverse(
+                agl::translation(settings.controls_translation)
+                * agl::rotation_x(settings.controls_rotation_xyz[0])
+                * agl::rotation_y(settings.controls_rotation_xyz[1])
+                * agl::rotation_z(settings.controls_rotation_xyz[2])
+                * agl::scaling3(settings.controls_scaling)));
         }
     }
 
@@ -150,6 +165,26 @@ struct App : Program {
         ImGui::Begin("Settings");
         ImGui::DragInt("Steps", &settings.steps, 5.f, 1, 1000, "%d");
         ImGui::DragFloat("Threshold", &settings.threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+
+        ImGui::DragFloat3(
+            "Translation",
+            data(settings.controls_translation.elements),
+            0.01f);
+        ImGui::DragFloat3(
+            "Rotation XYZ",
+            data(settings.controls_rotation_xyz.elements),
+            0.01f);
+        ImGui::DragFloat3(
+            "Scaling",
+            data(settings.controls_scaling.elements),
+            0.01f);
+
+        if(ImGui::Button("Reset")) {
+            settings.controls_translation = agl::vec3(0.f);
+            settings.controls_rotation_xyz = agl::vec3(0.f);
+            settings.controls_scaling = agl::vec3(1.f);
+        }
+
         ImGui::End();
     }
 
