@@ -1,10 +1,8 @@
 #pragma once
 
-#include "tree3/all.hpp"
+#include "kame_house/roshi.hpp"
 
 namespace kame_house {
-
-constexpr float pi = 3.14159265359f;
 
 template<typename T, typename... Args>
 std::shared_ptr<T> shared(Args&&... as) {
@@ -152,7 +150,7 @@ inline
 SharedNode scene() {
     return named("scene",
         unionn(
-            house()
+            roshi()
         )
     );
     // return shared<Object>("scene",

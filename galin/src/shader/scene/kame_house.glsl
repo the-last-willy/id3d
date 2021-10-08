@@ -25,6 +25,16 @@ SdfAndMaterial dilated(SdfAndMaterial sam, float radius) {
     return sam;
 }
 
+float inverted(float d) {
+    return -d;
+}
+
+SdfAndMaterial inverted(in SdfAndMaterial sam) {
+    return SdfAndMaterial(
+        inverted(sam.distance),
+        sam.color);
+}
+
 SdfAndMaterial mul(in SdfAndMaterial sam, float f) {
     return SdfAndMaterial(
         sam.distance * f,

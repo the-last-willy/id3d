@@ -167,6 +167,31 @@ struct Intersection : Branch {
     }
 };
 
+struct Inverted : Branch {
+    Inverted(SharedNode child)
+        : Branch({std::move(child)})
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        return "inverted(\n" + children.at(0)->sdf_only(s) + ")";
+    }
+
+    std::string sdf_and_material(const std::string& s) const override {
+        return "inverted(\n" + children.at(0)->sdf_and_material(s) + ")";
+    }
+};
+
+inline
+SharedNode inverted(SharedNode sn) {
+    return std::make_shared<Inverted>(std::move(sn));
+}
+
+template<typename... SharedNodes>
+SharedNode intersection(SharedNodes... sns) {
+    return std::make_shared<Intersection>(
+        std::vector<SharedNode>{std::move(sns)...});
+}
+
 struct Material : Branch {
     std::array<float, 3> color;
 
@@ -186,6 +211,11 @@ struct Material : Branch {
 inline
 SharedNode material(std::array<float, 3> color, SharedNode sn) {
     return std::make_shared<Material>(color, std::move(sn));
+}
+
+inline
+SharedNode material(float r, float g, float b, SharedNode sn) {
+    return std::make_shared<Material>(std::array{r, g, b}, std::move(sn));
 }
 
 struct Object : Branch {
@@ -513,6 +543,11 @@ struct Ellipsoid : Leaf {
     }
 };
 
+inline
+SharedNode ellipsoid(float r0, float r1, float r2) {
+    return std::make_shared<Ellipsoid>(std::array{r0, r1, r2});
+}
+
 struct Half : Leaf {
     int axis = 0;
 
@@ -521,7 +556,8 @@ struct Half : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        auto r = s + "[" + glsl(s) + "]";
+        constexpr auto symbols = std::array{'x', 'y', 'z'};
+        return s + "." + symbols[axis];
     }
 };
 
@@ -576,3 +612,8 @@ struct Sphere : Leaf {
         return ss.str();
     }
 };
+
+inline
+SharedNode sphere(float r) {
+    return std::make_shared<Sphere>(r);
+}

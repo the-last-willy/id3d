@@ -71,7 +71,7 @@ void Ray(in vec2 m, in vec2 p, out vec3 ro, out vec3 rd) {
 // Main
 
 uniform int Steps = 1000;
-const float Epsilon = .03; // Marching epsilon
+const float Epsilon = .003; // Marching epsilon
 
 uniform float T = .5;;
 
