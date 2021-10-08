@@ -12,8 +12,29 @@ vec3 attracted(vec3 p, float intensity) {
     return p - normalize(p) * intensity;
 }
 
+float cone_sdf( in vec3 p, in vec2 q)
+{
+  vec2 w = vec2( length(p.xz), p.y );
+  vec2 a = w - q*clamp( dot(w,q)/dot(q,q), 0.0, 1.0 );
+  vec2 b = w - q*vec2( clamp( w.x/q.x, 0.0, 1.0 ), 1.0 );
+  float k = sign( q.y );
+  float d = min(dot( a, a ),dot(b, b));
+  float s = max( k*(w.x*q.y-w.y*q.x),k*(w.y-q.y)  );
+  return sqrt(d)*sign(s);
+}
+
 vec3 controlled(vec3 p) {
     return (controls_transform * vec4(p, 1.f)).xyz;
+}
+
+float difference(float d0, float d1) {
+    return max(d0, -d1);
+}
+
+SdfAndMaterial difference(in SdfAndMaterial sam0, in SdfAndMaterial sam1) {
+    return SdfAndMaterial(
+        difference(sam0.distance, sam1.distance),
+        sam0.color);
 }
 
 float dilated(float d, float radius) {
@@ -53,6 +74,16 @@ SdfAndMaterial onion(in SdfAndMaterial sam) {
 
 vec3 reflected_x(vec3 p) {
     return vec3(abs(p.x), p.yz);
+}
+
+vec3 reflected_y(in vec3 p) {
+    p.y = abs(p.y);
+    return p;
+}
+
+vec3 reflected_z(vec3 p) {
+    p.z = abs(p.z);
+    return p;
 }
 
 vec3 rotated_x(vec3 p, float a) {
@@ -124,6 +155,20 @@ SdfAndMaterial sdf_union(in SdfAndMaterial sam0, in SdfAndMaterial sam1) {
     } else {
         return sam1;
     }
+}
+
+float smooth_union(float d1, float d2, float k) {
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return mix( d2, d1, h ) - k*h*(1.0-h);
+}
+
+SdfAndMaterial smooth_union(in SdfAndMaterial sam0, in SdfAndMaterial sam1, float k) {
+    float d1 = sam0.distance;
+    float d2 = sam1.distance;
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return SdfAndMaterial(
+        mix(d2, d1, h) - k*h*(1.0-h),
+        mix(sam1.color, sam0.color, h));
 }
 
 vec3 translated(vec3 position, vec3 translation) {

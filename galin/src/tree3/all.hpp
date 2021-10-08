@@ -115,6 +115,29 @@ SharedNode controlled(SharedNode child) {
     return std::make_shared<Controlled>(std::move(child));
 }
 
+struct Difference : Branch {
+    Difference(SharedNode sn0, SharedNode sn1)
+        : Branch({std::move(sn0), std::move(sn1)})
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        return "difference("
+        + children.at(0)->sdf_only(s) + ", "
+        + children.at(1)->sdf_only(s) + ")";
+    }
+
+    std::string sdf_and_material(const std::string& s) const override {
+        return "difference("
+        + children.at(0)->sdf_and_material(s) + ", "
+        + children.at(1)->sdf_and_material(s) + ")";
+    }
+};
+
+inline
+SharedNode difference(SharedNode sn0, SharedNode sn1) {
+    return std::make_shared<Difference>(std::move(sn0), std::move(sn1));
+}
+
 struct Dilatation : Branch {
     float radius = 0.f;
 
@@ -406,6 +429,53 @@ SharedNode scaled(float x, float y, float z, SharedNode sn) {
     return std::make_shared<Scaling>(std::array{x, y, z}, std::move(sn));
 }
 
+inline
+SharedNode scaled(float s, SharedNode sn) {
+    return scaled(s, s, s, std::move(sn));
+}
+
+struct SmoothUnion : Branch {
+    float radius;
+
+    SmoothUnion(float r, SharedNode sn0, SharedNode sn1)
+        : Branch({std::move(sn0), std::move(sn1)})
+        , radius(r)
+    {}
+
+    SmoothUnion(float r, Children cn)
+        : Branch(std::move(cn))
+        , radius(r)
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        auto r = children.at(0)->sdf_only(s);
+        for(std::size_t i = 1; i < size(children); ++i) {
+            r = "smooth_union(\n"
+            + children.at(i)->sdf_only(s) + ",\n"
+            + r + ",\n"
+            + glsl(radius) + ")";
+        }
+        return r;
+    }
+
+    std::string sdf_and_material(const std::string& s) const override {
+        auto r = children.at(0)->sdf_and_material(s);
+        for(std::size_t i = 1; i < size(children); ++i) {
+            r = "smooth_union(\n"
+            + children.at(i)->sdf_and_material(s) + ",\n"
+            + r + ",\n"
+            + glsl(radius) + ")";
+        }
+        return r;
+    }
+};
+
+template<typename... SharedNodes>
+SharedNode smooth_union(float r, SharedNodes... sns) {
+    return std::make_shared<SmoothUnion>(
+        r, std::vector<SharedNode>{std::move(sns)...});
+}
+
 struct Swizzling : Branch {
     std::array<int, 3> swizzling = {0, 1, 2};
 
@@ -518,6 +588,25 @@ SharedNode unionn(SharedNodes... sns) {
 
 struct Leaf : Node {};
 
+struct Cone : Leaf {
+    float height = 1.f;
+    float radius = 1.f;
+
+    Cone(float h, float r)
+        : height(h)
+        , radius(r)
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        return "cone_sdf(\n" + s + ",\nvec2(" + glsl(radius) + "," + glsl(height) + ")\n)";
+    }
+};
+
+inline
+SharedNode cone(float height, float radius) {
+    return std::make_shared<Cone>(height, radius);
+}
+
 struct Cube : Leaf {
     std::string sdf_only(const std::string& s) const override {
         return "sdf_cube(\n" + s + ")";
@@ -584,6 +673,11 @@ struct LineSegment : Leaf {
         + s + ")";
     }
 };
+
+inline
+SharedNode line_segment(std::array<float, 3> position0, std::array<float, 3> position1) {
+    return std::make_shared<LineSegment>(position0, position1);
+}
 
 struct Plane : Leaf {
     float width = 1.f;
