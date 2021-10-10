@@ -130,9 +130,9 @@ struct App : Program {
                 << settings.controls_translation[0] << ", "
                 << settings.controls_translation[1] << ", "
                 << settings.controls_translation[2] << ", rotated_x("
-                << settings.controls_rotation_xyz[0] <<  ", rotated_y("
-                << settings.controls_rotation_xyz[1] <<  ", rotated_z("
-                << settings.controls_rotation_xyz[2] << ", scaled("
+                << -settings.controls_rotation_xyz[0] <<  ", rotated_y("
+                << -settings.controls_rotation_xyz[1] <<  ", rotated_z("
+                << -settings.controls_rotation_xyz[2] << ", scaled("
                 << settings.controls_scaling[0] << ", "
                 << settings.controls_scaling[1] << ", "
                 << settings.controls_scaling[2] << ", )))))" << std::endl;

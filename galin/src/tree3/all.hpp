@@ -588,6 +588,23 @@ SharedNode unionn(SharedNodes... sns) {
 
 struct Leaf : Node {};
 
+struct Circle : Leaf {
+    float radius = 1.f;
+
+    Circle(float r)
+        : radius(r)
+    {}
+
+    std::string sdf_only(const std::string& s) const override {
+        return "circle(\n" + s + ",\n" + glsl(radius) + ")";
+    }
+};
+
+inline
+SharedNode circle(float r) {
+    return std::make_shared<Circle>(r);
+}
+
 struct Cone : Leaf {
     float height = 1.f;
     float radius = 1.f;

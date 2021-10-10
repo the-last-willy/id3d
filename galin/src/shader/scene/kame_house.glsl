@@ -12,8 +12,13 @@ vec3 attracted(vec3 p, float intensity) {
     return p - normalize(p) * intensity;
 }
 
-float cone_sdf( in vec3 p, in vec2 q)
-{
+float circle(vec3 p, float r) {
+  vec2 q = vec2(length(p.xz)-r,p.y);
+  return length(q);
+}
+
+float cone_sdf(in vec3 p, in vec2 q) {
+    // Credits to Inigo Quilez.
   vec2 w = vec2( length(p.xz), p.y );
   vec2 a = w - q*clamp( dot(w,q)/dot(q,q), 0.0, 1.0 );
   vec2 b = w - q*vec2( clamp( w.x/q.x, 0.0, 1.0 ), 1.0 );

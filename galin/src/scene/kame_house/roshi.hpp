@@ -14,6 +14,8 @@ constexpr auto roshi_glasses_material
 = std::array{12.f / 255.f, 51.f / 255.f, 17.f / 255.f};
 constexpr auto roshi_orange_material
 = std::array{204.f / 255.f, 113.f / 255.f, 61.f / 255.f};
+constexpr auto roshi_purple_material
+= std::array{58.f / 255.f, 37.f / 255.f, 67.f / 255.f};
 constexpr auto roshi_rod_material
 = std::array{91.f / 255.f, 41.f / 255.f, 39.f / 255.f};
 constexpr auto roshi_skin_material
@@ -22,13 +24,210 @@ constexpr auto roshi_white_material
 = std::array{222.f / 255.f, 199.f / 255.f, 199.f / 255.f};
 
 inline
+SharedNode roshi_rod() {
+    return named("roshi_rod",
+        material(roshi_rod_material,
+            smooth_union(0.2f,
+                translated(0.36f, -0.02f, -0.46f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(1.f, 1.08f, 1.f, 
+                    dilated(0.05f,
+                        line_segment({0.f, -1.f, 0.f}, {0.f, 1.f, 0.f})
+                    )
+                ))))),
+                dilated(0.05f,
+                    translated(0.33f, 1.43f, -0.5f, rotated_x(-1.01f, rotated_y(-0.21f, rotated_z(-0.73f, scaled(1.11f, 1.f, 1.55f, 
+                        scaled(0.1f,
+                            cube()
+                        )
+                    )))))
+                ),
+                dilated(0.05f,
+                    translated(0.33f, 1.19f, -0.5f, rotated_x(-0.92f, rotated_y(-0.46f, rotated_z(-0, scaled(1.76f, 1.59f, 1.66f, 
+                        scaled(0.1f,
+                            cube()
+                        )
+                    )))))
+                ),
+                dilated(0.05f,
+                    translated(0.33f, 1.01f, -0.5f, rotated_x(-1.01f, rotated_y(-0.21f, rotated_z(-0.73f, scaled(0.23f, 0.24f, 0.58f, 
+                        scaled(0.1f,
+                            cube()
+                        )
+                    )))))
+                )
+            )
+        )
+    );
+}
+
+inline
+SharedNode roshi_lower_half() {
+    return named("roshi_lower_half",
+        smooth_union(0.2f,
+            reflected(2,
+                unionn(
+                    material(roshi_blue_material,
+                        translated(0.01f, -0.88f, 0.24f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.49f, 0.94f, 0.53f, 
+                            dilated(0.2f,
+                                cone(1.f, 1.f)
+                            )
+                        )))))
+                    ),
+                    translated(0.17f, -1.25f, 0.3f, rotated_x(-0, rotated_y(0.37f, rotated_z(-0, scaled(0.51f, 0.26f, 0.24f, 
+                        intersection(
+                            unionn(
+                                material(roshi_skin_material,
+                                    sphere(1.f)
+                                ),
+                                material(roshi_purple_material,
+                                    translated(-0.08f, 0.12f, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(1.29f, 0.74f, 1.21f,
+                                        sphere(1.f)
+                                    )))))
+                                )
+                            ),
+                            material(roshi_skin_material,
+                                inverted(half(1))
+                            )
+                        )
+                    )))))
+                )
+            ),
+            material(roshi_blue_material,
+                translated(0.1f, -0.11f, 0.36f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.31f, 0.32f, 0.36f,
+                    sphere(1.f)
+                )))))
+            ),
+            material(roshi_blue_material,
+                translated(-0.03, -0.26, -0.31, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.331, 0.32, 0.36,
+                    sphere(1.f)
+                )))))
+            )
+        )
+    );
+}
+
+inline
 SharedNode roshi() {
     return named("roshi",
         unionn(
+            translated(0.36f, -0.02f, -0.46f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(1.f, 1.08f, 1.f, 
+                roshi_rod()
+            ))))),
             material(roshi_orange_material,
+                unionn(
+                    smooth_union(0.1f,
+                        intersection(
+                            ellipsoid(0.65f, 2.f, 1.f),
+                            inverted(half(1))
+                        ),
+                        reflected(2,
+                            translated(0, 1.16f, 0.58f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.4f, 0.4f, 0.4f,
+                                sphere(1.f)
+                            )))))
+                        )
+                    ),
+                    // Right arm.
+                    unionn(
+                        intersection(
+                            dilated(0.01f,
+                                onion(
+                                    unionn(
+                                        dilated(0.39f,
+                                            line_segment({0.f, 1.16f, -0.58f}, {0.f, 0.65f, -0.98f})
+                                        ),
+                                        dilated(0.39f,
+                                            line_segment({0.f, 0.65f, -0.98f}, {0.37f, 0.63f, -0.94f})
+                                        )
+                                    )
+                                )
+                            ),
+                            translated(0.47f, 0, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(1.f, 1.f, 1.f, 
+                                half(0)
+                            )))))
+                            
+                        )
+                    ),
+                    // Left arm.
+                    intersection(
+                        dilated(0.4f,
+                            line_segment(
+                                std::array{0.f, 1.16f, 0.58f},
+                                std::array{0.f, 0.27f, 0.87f}
+                            )
+                        ),
+                        translated(0, 0.2f, 0,
+                            inverted(half(1))
+                        )
+                    )
+                )
+            ),
+            // Buttons.
+            material(roshi_white_material,
                 intersection(
-                    ellipsoid(0.75f, 2.f, 1.f),
-                    inverted(half(1))
+                    translated(-0.06f, 0, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(1.14f, 1.16f, 0.46f, 
+                        intersection(
+                            ellipsoid(0.65f, 2.f, 1.f),
+                            inverted(half(1))
+                        )
+                    ))))),
+                    translated(0.1f, 0.f, 0.f,
+                        inverted(half(0))
+                    )
+                )
+            ),
+            // Actual buttons.
+            material(roshi_purple_material,
+                scaled(0.1f,
+                    unionn(
+                        translated(5.73f, 9.51f, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.62f, 0.39f, 1.f,
+                            sphere(1.f)
+                        ))))),
+                        translated(5.95f, 7.06f, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.62f, 0.39f, 1.f,
+                            sphere(1.f)
+                        ))))),
+                        translated(6.15f, 4.54f, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.62f, 0.39f, 1.f,
+                            sphere(1.f)
+                        ))))),
+                        translated(6.2, 1.88, 0, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.86, 0.34, 0.94,
+                            sphere(1.f)
+                        )))))
+                    )
+                )
+            ),
+            // Right sleeve.
+            material(roshi_white_material,
+                translated(0.36f, 0.62f, -0.94f, rotated_x(-0, rotated_y(-0, rotated_z(-1.68f, scaled(0.36f, 1.26f, 0.36f, 
+                    dilated(0.2f,
+                        circle(1.f)
+                    )
+                )))))
+            ),
+            // Right arm.
+            material(roshi_skin_material,
+                smooth_union(0.2f,
+                    dilated(0.1f,
+                        line_segment({0.f, 0.65f, -0.98f}, {0.67f, 0.63f, -0.94f})
+                    ),
+                    dilated(0.1f,
+                        translated(0.73f, 0.61f, -0.9f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.125f, 0.13f, 0.15f, 
+                            cube()
+                        )))))
+                    )
+                )
+            ),
+            // Left sleeve.
+            material(roshi_white_material,
+                translated(0, 0.33f, 0.86f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.38f, 0.96f, 0.36f, 
+                    dilated(0.2f,
+                        circle(1.f)
+                    )
+                )))))
+            ),
+            // Left arm.
+            material(roshi_skin_material,
+                dilated(0.1f,
+                    translated(0, 0.2f, 0.92f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(0.125f, 0.13f, 0.15f,
+                        cube()
+                    )))))
                 )
             ),
             material(roshi_skin_material,
@@ -75,7 +274,7 @@ SharedNode roshi() {
                             translated(6.46f, 10.32f, -0.14f, rotated_x(0, rotated_y(0, rotated_z(0, scaled(0.83f, 5.2f, 2.0f,
                                     cone(1.f, 1.f)
                             ))))),
-                            smooth_union(0.5f,
+                            smooth_union(0.3f,
                                 reflected(2,
                                     translated(6.81f, 13.67f, 2.86f, rotated_x(0.64f, rotated_y(0, rotated_z(0, scaled(0.75f, 3.51f, 1.35f,
                                         cone(1.f, 1.f)
@@ -125,12 +324,13 @@ SharedNode roshi() {
             material(roshi_glasses_material,
                 scaled(0.1f,
                     reflected(2,
-                        translated(7.3, 19.17, 1.83, rotated_x(0, rotated_y(0, rotated_z(0, scaled(0.24, 0.97, 1.24, 
+                        translated(7.3f, 19.17f, 1.83f, rotated_x(0, rotated_y(0, rotated_z(0, scaled(0.24f, 0.97f, 1.24f,
                             sphere(1.f)
                         )))))
                     )
                 )   
-            )
+            ),
+            roshi_lower_half()
         )
     );
 }
