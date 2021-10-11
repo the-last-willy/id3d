@@ -9,6 +9,7 @@
 #include "lawson_algorithm.hpp"
 #include "mesh.hpp"
 #include "topology.hpp"
+#include "triangle.hpp"
 #include "triangles.hpp"
 #include "vertices.hpp"
 #include "split.hpp"

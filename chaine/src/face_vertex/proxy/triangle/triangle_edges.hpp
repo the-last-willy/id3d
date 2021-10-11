@@ -12,7 +12,7 @@
 namespace face_vertex {
 
 inline
-auto triangle_edges(TriangleProxy tp) {
+auto triangle_edges(TriangleProxy) {
     // return ranges::views::ints(uint32_t(0), adjacent_triangle_count(tp))
     // | ranges::views::transform()
 }

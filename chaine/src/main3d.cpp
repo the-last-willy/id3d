@@ -94,6 +94,8 @@ struct App : Program {
         }
 
         auto face_vertex_mesh = to_face_vertex_mesh(mesh);
+        
+        // IDK WHAT I WAS TRYING TO DO HERE.
         // for(uint32_t i = 0; i < 100; ++i) {
         //     auto tp = proxy(
         //         face_vertex_mesh,
@@ -105,9 +107,9 @@ struct App : Program {
         //             index(adjacent_triangle(tp, 0))}));
         // }
 
-        // for(auto v : vertices(face_vertex_mesh)) {
-        //     color(v) = normalize(position(v)) * .5f + .5f;
-        // }
+        { // Collapse some random edges.
+            for(uint_32)
+        }
 
         { // Compute Laplacian.
             for(auto v : vertices(face_vertex_mesh)) {

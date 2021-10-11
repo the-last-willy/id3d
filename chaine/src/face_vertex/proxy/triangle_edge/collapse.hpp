@@ -32,6 +32,12 @@ VertexProxy collapse(const TriangleEdgeProxy& tep) {
         substitute_adjacent_triangle(t1b, t1, t1a);
         substitute_adjacent_triangle(t1a, t1, t1b);
     }
+    { // Invalidate t0.
+        
+    }
+    { // Invalidate t1.
+
+    }
     auto va = vertex_after(t0, opposite_vertex(t0, t1));
     auto vb = vertex_after(t1, opposite_vertex(t1, t0));
     { // Remove vb.
