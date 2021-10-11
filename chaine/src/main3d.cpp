@@ -170,7 +170,7 @@ struct App : Program {
             add(edge_pass2, *m);
         }
         { // Triangle pass.
-            auto m = to_triangle_mesh(face_vertex_mesh);
+            auto m = std::make_shared<eng::Mesh>(triangles_mesh(face_vertex_mesh));
             for(auto& p : m->primitives) {
                 p->material = std::make_shared<eng::Material>();
             }
@@ -179,7 +179,7 @@ struct App : Program {
             }
         }
         { // Vertex pass.
-            auto m = to_vertex_mesh(face_vertex_mesh);
+            auto m = std::make_shared<eng::Mesh>(vertices_mesh(face_vertex_mesh));
             for(auto& p : m->primitives | ranges::views::indirect) {
                 p.material = std::make_shared<eng::Material>();
             }
