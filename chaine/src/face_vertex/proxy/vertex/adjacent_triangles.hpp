@@ -55,7 +55,7 @@ auto& operator++(VertexAdjacentTriangleIterator& i) {
         }
     }
     throw std::logic_error(
-        "vertex_face_mesh: Bad implementation, blame Willy.");
+        "Not a triangle index.");
 }
 
 constexpr
