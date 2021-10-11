@@ -330,13 +330,21 @@ struct RotatedX : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return children.at(0)->sdf_only(
-            "rotated_x(\n" + s + ", " + glsl(angle) + ")");
+        if(angle == 0.f) {
+            return children.at(0)->sdf_only(s);
+        } else {
+            return children.at(0)->sdf_only(
+                "rotated_x(\n" + s + ", " + glsl(angle) + ")");
+        }
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return children.at(0)->sdf_and_material(
-            "rotated_x(\n" + s + ", " + glsl(angle) + ")");
+        if(angle == 0.f) {
+            return children.at(0)->sdf_and_material(s);
+        } else {
+            return children.at(0)->sdf_and_material(
+                "rotated_x(\n" + s + ", " + glsl(angle) + ")");
+        }
     }
 };
 
@@ -354,13 +362,21 @@ struct RotatedY : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return children.at(0)->sdf_only(
-            "rotated_y(\n" + s + ", " + glsl(angle) + ")");
+        if(angle == 0.f) {
+            return children.at(0)->sdf_only(s);
+        } else {
+            return children.at(0)->sdf_only(
+                "rotated_y(\n" + s + ", " + glsl(angle) + ")");
+        }
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return children.at(0)->sdf_and_material(
-            "rotated_y(\n" + s + ", " + glsl(angle) + ")");
+        if(angle == 0.f) {
+            return children.at(0)->sdf_and_material(s);
+        } else {
+            return children.at(0)->sdf_and_material(
+                "rotated_y(\n" + s + ", " + glsl(angle) + ")");
+        }
     }
 };
 
@@ -378,13 +394,21 @@ struct RotatedZ : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return children.at(0)->sdf_only(
-            "rotated_z(\n" + s + ", " + glsl(angle) + ")");
+        if(angle == 0.f) {
+            return children.at(0)->sdf_only(s);
+        } else {
+            return children.at(0)->sdf_only(
+                "rotated_z(\n" + s + ", " + glsl(angle) + ")");
+        }
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return children.at(0)->sdf_and_material(
-            "rotated_z(\n" + s + ", " + glsl(angle) + ")");
+        if(angle == 0.f) {
+            return children.at(0)->sdf_and_material(s);
+        } else {
+            return children.at(0)->sdf_and_material(
+                "rotated_z(\n" + s + ", " + glsl(angle) + ")");
+        }
     }
 };
 
