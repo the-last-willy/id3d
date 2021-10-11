@@ -5,8 +5,8 @@
 namespace face_vertex {
 
 inline
-TriangleIndex adjacent_triangle_count(TriangleProxy) {
-    return TriangleIndex(3);
+uint32_t adjacent_triangle_count(TriangleProxy) {
+    return 3;
 }
 
 }
