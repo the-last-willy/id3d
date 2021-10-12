@@ -28,23 +28,23 @@
 
 //
 
-struct DirectionalLight {
-    agl::Vec3 direction = {};
-    agl::Mat4 transform = {};
+// struct DirectionalLight {
+//     agl::Vec3 direction = {};
+//     agl::Mat4 transform = {};
 
-    std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
-};
+//     std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
+// };
 
-struct SpotLight {
-    agl::Vec3 direction = {};
-    agl::Mat4 transform = {};
+// struct SpotLight {
+//     agl::Vec3 direction = {};
+//     agl::Mat4 transform = {};
 
-    std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
-};
+//     std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
+// };
 
-struct PointLight {
-    agl::Vec3 position = {};
-};
+// struct PointLight {
+//     agl::Vec3 position = {};
+// };
 
 struct GltfProgram;
 
@@ -110,13 +110,20 @@ struct GltfProgram : Program {
             shader_compiler.root = "iehl/src/shader";
         }
 
-        database = agl::format::wavefront::load(
-            "D:/data/bistro-small/exterior.obj",
-            "D:/data/bistro-small/");
-            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            // "C:/Users/Willy/Desktop/data/bistro-small/");
-            // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
-            // "C:/Users/yoanp/Documents/bistro-small/");
+        auto geometry = agl::format::wavefront::load_geometry(
+            "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+        database.meshes.push_back(std::make_shared<eng::Mesh>(
+            agl::engine::render_mesh(geometry)));
+
+        // database = agl::format::wavefront::load(
+        //     "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
+        //     "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
+        //     // "D:/data/bistro-small/exterior.obj",
+        //     // "D:/data/bistro-small/");
+        //     // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+        //     // "C:/Users/Willy/Desktop/data/bistro-small/");
+        //     // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+        //     // "C:/Users/yoanp/Documents/bistro-small/");
             
 
         { // Normalize data.
@@ -124,9 +131,11 @@ struct GltfProgram : Program {
                 data::uniform_texture(agl::vec3(0.f)));
             for(auto&& me : database.meshes | ranges::views::indirect) {
                 for(auto&& p : me.primitives | ranges::views::indirect) {
-                    auto&& ma = *p.material;
-                    if(not ma.textures.contains("map_Ke")) {
-                        ma.textures["map_Ke"] = default_emissive;
+                    if(p.material) {
+                        auto&& ma = *p.material;
+                        if(not ma.textures.contains("map_Ke")) {
+                            ma.textures["map_Ke"] = default_emissive;
+                        }
                     }
                 }
             }
