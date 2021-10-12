@@ -3,11 +3,26 @@
 #include <array>
 #include <sstream>
 
+inline
+bool contains(const std::string& s, char c) {
+    for(auto sc : s) {
+        if(sc == c) {
+            return true;
+        }
+    }
+    return false;
+}
+
 template<typename T>
 std::string glsl(const T& t) {
     auto ss = std::stringstream();
     ss << t;
-    return ss.str();
+    auto r = ss.str();
+    if(contains(r, '.')) {
+        return r;
+    } else {
+        return r + ".";
+    }
 }
 
 template<std::size_t N>

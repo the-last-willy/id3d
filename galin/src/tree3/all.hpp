@@ -147,11 +147,11 @@ struct Dilatation : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "dilated(" + children.at(0)->sdf_only(s) + ", " + glsl(radius) + ")";
+        return "dilated(" + glsl(radius) + ",\n" + children.at(0)->sdf_only(s) + ")";
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return "dilated(" + children.at(0)->sdf_and_material(s) + ", " + glsl(radius) + ")";
+        return "dilated(" + glsl(radius) + ",\n" + children.at(0)->sdf_and_material(s) + ")";
     }
 };
 
@@ -172,7 +172,7 @@ struct Intersection : Branch {
     std::string sdf_only(const std::string& s) const override {
         auto r = children.at(0)->sdf_only(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "sdf_intersection(\n"
+            r = "intersection(\n"
             + children.at(i)->sdf_only(s) + ",\n"
             + r + ")";
         }
@@ -182,7 +182,7 @@ struct Intersection : Branch {
     std::string sdf_and_material(const std::string& s) const override {
         auto r = children.at(0)->sdf_and_material(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "sdf_intersection(\n"
+            r = "intersection(\n"
             + children.at(i)->sdf_and_material(s) + ",\n"
             + r + ")";
         }
@@ -224,10 +224,9 @@ struct Material : Branch {
     {}
 
     std::string sdf_and_material(const std::string& s) const override {
-        return "SdfAndMaterial(\n"
-        + sdf_only(s) + ",\n"
-        + glsl(color)
-        + ")";
+        return "SdfAndMaterial("
+        + glsl(color) + ",\n"
+        + sdf_only(s) + ")";
     }
 };
 
@@ -250,11 +249,11 @@ struct Object : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return name + "_sdf(" + s + ")";
+        return name + "_sdf(\n" + s + ")";
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return name + "_material(" + s + ")";
+        return name + "_material(\n" + s + ")";
     }
 
     void dump_sdf_only(std::ostream& os) const override {
@@ -283,11 +282,11 @@ struct Onion : Branch {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "onion(" + children.at(0)->sdf_only(s) + ")";
+        return "onion(\n" + children.at(0)->sdf_only(s) + ")";
     }
 
     std::string sdf_and_material(const std::string& s) const override {
-        return "onion(" + children.at(0)->sdf_and_material(s) + ")";
+        return "onion(\n" + children.at(0)->sdf_and_material(s) + ")";
     }
 };
 
@@ -334,7 +333,7 @@ struct RotatedX : Branch {
             return children.at(0)->sdf_only(s);
         } else {
             return children.at(0)->sdf_only(
-                "rotated_x(\n" + s + ", " + glsl(angle) + ")");
+                "rotated_x(" + glsl(angle) + ",\n" + s + ")");
         }
     }
 
@@ -343,7 +342,7 @@ struct RotatedX : Branch {
             return children.at(0)->sdf_and_material(s);
         } else {
             return children.at(0)->sdf_and_material(
-                "rotated_x(\n" + s + ", " + glsl(angle) + ")");
+                "rotated_x(" + glsl(angle) + ",\n" + s + ")");
         }
     }
 };
@@ -366,7 +365,7 @@ struct RotatedY : Branch {
             return children.at(0)->sdf_only(s);
         } else {
             return children.at(0)->sdf_only(
-                "rotated_y(\n" + s + ", " + glsl(angle) + ")");
+                "rotated_y(" + glsl(angle) + ",\n" + s + ")");
         }
     }
 
@@ -375,7 +374,7 @@ struct RotatedY : Branch {
             return children.at(0)->sdf_and_material(s);
         } else {
             return children.at(0)->sdf_and_material(
-                "rotated_y(\n" + s + ", " + glsl(angle) + ")");
+                "rotated_y(" + glsl(angle) + ",\n" + s + ")");
         }
     }
 };
@@ -398,7 +397,7 @@ struct RotatedZ : Branch {
             return children.at(0)->sdf_only(s);
         } else {
             return children.at(0)->sdf_only(
-                "rotated_z(\n" + s + ", " + glsl(angle) + ")");
+                "rotated_z(" + glsl(angle) + ",\n" + s + ")");
         }
     }
 
@@ -407,7 +406,7 @@ struct RotatedZ : Branch {
             return children.at(0)->sdf_and_material(s);
         } else {
             return children.at(0)->sdf_and_material(
-                "rotated_z(\n" + s + ", " + glsl(angle) + ")");
+                "rotated_z(" + glsl(angle) + ",\n" + s + ")");
         }
     }
 };
@@ -430,10 +429,11 @@ struct Scaling : Branch {
         for(auto sc : scaling) {
             ms = std::min(ms, std::abs(sc));
         }
-        return "scaling_out(\n"
+        return "corrected("
+        + glsl(ms) + ",\n"
         + children.at(0)->sdf_only(
-            "scaling_in(\n" + s + ", " + glsl(scaling) + ")")
-        + ", " + glsl(ms) + ")";
+            "scaled(" + glsl(scaling) + ",\n" + s + ")")
+        + ")";
     }
 
     std::string sdf_and_material(const std::string& s) const override {
@@ -441,10 +441,11 @@ struct Scaling : Branch {
         for(auto sc : scaling) {
             ms = std::min(ms, std::abs(sc));
         }
-        return "scaling_out(\n"
+        return "corrected("
+        + glsl(ms) + ",\n"
         + children.at(0)->sdf_and_material(
-            "scaling_in(\n" + s + ", " + glsl(scaling) + ")")
-        + ", " + glsl(ms) + ")";
+            "scaled(" + glsl(scaling) + ",\n" + s + ")")
+        + ")";
     }
 };
 
@@ -474,10 +475,10 @@ struct SmoothUnion : Branch {
     std::string sdf_only(const std::string& s) const override {
         auto r = children.at(0)->sdf_only(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "smooth_union(\n"
+            r = "smooth_union("
+            + glsl(radius) + ",\n"
             + children.at(i)->sdf_only(s) + ",\n"
-            + r + ",\n"
-            + glsl(radius) + ")";
+            + r + ")";
         }
         return r;
     }
@@ -485,10 +486,10 @@ struct SmoothUnion : Branch {
     std::string sdf_and_material(const std::string& s) const override {
         auto r = children.at(0)->sdf_and_material(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "smooth_union(\n"
+            r = "smooth_union("
+            + glsl(radius) + ",\n"
             + children.at(i)->sdf_and_material(s) + ",\n"
-            + r + ",\n"
-            + glsl(radius) + ")";
+            + r + ")";
         }
         return r;
     }
@@ -537,12 +538,12 @@ struct Translation : Branch {
 
     std::string sdf_only(const std::string& s) const override {
         return children.at(0)->sdf_only(
-            "translated(\n" + s + ", " + glsl(translation) + ")");
+            "translated(" + glsl(translation) + ",\n" + s + ")");
     }
 
     std::string sdf_and_material(const std::string& s) const override {
         return children.at(0)->sdf_and_material(
-            "translated(\n" + s + ", " + glsl(translation) + ")");
+            "translated(" + glsl(translation) + ",\n" + s + ")");
     }
 };
 
@@ -551,28 +552,28 @@ SharedNode translated(float x, float y, float z, SharedNode sn) {
     return std::make_shared<Translation>(std::array{x, y, z}, std::move(sn));
 }
 
-struct UniformScaling : Branch {
-    float scaling = 1.f;
+// struct UniformScaling : Branch {
+//     float scaling = 1.f;
 
-    UniformScaling(float scaling, SharedNode child)
-        : Branch({std::move(child)})
-        , scaling(scaling)
-    {}
+//     UniformScaling(float scaling, SharedNode child)
+//         : Branch({std::move(child)})
+//         , scaling(scaling)
+//     {}
 
-    std::string sdf_only(const std::string& s) const override {
-        return "scaling_out(\n"
-        + children.at(0)->sdf_only(
-            "scaling_in(\n" + s + ", " + glsl(scaling) + ")")
-        + ", " + glsl(scaling) + ")";
-    }
+//     std::string sdf_only(const std::string& s) const override {
+//         return "scaling_out(\n"
+//         + children.at(0)->sdf_only(
+//             "scaling_in(\n" + s + ",\n" + glsl(scaling) + ")")
+//         + ", " + glsl(scaling) + ")";
+//     }
 
-    std::string sdf_and_material(const std::string& s) const override {
-        return "scaling_out(\n"
-        + children.at(0)->sdf_and_material(
-            "scaling_in(\n" + s + ", " + glsl(scaling) + ")")
-        + ", " + glsl(scaling) + ")";
-    }
-};
+//     std::string sdf_and_material(const std::string& s) const override {
+//         return "scaling_out(\n"
+//         + children.at(0)->sdf_and_material(
+//             "scaling_in(\n" + s + ",\n" + glsl(scaling) + ")")
+//         + ", " + glsl(scaling) + ")";
+//     }
+// };
 
 struct Union : Branch {
     Union(SharedNode sn0, SharedNode sn1)
@@ -586,7 +587,7 @@ struct Union : Branch {
     std::string sdf_only(const std::string& s) const override {
         auto r = children.at(0)->sdf_only(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "sdf_union(\n"
+            r = "unionn(\n"
             + children.at(i)->sdf_only(s) + ",\n"
             + r + ")";
         }
@@ -596,7 +597,7 @@ struct Union : Branch {
     std::string sdf_and_material(const std::string& s) const override {
         auto r = children.at(0)->sdf_and_material(s);
         for(std::size_t i = 1; i < size(children); ++i) {
-            r = "sdf_union(\n"
+            r = "unionn(\n"
             + children.at(i)->sdf_and_material(s) + ",\n"
             + r + ")";
         }
@@ -620,7 +621,7 @@ struct Circle : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "circle(\n" + s + ",\n" + glsl(radius) + ")";
+        return "circle(" + glsl(radius) + ",\n" + s + ")";
     }
 };
 
@@ -639,7 +640,7 @@ struct Cone : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "cone_sdf(\n" + s + ",\nvec2(" + glsl(radius) + "," + glsl(height) + ")\n)";
+        return "cone(vec2(" + glsl(radius) + "," + glsl(height) + "),\n" + s + ")";
     }
 };
 
@@ -650,7 +651,7 @@ SharedNode cone(float height, float radius) {
 
 struct Cube : Leaf {
     std::string sdf_only(const std::string& s) const override {
-        return "sdf_cube(\n" + s + ")";
+        return "cube(\n" + s + ")";
     }
 };
 
@@ -667,9 +668,9 @@ struct Ellipsoid : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "sdf_ellipsoid(\n"
-        + s + ", "
-        + glsl(radiuses) + ")";
+        return "ellipsoid("
+        + glsl(radiuses) + ",\n"
+        + s + ")";
     }
 };
 
@@ -708,9 +709,9 @@ struct LineSegment : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "sdf_line_segment(\n"
-        + glsl(position0) + ",\n"
-        + glsl(position1) + ",\n"
+        return "line_segment("
+        + glsl(position0) + ", "
+        + glsl(position1) + ", "
         + s + ")";
     }
 };
@@ -728,7 +729,7 @@ struct Plane : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        return "(sdf_plane(" + s + ") - " + glsl(width / 2.f) + ")";
+        return "(plane(" + s + ") - " + glsl(width / 2.f) + ")";
     }
 };
 
@@ -740,11 +741,9 @@ struct Sphere : Leaf {
     {}
 
     std::string sdf_only(const std::string& s) const override {
-        auto ss = std::stringstream();
-        ss << "(sdf_point("
-        << s << ") - "
-        << radius << ")";
-        return ss.str();
+        return "dilated(" + glsl(radius) + ",\n"
+            + "point(" + s + ")"
+        + ")";
     }
 };
 
