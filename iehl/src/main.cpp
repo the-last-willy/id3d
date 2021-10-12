@@ -111,10 +111,10 @@ struct GltfProgram : Program {
         }
 
         database = agl::format::wavefront::load(
-            // "D:/data/bistro/exterior.obj",
-            // "D:/data/bistro/");
-            "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            "C:/Users/Willy/Desktop/data/bistro-small/");
+            "D:/data/bistro-small/exterior.obj",
+            "D:/data/bistro-small/");
+            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            // "C:/Users/Willy/Desktop/data/bistro-small/");
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
             // "C:/Users/yoanp/Documents/bistro-small/");
             
@@ -217,9 +217,9 @@ struct GltfProgram : Program {
             }
             // std::cout << count << std::endl;
         }
-        if(ambient_pass_loaded) { // Ambient pass.
-            agl::engine::render(ambient_pass);
-        }
+        // if(ambient_pass_loaded) { // Ambient pass.
+        //     agl::engine::render(ambient_pass);
+        // }
         if(blinn_phong_pass_loaded) { // Blinn Phong pass.
             blinn_phong_pass.uniforms["light_position"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
