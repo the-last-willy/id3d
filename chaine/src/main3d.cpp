@@ -108,7 +108,7 @@ struct App : Program {
         // }
 
         { // Collapse some random edges.
-            for(uint_32)
+            
         }
 
         { // Compute Laplacian.
