@@ -1,6 +1,6 @@
 # Geometric Modelling: Implicit Modeling
 
-# Assignement #1
+# Assignment #1
 
 We were tasked on modeling any object of our choice using signed distance fields (SDF) (or blobs).
 
