@@ -25,10 +25,17 @@
 // Standard library.
 
 #include <iostream>
+#include <random>
 
 //
 
 using namespace chaine;
+
+inline
+auto create_random_generator() {
+    auto rd = std::random_device();
+    return std::mt19937(rd());
+}
 
 struct RenderSettings {
     bool show_edges = true;
@@ -43,6 +50,8 @@ struct RenderSettings {
 
 struct App : Program {
     RenderSettings render_settings;
+
+    std::mt19937 random_generator = create_random_generator();
 
     eng::ShaderCompiler shader_compiler = {};
 
@@ -249,6 +258,11 @@ struct App : Program {
             auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
             ImGui::Combo("Render mode", &render_settings.selected_render_mode,
                 std::data(render_modes), static_cast<int>(size(render_modes)));
+
+            if(ImGui::Button("Collapse random edge")) {
+                collapse(random_triangle_edge(mesh, random_generator));
+                refresh_mesh();
+            }
 
             ImGui::End();
         }

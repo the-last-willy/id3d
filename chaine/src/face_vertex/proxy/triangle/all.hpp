@@ -16,6 +16,7 @@
 #include "mesh.hpp"
 #include "opposite_adjacent_triangle.hpp"
 #include "opposite_triangle_edge.hpp"
+#include "opposite_triangle.hpp"
 #include "opposite_vertex.hpp"
 #include "proxy.hpp"
 #include "relative_index.hpp"

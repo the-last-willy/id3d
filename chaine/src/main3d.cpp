@@ -25,10 +25,17 @@
 // Standard library.
 
 #include <iostream>
+#include <random>
 
 //
 
 using namespace chaine;
+
+inline
+auto create_random_generator() {
+    std::random_device rd;
+    return std::mt19937(rd());
+}
 
 struct RenderSettings {
     bool show_edges = false;
@@ -44,6 +51,8 @@ struct RenderSettings {
 struct App : Program {
     RenderSettings render_settings;
 
+    std::mt19937 random_generator = create_random_generator();
+
     eng::ShaderCompiler shader_compiler = {};
 
     eng::Camera camera;
@@ -57,7 +66,6 @@ struct App : Program {
     void init() override {
         shader_compiler.log_folder = "logs/";
         shader_compiler.root = "chaine/src/";
-
         { // Render passes.
             edge_pass.program = std::make_shared<eng::Program>(
                 data::edge_program(shader_compiler));
@@ -107,9 +115,10 @@ struct App : Program {
         //             index(adjacent_triangle(tp, 0))}));
         // }
 
-        { // Collapse some random edges.
-            
-        }
+        // { // Collapse some random edges.
+        //     auto rte = random_triangle_edge(face_vertex_mesh, random_generator);
+        //     collapse(rte);
+        // }
 
         { // Compute Laplacian.
             for(auto v : vertices(face_vertex_mesh)) {

@@ -1,28 +1,18 @@
 #pragma once
 
-#include "adjacent_triangle.hpp"
+#include "opposite_triangle.hpp"
 #include "proxy.hpp"
-#include "vertex.hpp"
 
-#include "face_vertex/index/vertex.hpp"
 #include "face_vertex/proxy/triangle_edge/proxy.hpp"
-
-#include <stdexcept>
 
 namespace face_vertex {
 
 inline
 TriangleEdgeProxy opposite_triangle_edge(TriangleProxy tp, VertexIndex vi) {
-    (void) tp;
-    (void) vi;
-    // for(uint32_t i = 0; i < 3; ++i) {
-    //     if(index(vertex(tp, i)) == vi) {
-    //         return TriangleEdgeProxy(
-    //             mesh(tp),
-    //             TriangleEdgeIndex(tp, adjacent_triangle(tp, i)));
-    //     }
-    // }
-    throw std::logic_error("Not a triangle vertex.");
+    auto ot = opposite_triangle(tp, vi);
+    return proxy(
+        mesh(tp),
+        TriangleEdgeIndex(std::array{index(tp), index(ot)}));
 }
 
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "adjacent_triangle_count.hpp"
 #include "index.hpp"
 #include "mesh.hpp"
 #include "proxy.hpp"
@@ -11,7 +12,7 @@ inline
 TriangleProxy adjacent_triangle(TriangleProxy tp, uint32_t i) {
     return proxy(
         mesh(tp),
-        topology(tp).triangles[i]);
+        TriangleIndex(topology(tp).triangles[i % adjacent_triangle_count(tp)]));
 }
 
 }
