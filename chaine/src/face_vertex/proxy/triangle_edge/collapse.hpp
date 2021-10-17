@@ -4,9 +4,11 @@
 #include "proxy.hpp"
 
 #include "face_vertex/proxy/triangle/adjacent_triangle_after.hpp"
+#include "face_vertex/proxy/triangle/invalidate.hpp"
 #include "face_vertex/proxy/triangle/opposite_vertex.hpp"
 #include "face_vertex/proxy/triangle/substitute_adjacent_triangle.hpp"
 #include "face_vertex/proxy/triangle/vertex_after.hpp"
+#include "face_vertex/proxy/vertex/invalidate.hpp"
 #include "face_vertex/proxy/vertex/proxy.hpp"
 #include "face_vertex/proxy/vertex/substitute.hpp"
 
@@ -32,18 +34,17 @@ VertexProxy collapse(const TriangleEdgeProxy& tep) {
         substitute_adjacent_triangle(t1b, t1, t1a);
         substitute_adjacent_triangle(t1a, t1, t1b);
     }
-    { // Invalidate t0.
-        
+    {
+        invalidate(t0);
     }
-    { // Invalidate t1.
-
+    {
+        invalidate(t1);
     }
     auto va = vertex_after(t0, opposite_vertex(t0, t1));
     auto vb = vertex_after(t1, opposite_vertex(t1, t0));
     { // Remove vb.
         substitute(vb, va);
-        // Invalidates vb the bad way.
-        topology(vb).is_valid = false;
+        invalidate(vb);
     }
     return va;
 }
