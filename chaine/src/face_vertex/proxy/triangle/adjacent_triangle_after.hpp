@@ -13,9 +13,7 @@ inline
 TriangleProxy adjacent_triangle_after(TriangleProxy tp, TriangleIndex ti) {
     for(uint32_t i = 0; i < adjacent_triangle_count(tp); ++i) {
         if(index(adjacent_triangle(tp, i)) == ti) {
-            return proxy(
-                mesh(tp),
-                TriangleIndex((i + 1) % adjacent_triangle_count(tp)));
+            return adjacent_triangle(tp, i + 1);
         }
     }
     throw std::logic_error("Not an adjacent triangle.");
