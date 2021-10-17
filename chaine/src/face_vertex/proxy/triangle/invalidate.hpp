@@ -7,10 +7,9 @@ namespace face_vertex {
 
 inline
 void invalidate(TriangleProxy tp) {
-    // topology(tp).adjacent_triangles[0] = tp;
-    // topology(tp).adjacent_triangles[1] = tp;
-    // topology(tp).adjacent_triangles[2] = tp;
-    
+    topology(tp).triangles[0] = tp;
+    topology(tp).triangles[1] = tp;
+    topology(tp).triangles[2] = tp;
 }
 
 }
