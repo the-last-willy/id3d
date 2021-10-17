@@ -8,6 +8,7 @@
 #include "insert_vertex.hpp"
 #include "lawson_algorithm.hpp"
 #include "mesh.hpp"
+#include "random_triangle_edge.hpp"
 #include "topology.hpp"
 #include "triangle.hpp"
 #include "triangles.hpp"
