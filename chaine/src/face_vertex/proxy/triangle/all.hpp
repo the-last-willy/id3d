@@ -7,6 +7,7 @@
 #include "area.hpp"
 #include "barycenter.hpp"
 #include "contains_xy.hpp"
+#include "circumcenter.hpp"
 #include "edge_count.hpp"
 #include "index.hpp"
 #include "invalidate.hpp"
