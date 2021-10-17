@@ -13,6 +13,9 @@ void throwing_main() {
     auto s = kame_house::scene();
     s->dump_sdf_only(o);
     s->dump_sdf_and_material(o);
+
+    std::cout << s->operator_count() << std::endl;
+    std::cout << s->primitive_count() << std::endl;
 }
 
 int main() {

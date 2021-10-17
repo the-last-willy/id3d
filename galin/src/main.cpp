@@ -72,7 +72,7 @@ struct App : Program {
                     },
                     {
                         agl::fragment_shader_tag,
-                        "kame_house.glsl"
+                        "main.glsl"
                     }
                 });
             }

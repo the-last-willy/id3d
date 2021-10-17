@@ -369,17 +369,7 @@ SharedNode roshi_shirt() {
 inline
 SharedNode roshi() {
     return named("roshi",
-        unionn(
-            translated(0.36f, -0.02f, -0.46f, rotated_x(-0, rotated_y(-0, rotated_z(-0, scaled(1.f, 1.08f, 1.f, 
                 roshi_rod()
-            ))))),
-            roshi_shirt(),
-            roshi_left_arm(),
-            roshi_right_arm(),
-            roshi_head(),
-            roshi_glasses(),
-            roshi_lower_half()
-        )
     );
 }
 

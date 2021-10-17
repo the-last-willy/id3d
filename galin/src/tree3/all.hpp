@@ -17,6 +17,9 @@ struct DumpInfo {
 };
 
 struct Node {
+    virtual std::size_t operator_count() const = 0;
+    virtual std::size_t primitive_count() const = 0;
+
     virtual std::string sdf_only(const std::string&) const {
         throw std::logic_error("Not implemented.");
     }
@@ -47,6 +50,30 @@ struct Branch : Node {
     Branch(std::vector<SharedNode>&& children)
         : children(std::move(children))
     {}
+
+    std::size_t operator_count() const override {
+        if(empty(children)) {
+            return 0;
+        } else {
+            auto sum = std::size_t(1);
+            for(auto&& c : children) {
+                sum += c->operator_count();
+            }
+            return sum;
+        }
+    }
+
+    std::size_t primitive_count() const override {
+        if(empty(children)) {
+            return 1;
+        } else {
+            auto sum = std::size_t(0);
+            for(auto&& c : children) {
+                sum += c->primitive_count();
+            }
+            return sum;
+        }
+    }
 
     std::string sdf_only(const std::string& s) const override {
         if(size(children) == 1) {
@@ -611,7 +638,15 @@ SharedNode unionn(SharedNodes... sns) {
         std::vector<SharedNode>{std::move(sns)...});
 }
 
-struct Leaf : Node {};
+struct Leaf : Node {
+    std::size_t operator_count() const override {
+        return 0;
+    }
+
+    std::size_t primitive_count() const override {
+        return 1;
+    }
+};
 
 struct Circle : Leaf {
     float radius = 1.f;

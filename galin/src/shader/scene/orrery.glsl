@@ -23,12 +23,6 @@ float base(in vec3 p) {
     return d;
 }
 
-// float pillar(in vec3 p) {
-//     return float(
-//         vec3(252, 212, 64) / 255,
-//         point_sdf(p, vec3(0., 0., 0.), 1., 1.));
-// }
-
 // Planets.
 
 vec3 sun_position() {

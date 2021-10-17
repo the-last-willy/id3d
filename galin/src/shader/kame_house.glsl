@@ -1,6 +1,6 @@
 #include "shadertoy_prefix.fs"
 
-#include "scene/kame_house.glsl"
+#include "scene/orrery.glsl"
 
 // Common
 

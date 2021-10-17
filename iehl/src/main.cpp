@@ -111,7 +111,7 @@ struct GltfProgram : Program {
         }
 
         auto geometry = agl::format::wavefront::load_geometry(
-            "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+            "D:/data/cornell-box/cornell-box.obj");
         database.meshes.push_back(std::make_shared<eng::Mesh>(
             agl::engine::render_mesh(geometry)));
 
