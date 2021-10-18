@@ -6,11 +6,14 @@
 #include "face_vertex/proxy/triangle/adjacent_triangle_after.hpp"
 #include "face_vertex/proxy/triangle/invalidate.hpp"
 #include "face_vertex/proxy/triangle/opposite_vertex.hpp"
+#include "face_vertex/proxy/triangle/string.hpp"
 #include "face_vertex/proxy/triangle/substitute_adjacent_triangle.hpp"
 #include "face_vertex/proxy/triangle/vertex_after.hpp"
 #include "face_vertex/proxy/vertex/invalidate.hpp"
 #include "face_vertex/proxy/vertex/proxy.hpp"
 #include "face_vertex/proxy/vertex/substitute.hpp"
+
+#include <iostream>
 
 namespace face_vertex {
 
@@ -20,8 +23,15 @@ namespace face_vertex {
 // Returns collapsed vertex.
 inline
 VertexProxy collapse(const TriangleEdgeProxy& tep) {
+    std::cout << "collpase " << tep.index.value[0] << " " << tep.index.value[1] << std::endl;
+
+    std::cout << "BEFORE" << std::endl;
+
     auto t0 = adjacent_triangle(tep, 0);
     auto t1 = adjacent_triangle(tep, 1);
+
+    std::cout << "t0: " << string(t0);
+    std::cout << "t1: " << string(t1);
 
     auto va = vertex_after(t0, opposite_vertex(t0, t1));
     auto vb = vertex_after(t1, opposite_vertex(t1, t0));
@@ -51,7 +61,10 @@ VertexProxy collapse(const TriangleEdgeProxy& tep) {
         invalidate(t1);
     }
 
-    
+    std::cout << "AFTER" << std::endl;
+
+    std::cout << "t0: " << string(t0);
+    std::cout << "t1: " << string(t1);
     
     return va;
 }
