@@ -21,18 +21,18 @@ eng::Mesh triangle_adjacency_mesh(face_vertex::Mesh& m) {
         for(auto&& t : triangles(m)) {
             auto at0 = adjacent_triangle(t, 0);
             if(not is_ghost(at0)) {
-                positions.push_back(circumcenter(t));
-                positions.push_back(circumcenter(at0));
+                positions.push_back(barycenter(t));
+                positions.push_back(barycenter(at0));
             }
             auto at1 = adjacent_triangle(t, 1);
             if(not is_ghost(at1)) {
-                positions.push_back(circumcenter(t));
-                positions.push_back(circumcenter(at1));
+                positions.push_back(barycenter(t));
+                positions.push_back(barycenter(at1));
             }
             auto at2 = adjacent_triangle(t, 2);
             if(not is_ghost(at2)) {
-                positions.push_back(circumcenter(t));
-                positions.push_back(circumcenter(at2));
+                positions.push_back(barycenter(t));
+                positions.push_back(barycenter(at2));
             }
         }
         if(not empty(positions)) {
