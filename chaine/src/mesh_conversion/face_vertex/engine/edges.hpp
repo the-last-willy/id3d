@@ -33,3 +33,39 @@ auto edges_mesh(face_vertex::Mesh& m) {
     }
     return eng::Mesh({std::move(primitive)});
 }
+
+// #pragma once
+
+// #include <face_vertex/all.hpp>
+
+// #include <range/v3/view/enumerate.hpp>
+
+// inline
+// auto edges_mesh(face_vertex::Mesh& m) {
+//     auto primitive = std::make_shared<eng::Primitive>();
+//     {
+//         primitive->draw_mode = agl::DrawMode::lines;
+//         primitive->draw_type = agl::DrawType::unsigned_int;
+//     }
+//     {
+//         auto indices = std::vector<agl::Vec3>();
+//         for(auto&& t : triangles(m)) {
+//             indices.push_back(vertex(t, 0));
+//             indices.push_back(vertex(t, 1));
+
+//             positions.push_back(vertex(t, 1));
+//             positions.push_back(vertex(t, 2));
+
+//             positions.push_back(vertex(t, 2));
+//             positions.push_back(vertex(t, 0));
+//         }
+
+//         primitive->
+
+//         primitive->attributes["POSITION"]
+//         = agl::engine::accessor(std::span(m.geometry.vertex_positions));
+//         primitive->primitive_count
+//         = agl::Count<GLsizei>(static_cast<GLsizei>(size(positions)));
+//     }
+//     return eng::Mesh({std::move(primitive)});
+// }
