@@ -1,10 +1,7 @@
 #pragma once
 
-#include "adjacent_triangle.hpp"
-#include "adjacent_triangle_count.hpp"
 #include "proxy.hpp"
-
-#include <stdexcept>
+#include "relative_index.hpp"
 
 namespace face_vertex {
 
@@ -14,13 +11,7 @@ void substitute_adjacent_triangle(
     TriangleIndex before,
     TriangleIndex after)
 {
-    for(uint32_t i = 0; i < adjacent_triangle_count(tp); ++i) {
-        if(index(adjacent_triangle(tp, i)) == before) {
-            topology(tp).triangles[i] = after;
-            return;
-        }
-    }
-    throw std::logic_error("Not an adjacent triangle.");
+    topology(tp).triangles[relative_index(tp, before)] = after;
 }
 
 }
