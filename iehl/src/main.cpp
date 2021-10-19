@@ -71,9 +71,16 @@ struct GltfProgram : Program {
     bool blinn_phong_pass_loaded = false;
     agl::engine::RenderPass blinn_phong_pass;
 
+    agl::engine::RenderPass point_pass;
+
     // Gizmo gizmo;
     
     float time = 0.f;
+
+    agl::engine::TriangleMesh inter_mesh;
+
+    bool toggle_rasterization = true;
+    
 
     void reload_shaders() {
         try {
@@ -104,6 +111,13 @@ struct GltfProgram : Program {
         }
     }
 
+    void reload_points() {
+        auto render_inter_mesh = std::make_shared<eng::Mesh>(
+            agl::engine::render_mesh(inter_mesh, database.materials));
+        point_pass.subscriptions.clear();
+        subscribe(point_pass, render_inter_mesh);
+    }
+
     void init() override {
         { // Shader compiler.
             shader_compiler.log_folder = "logs/";
@@ -111,8 +125,10 @@ struct GltfProgram : Program {
         }
         
         database = agl::format::wavefront::load(
-            "D:/data/cornell-box/cornell-box.obj",
-            "D:/data/cornell-box");
+            // "D:/data/cornell-box/cornell-box.obj",
+            // "D:/data/cornell-box");
+            "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
+            "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
             // "D:/data/bistro-small/exterior.obj",
             // "D:/data/bistro-small/");
             // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
@@ -120,11 +136,12 @@ struct GltfProgram : Program {
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
             // "C:/Users/yoanp/Documents/bistro-small/");
 
+        
+
         for(auto&& tm : database.tmeshes) {
             database.meshes.push_back(std::make_shared<eng::Mesh>(
                 agl::engine::render_mesh(*tm, database.materials)));
         }
-            
 
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
@@ -150,6 +167,11 @@ struct GltfProgram : Program {
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
                 pp->aspect_ratio = 16.f / 9.f;
             }
+        }
+
+        { // Point pass.
+            point_pass.program = std::make_shared<eng::Program>(
+                data::wavefront::point_program(shader_compiler));
         }
     }
 
@@ -192,10 +214,70 @@ struct GltfProgram : Program {
             }
         }
 
+        if(glfwGetKey(window.window, GLFW_KEY_SPACE)) {
+            toggle_rasterization = not toggle_rasterization;
+        }
+
+        rtx(); // on
+        reload_points();
+    }
+
+    
+
+    void rtx() {
+        
+        inter_mesh.vertex_per_face = 1;
+
+        auto& tmesh = *database.tmeshes.front();
+        auto ro = camera->view.position;
+        
+
+        auto n = 20.f;
+        for(float i = 0; i < n; ++i) {    
+            auto radius = i / 200.f;
+            auto angle = i;
+            auto dir = normalize(agl::vec3(
+                radius * std::cos(angle), radius * std::sin(angle), -1.f));
+            auto rd = (rotation(camera->view) * agl::vec4(dir, 0.f)).xyz();
+
+            float progression = 1.f;
+            agl::Vec3 intersection;
+
+            uint32_t t = 0;
+            for(; t < face_count(tmesh); ++t) {
+                
+                auto r = agl::engine::Ray(ro, rd);
+                auto tr = triangle(tmesh, t);
+                auto h = intersection(r, tr);
+                if(h) {
+                    intersection = h->position;
+                    progression = h->ray;
+                    break;
+                }
+            }
+            for(++t; t < face_count(tmesh); ++t) {
+                auto r = agl::engine::Ray(ro, rd);
+                auto tr = triangle(tmesh, t);
+                auto h = intersection(r, tr);
+                if(h) {
+                    if(h->ray < progression) {
+                        intersection = h->position;
+                        progression = h->ray;
+                    }
+                    
+                }
+            }
+            if(progression < 1.f) {
+                inter_mesh.indices.push_back(static_cast<uint32_t>(size(inter_mesh.indices)));
+                inter_mesh.positions.push_back(intersection);
+            }
+        }
     }
 
     void render() override {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
+
+
 
         auto vp_tr = agl::engine::world_to_clip(*camera);
         auto v_tr = agl::engine::world_to_eye(*camera);
@@ -204,15 +286,15 @@ struct GltfProgram : Program {
         auto light_position = (agl::vec4(0.f, 0.f, 0.f, 1.f)).xyz();
         auto view_position = (vec4(camera->view.position, 1.f)).xyz();
 
-        // for(auto& s : ambient_pass.subscriptions) {
-        //     s.mesh->uniforms["mvp_transform"]
-        //     = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
-        // }
-        for(auto& s : blinn_phong_pass.subscriptions) {
+        for(auto& s : ambient_pass.subscriptions) {
             s.mesh->uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
         }
-        if constexpr(true) { // Frustrum culling.
+        // for(auto& s : blinn_phong_pass.subscriptions) {
+        //     s.mesh->uniforms["mvp_transform"]
+        //     = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+        // }
+        if constexpr(false) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
             
             int count = 0;
@@ -226,18 +308,24 @@ struct GltfProgram : Program {
             }
             // std::cout << count << std::endl;
         }
-        // if(ambient_pass_loaded) { // Ambient pass.
-        //     agl::engine::render(ambient_pass);
-        // }
-        if(blinn_phong_pass_loaded) { // Blinn Phong pass.
-            blinn_phong_pass.uniforms["light_position"]
-            = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
-            blinn_phong_pass.uniforms["normal_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
-            blinn_phong_pass.uniforms["view_position"]
-            = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
-            agl::engine::render(blinn_phong_pass);
+        if(toggle_rasterization) {
+            if(ambient_pass_loaded) { // Ambient pass.
+                agl::engine::render(ambient_pass);
+            }
         }
+        // if(blinn_phong_pass_loaded) { // Blinn Phong pass.
+        //     blinn_phong_pass.uniforms["light_position"]
+        //     = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
+        //     blinn_phong_pass.uniforms["normal_transform"]
+        //     = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
+        //     blinn_phong_pass.uniforms["view_position"]
+        //     = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
+        //     agl::engine::render(blinn_phong_pass);
+        // }
+
+        point_pass.uniforms["mvp_transform"]
+        = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+        agl::engine::render(point_pass);
     }
 };
 
