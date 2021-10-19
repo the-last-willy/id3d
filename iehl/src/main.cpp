@@ -144,8 +144,8 @@ struct GltfProgram : Program {
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
             // "C:/Users/yoanp/Documents/bistro-small/");
 
-        
-
+        // CLEAR GPU MESHES BECAUSE OF BADNESS ???
+        // database.meshes.clear();
         for(auto&& tm : database.tmeshes) {
             database.meshes.push_back(std::make_shared<eng::Mesh>(
                 agl::engine::render_mesh(*tm, database.materials)));
