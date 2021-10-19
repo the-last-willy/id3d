@@ -25,6 +25,7 @@
 // Standard library.
 
 #include <iostream>
+#include <random>
 
 //
 
@@ -45,6 +46,12 @@
 // struct PointLight {
 //     agl::Vec3 position = {};
 // };
+
+inline
+auto create_random_generator() {
+    auto rd = std::random_device();
+    return std::default_random_engine(rd());
+}
 
 struct GltfProgram;
 
@@ -81,6 +88,7 @@ struct GltfProgram : Program {
 
     bool toggle_rasterization = true;
     
+    std::default_random_engine random_generator = create_random_generator();
 
     void reload_shaders() {
         try {
@@ -125,10 +133,10 @@ struct GltfProgram : Program {
         }
         
         database = agl::format::wavefront::load(
-            // "D:/data/cornell-box/cornell-box.obj",
-            // "D:/data/cornell-box");
-            "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
-            "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
+            "D:/data/cornell-box/cornell-box.obj",
+            "D:/data/cornell-box");
+            // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
+            // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
             // "D:/data/bistro-small/exterior.obj",
             // "D:/data/bistro-small/");
             // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
@@ -234,50 +242,43 @@ struct GltfProgram : Program {
 
         auto n = 20.f;
         for(float i = 0; i < n; ++i) {    
-            auto radius = i / 200.f;
-            auto angle = i;
+            auto radius = i / 2000.f + std::uniform_real_distribution<float>(0.f, agl::constant::pi / 100.f)(random_generator);
+            auto angle = i + std::uniform_real_distribution<float>(0.f, 1.f)(random_generator);
             auto dir = normalize(agl::vec3(
                 radius * std::cos(angle), radius * std::sin(angle), -1.f));
             auto rd = (rotation(camera->view) * agl::vec4(dir, 0.f)).xyz();
+            auto r = agl::engine::Ray(ro, rd);
 
-            float progression = 1.f;
-            agl::Vec3 intersection;
+            float ray_t = 1000.f;
+            agl::Vec3 pos;
 
             uint32_t t = 0;
             for(; t < face_count(tmesh); ++t) {
-                
-                auto r = agl::engine::Ray(ro, rd);
                 auto tr = triangle(tmesh, t);
                 auto h = intersection(r, tr);
                 if(h) {
-                    intersection = h->position;
-                    progression = h->ray;
+                    pos = h->position;
+                    ray_t = h->ray;
                     break;
                 }
             }
             for(++t; t < face_count(tmesh); ++t) {
-                auto r = agl::engine::Ray(ro, rd);
                 auto tr = triangle(tmesh, t);
                 auto h = intersection(r, tr);
-                if(h) {
-                    if(h->ray < progression) {
-                        intersection = h->position;
-                        progression = h->ray;
-                    }
-                    
+                if(h and h->ray < ray_t) {
+                    pos = h->position;
+                    ray_t = h->ray;
                 }
             }
-            if(progression < 1.f) {
+            if(ray_t < 1000.f) {
                 inter_mesh.indices.push_back(static_cast<uint32_t>(size(inter_mesh.indices)));
-                inter_mesh.positions.push_back(intersection);
+                inter_mesh.positions.push_back(pos);
             }
         }
     }
 
     void render() override {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
-
-
 
         auto vp_tr = agl::engine::world_to_clip(*camera);
         auto v_tr = agl::engine::world_to_eye(*camera);
@@ -323,9 +324,13 @@ struct GltfProgram : Program {
         //     agl::engine::render(blinn_phong_pass);
         // }
 
-        point_pass.uniforms["mvp_transform"]
-        = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
-        agl::engine::render(point_pass);
+        {
+            point_pass.uniforms["mvp_transform"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+            point_pass.uniforms["world_to_eye"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(v_tr);
+            agl::engine::render(point_pass);
+        }
     }
 };
 
