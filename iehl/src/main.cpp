@@ -109,21 +109,21 @@ struct GltfProgram : Program {
             shader_compiler.log_folder = "logs/";
             shader_compiler.root = "iehl/src/shader";
         }
+        
+        database = agl::format::wavefront::load(
+            "D:/data/cornell-box/cornell-box.obj",
+            "D:/data/cornell-box");
+            // "D:/data/bistro-small/exterior.obj",
+            // "D:/data/bistro-small/");
+            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+            // "C:/Users/Willy/Desktop/data/bistro-small/");
+            // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+            // "C:/Users/yoanp/Documents/bistro-small/");
 
-        auto geometry = agl::format::wavefront::load_geometry(
-            "D:/data/cornell-box/cornell-box.obj");
-        database.meshes.push_back(std::make_shared<eng::Mesh>(
-            agl::engine::render_mesh(geometry)));
-
-        // database = agl::format::wavefront::load(
-        //     "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
-        //     "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-        //     // "D:/data/bistro-small/exterior.obj",
-        //     // "D:/data/bistro-small/");
-        //     // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-        //     // "C:/Users/Willy/Desktop/data/bistro-small/");
-        //     // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
-        //     // "C:/Users/yoanp/Documents/bistro-small/");
+        for(auto&& tm : database.tmeshes) {
+            database.meshes.push_back(std::make_shared<eng::Mesh>(
+                agl::engine::render_mesh(*tm, database.materials)));
+        }
             
 
         { // Normalize data.
