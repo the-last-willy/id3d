@@ -1,5 +1,7 @@
 #version 450 core
 
-void main() {
+out vec3 fragment_rgb;
 
+void main() {
+    fragment_rgb = vec3(0.);
 }

@@ -16,10 +16,9 @@ auto wireframe_program(eng::ShaderCompiler& sc) {
             "/mesh/wireframe.frag"
         }
     });
-    p.capabilities.emplace_back(agl::Capability::cull_face, []() {
-        glCullFace(GL_BACK); });
-    p.capabilities.emplace_back(agl::Capability::depth_test, []() {
-        glDepthFunc(GL_LEQUAL); });
+    p.capabilities.emplace_back(
+        agl::Capability::depth_test,
+        []() { glDepthFunc(GL_LEQUAL); });
     return p;
 }
 
