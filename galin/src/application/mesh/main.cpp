@@ -42,6 +42,8 @@ struct App : Program {
     agl::engine::RenderPass mesh_pass;
     agl::engine::RenderPass wireframe_pass;
 
+    std::shared_ptr<eng::Mesh> wireframe;
+
     agl::format::wavefront::Content database;
 
     float time = 0.f;
@@ -70,11 +72,15 @@ struct App : Program {
                 database.meshes.push_back(std::make_shared<eng::Mesh>(
                     agl::engine::render_mesh(*tm, database.materials)));
             }
+
+            wireframe = std::make_shared<eng::Mesh>(
+                agl::engine::wireframe(*database.tmeshes.front()));
         }
         { // 
             for(auto&& m : database.meshes) {
                 subscribe(mesh_pass, m);
             }
+            subscribe(wireframe_pass, wireframe);
         }
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
@@ -134,9 +140,11 @@ struct App : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(wte);
             agl::engine::render(mesh_pass);
         }
-        // if(settings.show_wireframe) {
-        //     agl::engine::render(wireframe_pass);
-        // }
+        if(settings.show_wireframe) {
+            wireframe_pass.uniforms["world_to_clip"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
+            agl::engine::render(wireframe_pass);
+        }
     }
 };
 
