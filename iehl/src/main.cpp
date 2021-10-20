@@ -133,12 +133,12 @@ struct GltfProgram : Program {
         }
         
         database = agl::format::wavefront::load(
-            "D:/data/cornell-box/cornell-box.obj",
-            "D:/data/cornell-box");
+            // "D:/data/cornell-box/cornell-box.obj",
+            // "D:/data/cornell-box");
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-            // "D:/data/bistro-small/exterior.obj",
-            // "D:/data/bistro-small/");
+            "D:/data/bistro-small/exterior.obj",
+            "D:/data/bistro-small/");
             // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
             // "C:/Users/Willy/Desktop/data/bistro-small/");
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
@@ -146,10 +146,10 @@ struct GltfProgram : Program {
 
         // CLEAR GPU MESHES BECAUSE OF BADNESS ???
         // database.meshes.clear();
-        for(auto&& tm : database.tmeshes) {
-            database.meshes.push_back(std::make_shared<eng::Mesh>(
-                agl::engine::render_mesh(*tm, database.materials)));
-        }
+        // for(auto&& tm : database.tmeshes) {
+        //     database.meshes.push_back(std::make_shared<eng::Mesh>(
+        //         agl::engine::render_mesh(*tm, database.materials)));
+        // }
 
         { // Normalize data.
             auto default_emissive = std::make_shared<eng::Texture>(
@@ -288,14 +288,16 @@ struct GltfProgram : Program {
         auto light_position = (agl::vec4(0.f, 0.f, 0.f, 1.f)).xyz();
         auto view_position = (vec4(camera->view.position, 1.f)).xyz();
 
-        for(auto& s : ambient_pass.subscriptions) {
+        if constexpr(false) {
+            for(auto& s : ambient_pass.subscriptions) {
+                s.mesh->uniforms["mvp_transform"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+            }
+        }
+        for(auto& s : blinn_phong_pass.subscriptions) {
             s.mesh->uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
         }
-        // for(auto& s : blinn_phong_pass.subscriptions) {
-        //     s.mesh->uniforms["mvp_transform"]
-        //     = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
-        // }
         if constexpr(false) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
             
@@ -311,21 +313,23 @@ struct GltfProgram : Program {
             // std::cout << count << std::endl;
         }
         if(toggle_rasterization) {
-            if(ambient_pass_loaded) { // Ambient pass.
-                agl::engine::render(ambient_pass);
+            // if(ambient_pass_loaded) { // Ambient pass.
+            //     agl::engine::render(ambient_pass);
+            // }
+        }
+        if constexpr(true) {
+            if(blinn_phong_pass_loaded) { // Blinn Phong pass.
+                blinn_phong_pass.uniforms["light_position"]
+                = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
+                blinn_phong_pass.uniforms["normal_transform"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
+                blinn_phong_pass.uniforms["view_position"]
+                = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
+                agl::engine::render(blinn_phong_pass);
             }
         }
-        // if(blinn_phong_pass_loaded) { // Blinn Phong pass.
-        //     blinn_phong_pass.uniforms["light_position"]
-        //     = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
-        //     blinn_phong_pass.uniforms["normal_transform"]
-        //     = std::make_shared<eng::Uniform<agl::Mat4>>(normal_tr);
-        //     blinn_phong_pass.uniforms["view_position"]
-        //     = std::make_shared<eng::Uniform<agl::Vec3>>(view_position);
-        //     agl::engine::render(blinn_phong_pass);
-        // }
 
-        {
+        if constexpr(false) { // Point pass.
             point_pass.uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             point_pass.uniforms["world_to_eye"]
