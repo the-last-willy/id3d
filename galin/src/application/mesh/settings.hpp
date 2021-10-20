@@ -1,6 +1,6 @@
 #pragma once
 
 struct Settings {
-    bool show_mesh = false;
-    bool show_wireframe = true;
+    bool show_mesh = true;
+    bool show_wireframe = false;
 };

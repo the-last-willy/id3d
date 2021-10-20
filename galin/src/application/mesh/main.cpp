@@ -12,6 +12,7 @@
 #include "settings.hpp"
 
 #include "data/all.hpp"
+#include "nurbs/all.hpp"
 
 #include "error_callback.hpp"
 
@@ -65,22 +66,24 @@ struct App : Program {
         }
         { // Load mesh.
             database = agl::format::wavefront::load(
-                "D:/data/cornell-box/cornell-box.obj",
-                "D:/data/cornell-box");
+                // "D:/data/cornell-box/cornell-box.obj",
+                // "D:/data/cornell-box");
+                "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
+                "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
             database.meshes.clear();
             for(auto&& tm : database.tmeshes) {
                 database.meshes.push_back(std::make_shared<eng::Mesh>(
                     agl::engine::render_mesh(*tm, database.materials)));
             }
 
-            wireframe = std::make_shared<eng::Mesh>(
-                agl::engine::wireframe(*database.tmeshes.front()));
+            // wireframe = std::make_shared<eng::Mesh>(
+            //     agl::engine::wireframe(*database.tmeshes.front()));
         }
         { // 
             for(auto&& m : database.meshes) {
                 subscribe(mesh_pass, m);
             }
-            subscribe(wireframe_pass, wireframe);
+            // subscribe(wireframe_pass, wireframe);
         }
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
