@@ -181,6 +181,9 @@ struct GltfProgram : Program {
             point_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::point_program(shader_compiler));
         }
+        { // Intersection mesh.
+            topology(inter_mesh).vertex_per_face = 1;
+        }
     }
 
     void update(float dt) override {
@@ -226,16 +229,13 @@ struct GltfProgram : Program {
             toggle_rasterization = not toggle_rasterization;
         }
 
-        rtx(); // on
-        reload_points();
+        // rtx(); // on
+        // reload_points();
     }
 
     
 
     void rtx() {
-        
-        inter_mesh.vertex_per_face = 1;
-
         auto& tmesh = *database.tmeshes.front();
         auto ro = camera->view.position;
         
@@ -271,8 +271,9 @@ struct GltfProgram : Program {
                 }
             }
             if(ray_t < 1000.f) {
-                inter_mesh.indices.push_back(static_cast<uint32_t>(size(inter_mesh.indices)));
-                inter_mesh.positions.push_back(pos);
+                topology(inter_mesh).face_indices.push_back(static_cast<uint32_t>(
+                    size(topology(inter_mesh).face_indices)));
+                geometry(inter_mesh).vertex_positions.push_back(pos);
             }
         }
     }
