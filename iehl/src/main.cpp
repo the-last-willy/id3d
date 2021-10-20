@@ -121,7 +121,7 @@ struct GltfProgram : Program {
 
     void reload_points() {
         auto render_inter_mesh = std::make_shared<eng::Mesh>(
-            agl::engine::render_mesh(inter_mesh, database.materials));
+            agl::engine::point_mesh(inter_mesh, database.materials));
         point_pass.subscriptions.clear();
         subscribe(point_pass, render_inter_mesh);
     }
@@ -133,12 +133,12 @@ struct GltfProgram : Program {
         }
         
         database = agl::format::wavefront::load(
-            // "D:/data/cornell-box/cornell-box.obj",
-            // "D:/data/cornell-box");
+            "D:/data/cornell-box/cornell-box.obj",
+            "D:/data/cornell-box");
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-            "D:/data/bistro-small/exterior.obj",
-            "D:/data/bistro-small/");
+            // "D:/data/bistro-small/exterior.obj",
+            // "D:/data/bistro-small/");
             // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
             // "C:/Users/Willy/Desktop/data/bistro-small/");
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
@@ -148,7 +148,7 @@ struct GltfProgram : Program {
         // database.meshes.clear();
         // for(auto&& tm : database.tmeshes) {
         //     database.meshes.push_back(std::make_shared<eng::Mesh>(
-        //         agl::engine::render_mesh(*tm, database.materials)));
+        //         agl::engine::triangle_mesh(*tm, database.materials)));
         // }
 
         { // Normalize data.
@@ -180,9 +180,6 @@ struct GltfProgram : Program {
         { // Point pass.
             point_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::point_program(shader_compiler));
-        }
-        { // Intersection mesh.
-            topology(inter_mesh).vertex_per_face = 1;
         }
     }
 
@@ -240,9 +237,9 @@ struct GltfProgram : Program {
         auto ro = camera->view.position;
         
 
-        auto n = 20.f;
+        auto n = 500.f;
         for(float i = 0; i < n; ++i) {    
-            auto radius = i / 2000.f + std::uniform_real_distribution<float>(0.f, agl::constant::pi / 100.f)(random_generator);
+            auto radius = i / 200.f + std::uniform_real_distribution<float>(0.f, agl::constant::pi / 100.f)(random_generator);
             auto angle = i + std::uniform_real_distribution<float>(0.f, 1.f)(random_generator);
             auto dir = normalize(agl::vec3(
                 radius * std::cos(angle), radius * std::sin(angle), -1.f));
@@ -250,11 +247,11 @@ struct GltfProgram : Program {
             auto r = agl::engine::Ray(ro, rd);
 
             float ray_t = 1000.f;
-            agl::Vec3 pos;
+            auto pos = agl::vec3(0.f);
 
             uint32_t t = 0;
             for(; t < face_count(tmesh); ++t) {
-                auto tr = triangle(tmesh, t);
+                auto tr = face(tmesh, t);
                 auto h = intersection(r, tr);
                 if(h) {
                     pos = h->position;
@@ -263,7 +260,7 @@ struct GltfProgram : Program {
                 }
             }
             for(++t; t < face_count(tmesh); ++t) {
-                auto tr = triangle(tmesh, t);
+                auto tr = face(tmesh, t);
                 auto h = intersection(r, tr);
                 if(h and h->ray < ray_t) {
                     pos = h->position;
@@ -271,9 +268,8 @@ struct GltfProgram : Program {
                 }
             }
             if(ray_t < 1000.f) {
-                topology(inter_mesh).face_indices.push_back(static_cast<uint32_t>(
-                    size(topology(inter_mesh).face_indices)));
-                geometry(inter_mesh).vertex_positions.push_back(pos);
+                auto v = create_vertex(inter_mesh);
+                position(v) = pos;
             }
         }
     }
@@ -294,9 +290,11 @@ struct GltfProgram : Program {
                 = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             }
         }
-        for(auto& s : blinn_phong_pass.subscriptions) {
-            s.mesh->uniforms["mvp_transform"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+        if constexpr(true) {
+            for(auto& s : blinn_phong_pass.subscriptions) {
+                s.mesh->uniforms["mvp_transform"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
+            }
         }
         if constexpr(false) { // Frustrum culling.
             auto frustrum = agl::engine::bounding_box(*camera);
