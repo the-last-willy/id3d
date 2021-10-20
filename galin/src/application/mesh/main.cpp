@@ -66,10 +66,10 @@ struct App : Program {
         }
         { // Load mesh.
             database = agl::format::wavefront::load(
-                // "D:/data/cornell-box/cornell-box.obj",
-                // "D:/data/cornell-box");
-                "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
-                "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
+                "D:/data/cornell-box/cornell-box.obj",
+                "D:/data/cornell-box");
+                // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
+                // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
             database.meshes.clear();
             for(auto&& tm : database.tmeshes) {
                 database.meshes.push_back(std::make_shared<eng::Mesh>(

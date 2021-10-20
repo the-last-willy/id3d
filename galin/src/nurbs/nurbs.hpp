@@ -78,20 +78,21 @@ agl::Vec3 compute(const DeBoorsAlgorithm& dba, const Surface& s, float u, float 
 
 inline
 agl::engine::TriangleMesh sampled_mesh(
-    const DeBoorsAlgorithm& dba,
     const Surface& s,
     uint32_t w,
     uint32_t h)
 {
-    auto mapped = Grid({w, h});
+    auto g = Grid<agl::Vec3>({w, h});
     auto dba = DeBoorsAlgorithm(w, h);
     for(uint32_t i = 0; i < w; ++i)
     for(uint32_t j = 0; j < h; ++j) {
         auto u = float(i) / (w - 1.f);
         auto v = float(j) / (j - 1.f);
-        at(grid, i, j) = compute(dba, s, u, v);
+        at(g, i, j) = compute(dba, s, u, v);
     }
-    auto m = eng::TriangleMesh();
+    
+    auto m = agl::engine::TriangleMesh();
+
 
     return m;
 }
