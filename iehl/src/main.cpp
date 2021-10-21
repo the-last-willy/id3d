@@ -237,7 +237,7 @@ struct GltfProgram : Program {
         auto ro = camera->view.position;
         
 
-        auto n = 500.f;
+        auto n = 300.f;
         for(float i = 0; i < n; ++i) {    
             auto radius = i / 200.f + std::uniform_real_distribution<float>(0.f, agl::constant::pi / 100.f)(random_generator);
             auto angle = i + std::uniform_real_distribution<float>(0.f, 1.f)(random_generator);
@@ -248,6 +248,7 @@ struct GltfProgram : Program {
 
             float ray_t = 1000.f;
             auto pos = agl::vec3(0.f);
+            uint32_t fi = 0;
 
             uint32_t t = 0;
             for(; t < face_count(tmesh); ++t) {
@@ -256,6 +257,7 @@ struct GltfProgram : Program {
                 if(h) {
                     pos = h->position;
                     ray_t = h->ray;
+                    fi = t;
                     break;
                 }
             }
@@ -265,11 +267,21 @@ struct GltfProgram : Program {
                 if(h and h->ray < ray_t) {
                     pos = h->position;
                     ray_t = h->ray;
+                    fi = t;
                 }
             }
             if(ray_t < 1000.f) {
                 auto v = create_vertex(inter_mesh);
                 position(v) = pos;
+                auto ivert = incident_vertex(face(tmesh, fi), 0);
+                normal(v) = normal(ivert);
+                auto mid = material_id(ivert);
+                auto& m = database.materials[mid];
+                if(auto ptr = dynamic_cast<eng::Uniform<agl::Vec3>*>(m->uniforms["Kd"])) {
+                    color(v) = ptr->value;
+                } else {
+                    std::cout << "no color" << std::endl;
+                }
             }
         }
     }
@@ -284,13 +296,13 @@ struct GltfProgram : Program {
         auto light_position = (agl::vec4(0.f, 0.f, 0.f, 1.f)).xyz();
         auto view_position = (vec4(camera->view.position, 1.f)).xyz();
 
-        if constexpr(false) {
+        if constexpr(true) {
             for(auto& s : ambient_pass.subscriptions) {
                 s.mesh->uniforms["mvp_transform"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             }
         }
-        if constexpr(true) {
+        if constexpr(false) {
             for(auto& s : blinn_phong_pass.subscriptions) {
                 s.mesh->uniforms["mvp_transform"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
@@ -308,14 +320,13 @@ struct GltfProgram : Program {
                     count += 1;
                 }
             }
-            // std::cout << count << std::endl;
         }
         if(toggle_rasterization) {
-            // if(ambient_pass_loaded) { // Ambient pass.
-            //     agl::engine::render(ambient_pass);
-            // }
+            if(ambient_pass_loaded) { // Ambient pass.
+                agl::engine::render(ambient_pass);
+            }
         }
-        if constexpr(true) {
+        if constexpr(false) {
             if(blinn_phong_pass_loaded) { // Blinn Phong pass.
                 blinn_phong_pass.uniforms["light_position"]
                 = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
@@ -327,7 +338,7 @@ struct GltfProgram : Program {
             }
         }
 
-        if constexpr(false) { // Point pass.
+        if constexpr(true) { // Point pass.
             point_pass.uniforms["mvp_transform"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             point_pass.uniforms["world_to_eye"]
