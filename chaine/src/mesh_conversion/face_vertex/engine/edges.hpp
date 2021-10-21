@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <agl/engine/all.hpp>
+
 #include <face_vertex/all.hpp>
 
 #include <range/v3/view/enumerate.hpp>
@@ -60,10 +62,11 @@ auto edges_mesh(face_vertex::Mesh& m) {
             indices.push_back(index(vertex(t, 0)));
         }
 
-        primitive->indices = agl::engine::accessor(std::span(indices));
+        primitive->indices = std::make_shared<eng::Accessor>(
+            agl::engine::accessor(std::span(indices)));
 
-        primitive->attributes["POSITION"]
-        = agl::engine::accessor(std::span(m.geometry.vertex_positions));
+        primitive->attributes["POSITION"] = std::make_shared<eng::Accessor>(
+            agl::engine::accessor(std::span(m.geometry.vertex_positions)));
         primitive->primitive_count
         = agl::Count<GLsizei>(static_cast<GLsizei>(size(indices)));
     }

@@ -20,18 +20,18 @@ auto triangles_mesh(face_vertex::Mesh& m) {
             indices.push_back(topology(t).vertices[1]);
             indices.push_back(topology(t).vertices[2]);
         }
-        primitive_ptr->indices = agl::engine::accessor(std::span(indices));
+        primitive_ptr->indices = std::make_shared<eng::Accessor>(
+            agl::engine::accessor(std::span(indices)));
     }
     {
         auto& primitive = *primitive_ptr;
-        primitive.attributes["COLOR"] = agl::engine::accessor(
-            std::span(m.geometry.vertex_colors));
-        primitive.attributes["NORMAL"] = agl::engine::accessor(
-            std::span(m.geometry.vertex_normals));
-        primitive.attributes["POSITION"] = agl::engine::accessor(
-            std::span(m.geometry.vertex_positions));
+        primitive.attributes["COLOR"] = std::make_shared<eng::Accessor>(
+            agl::engine::accessor(std::span(m.geometry.vertex_colors)));
+        primitive.attributes["NORMAL"] = std::make_shared<eng::Accessor>(
+            agl::engine::accessor(std::span(m.geometry.vertex_normals)));
+        primitive.attributes["POSITION"] = std::make_shared<eng::Accessor>(
+            agl::engine::accessor(std::span(m.geometry.vertex_positions)));
         primitive.draw_type = agl::DrawType::unsigned_int;
-        // primitive.indices = std::move(index_accessor);
         primitive.primitive_count = agl::Count<GLsizei>(GLsizei(3 * triangle_count(m)));
     }
     return eng::Mesh({std::move(primitive_ptr)});

@@ -11,9 +11,9 @@ namespace chaine {
 
 inline
 eng::Mesh vertex_adjacency_mesh(face_vertex::Mesh& m) {
-    auto position_accessor = eng::Accessor();
+    auto position_accessor = std::make_shared<eng::Accessor>(eng::Accessor());
     {
-        auto& accessor = position_accessor;
+        auto& accessor = *position_accessor;
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();
             auto& buffer = *buffer_ptr;

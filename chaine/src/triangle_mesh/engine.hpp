@@ -10,9 +10,9 @@ namespace triangle_mesh {
 
 inline
 auto triangle_mesh(const Mesh& m) {
-    auto index_accessor = eng::Accessor();
+    auto index_accessor = std::make_shared<eng::Accessor>();
     {
-        auto& accessor = index_accessor;
+        auto& accessor = *index_accessor;
 
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();
@@ -37,9 +37,9 @@ auto triangle_mesh(const Mesh& m) {
         accessor.component_type = GL_UNSIGNED_INT;
         
     }
-    auto position_accessor = eng::Accessor();
+    auto position_accessor = std::make_shared<eng::Accessor>();
     {
-        auto& accessor = position_accessor;
+        auto& accessor = *position_accessor;
 
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();
@@ -78,9 +78,9 @@ auto triangle_mesh(const Mesh& m) {
 
 inline
 auto edge_mesh(const Mesh& m) {
-    auto index_accessor = eng::Accessor();
+    auto index_accessor = std::make_shared<eng::Accessor>();
     {
-        auto& accessor = index_accessor;
+        auto& accessor = *index_accessor;
 
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();
@@ -111,9 +111,9 @@ auto edge_mesh(const Mesh& m) {
         accessor.component_type = GL_UNSIGNED_INT;
         
     }
-    auto position_accessor = eng::Accessor();
+    auto position_accessor = std::make_shared<eng::Accessor>();
     {
-        auto& accessor = position_accessor;
+        auto& accessor = *position_accessor;
 
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();
@@ -155,9 +155,9 @@ auto edge_mesh(const Mesh& m) {
 
 inline
 auto vertex_mesh(const Mesh& m) {
-    auto position_accessor = eng::Accessor();
+    auto position_accessor = std::make_shared<eng::Accessor>();
     {
-        auto& accessor = position_accessor;
+        auto& accessor = *position_accessor;
 
         {
             auto buffer_ptr = std::make_shared<eng::Buffer>();

@@ -36,8 +36,8 @@ eng::Mesh triangle_adjacency_mesh(face_vertex::Mesh& m) {
             }
         }
         if(not empty(positions)) {
-            primitive.attributes["POSITION"]
-            = agl::engine::accessor(std::span(positions));
+            primitive.attributes["POSITION"] = std::make_shared<eng::Accessor>(
+                agl::engine::accessor(std::span(positions)));
         }
         primitive.primitive_count
         = agl::Count<GLsizei>(static_cast<GLsizei>(size(positions)));
