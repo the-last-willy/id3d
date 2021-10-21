@@ -53,15 +53,15 @@ struct App : Program {
 
     std::mt19937 random_generator = create_random_generator();
 
-    eng::ShaderCompiler shader_compiler = {};
+    eng::ShaderCompiler shader_compiler;
 
     eng::Camera camera;
 
-    eng::RenderPass edge_pass;
-    eng::RenderPass edge_pass2;
-    eng::RenderPass vertex_pass = {};
+    agl::engine::RenderPass edge_pass;
+    agl::engine::RenderPass edge_pass2;
+    agl::engine::RenderPass vertex_pass;
 
-    std::vector<eng::RenderPass> triangle_passes = {};
+    std::array<agl::engine::RenderPass, 3> triangle_passes;
 
     void init() override {
         shader_compiler.log_folder = "logs/";
@@ -74,7 +74,6 @@ struct App : Program {
             vertex_pass.program = std::make_shared<eng::Program>(
                 data::vertex_program(shader_compiler));
 
-            triangle_passes.resize(3);
             triangle_passes[0].program = std::make_shared<eng::Program>(
                 data::triangle_program(shader_compiler));
             triangle_passes[1].program = std::make_shared<eng::Program>(
@@ -83,7 +82,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("data/queen.off");
+        auto off = format::off::read("data/cube.off");
 
         auto mesh = triangle_mesh::Mesh();
         { // Off to triangle mesh.
@@ -168,33 +167,21 @@ struct App : Program {
 
         { // Edge pass.
             auto m = triangle_mesh::edge_mesh(mesh);
-            for(auto& p : m->primitives) {
-                p->material = std::make_shared<eng::Material>();
-            }
-            add(edge_pass, *m);
+            subscribe(edge_pass, m);
         }
         { // Edge pass 2.
             auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(face_vertex_mesh));
-            for(auto& p : m->primitives) {
-                p->material = std::make_shared<eng::Material>();
-            }
-            add(edge_pass2, *m);
+            subscribe(edge_pass2, m);
         }
         { // Triangle pass.
             auto m = std::make_shared<eng::Mesh>(triangles_mesh(face_vertex_mesh));
-            for(auto& p : m->primitives) {
-                p->material = std::make_shared<eng::Material>();
-            }
             for(auto& tp : triangle_passes) {
-                add(tp, *m);
+                subscribe(tp, m);
             }
         }
         { // Vertex pass.
             auto m = std::make_shared<eng::Mesh>(vertices_mesh(face_vertex_mesh));
-            for(auto& p : m->primitives | ranges::views::indirect) {
-                p.material = std::make_shared<eng::Material>();
-            }
-            add(vertex_pass, *m);
+            subscribe(vertex_pass, m);
         }
 
         { // Camera.
@@ -244,60 +231,27 @@ struct App : Program {
         
         if(render_settings.show_triangles) {
             auto& triangle_pass = triangle_passes[render_settings.selected_render_mode];
-            bind(*triangle_pass.program);
-            for(std::size_t i = 0; i < size(triangle_pass.primitives); ++i) {
-                auto& p = *triangle_pass.primitives[i];
-                auto& va = triangle_pass.vertex_arrays[i];
-                bind(*p.material, *triangle_pass.program);
-                bind(va);
-                uniform(*triangle_pass.program, "mvp", agl::engine::world_to_clip(camera));
-                eng::render(p, va);
-            }
-            unbind(*triangle_pass.program);
+            uniform(*triangle_pass.program, "mvp", agl::engine::world_to_clip(camera));
+            agl::engine::render(triangle_pass);
         }
         
         if(render_settings.show_edges) {
             glLineWidth(render_settings.line_width);
-            
             uniform(*edge_pass.program, "color", agl::vec3(1.f, 0.f, 0.f));
-            bind(*edge_pass.program);
-            for(std::size_t i = 0; i < size(edge_pass.primitives); ++i) {
-                auto& p = *edge_pass.primitives[i];
-                auto& va = edge_pass.vertex_arrays[i];
-                bind(*p.material, *edge_pass.program);
-                bind(va);
-                uniform(*edge_pass.program, "mvp", agl::engine::world_to_clip(camera));
-                eng::render(p, va);
-            }
-            unbind(*edge_pass.program);
+            uniform(*edge_pass.program, "mvp", agl::engine::world_to_clip(camera));
+            agl::engine::render(edge_pass);
         }
+
         if(render_settings.show_edges) {
             glLineWidth(render_settings.line_width);
-            
             uniform(*edge_pass2.program, "color", agl::vec3(0.f, 1.f, 0.f));
-            bind(*edge_pass2.program);
-            for(std::size_t i = 0; i < size(edge_pass2.primitives); ++i) {
-                auto& p = *edge_pass2.primitives[i];
-                auto& va = edge_pass2.vertex_arrays[i];
-                bind(*p.material, *edge_pass2.program);
-                bind(va);
-                uniform(*edge_pass2.program, "mvp", agl::engine::world_to_clip(camera));
-                eng::render(p, va);
-            }
-            unbind(*edge_pass2.program);
+            uniform(*edge_pass2.program, "mvp", agl::engine::world_to_clip(camera));
+            agl::engine::render(edge_pass2);
         }
         if(render_settings.show_vertices) {
-            bind(*vertex_pass.program);
-            for(std::size_t i = 0; i < size(vertex_pass.primitives); ++i) {
-                auto& p = *vertex_pass.primitives[i];
-                auto& va = vertex_pass.vertex_arrays[i];
-                bind(*p.material, *vertex_pass.program);
-                bind(va);
-                uniform(*vertex_pass.program, "mvp", agl::engine::world_to_clip(camera));
-                uniform(*vertex_pass.program, "point_size", render_settings.point_size);
-                eng::render(p, va);
-            }
-            unbind(*vertex_pass.program);
+            uniform(*vertex_pass.program, "mvp", agl::engine::world_to_clip(camera));
+            uniform(*vertex_pass.program, "point_size", render_settings.point_size);
+            agl::engine::render(vertex_pass);
         }
         { // UI
             ImGui::Begin("Settings");

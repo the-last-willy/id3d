@@ -61,7 +61,7 @@ struct App : Program {
     agl::engine::RenderPass edge_pass2;
     agl::engine::RenderPass vertex_pass = {};
 
-    eng::RenderPass triangle_pass = {};
+    agl::engine::RenderPass triangle_pass = {};
 
     face_vertex::Mesh mesh;
 
@@ -78,10 +78,7 @@ struct App : Program {
         }
         { // Triangle pass.
             auto m = std::make_shared<eng::Mesh>(triangles_mesh(mesh));
-            for(auto& p : m->primitives) {
-                p->material = std::make_shared<eng::Material>();
-            }
-            add(triangle_pass, *m);
+            subscribe(triangle_pass, m);
         }
         { // Vertex pass.
             auto m = std::make_shared<eng::Mesh>(vertices_mesh(mesh));
@@ -207,16 +204,8 @@ struct App : Program {
         glClear(GL_DEPTH_BUFFER_BIT);
         
         if(render_settings.show_triangles) {
-            bind(*triangle_pass.program);
-            for(std::size_t i = 0; i < size(triangle_pass.primitives); ++i) {
-                auto& p = *triangle_pass.primitives[i];
-                auto& va = triangle_pass.vertex_arrays[i];
-                bind(*p.material, *triangle_pass.program);
-                bind(va);
-                uniform(*triangle_pass.program, "mvp", agl::engine::world_to_clip(camera));
-                eng::render(p, va);
-            }
-            unbind(*triangle_pass.program);
+            uniform(*triangle_pass.program, "mvp", agl::engine::world_to_clip(camera));
+            agl::engine::render(triangle_pass);
         }
         
         if(render_settings.show_edges) {

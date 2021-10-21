@@ -45,7 +45,6 @@ eng::Mesh vertex_adjacency_mesh(face_vertex::Mesh& m) {
         primitive.draw_mode = agl::DrawMode::lines;
         primitive.draw_type = agl::DrawType::unsigned_int;
         primitive.primitive_count = agl::Count<GLsizei>(2 * vertex_count(m));
-        primitive.vertex_array = agl::vertex_array();
     }
 
     return eng::Mesh({std::move(primitive_ptr)});

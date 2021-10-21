@@ -146,7 +146,6 @@ auto edge_mesh(const Mesh& m) {
         primitive.draw_type = agl::DrawType::unsigned_int;
         primitive.indices = std::move(index_accessor);
         primitive.primitive_count = agl::Count<GLsizei>(6 * triangle_count(m));
-        primitive.vertex_array = agl::vertex_array();
     }
 
     return std::make_shared<eng::Mesh>(eng::Mesh({std::move(primitive_ptr)}));

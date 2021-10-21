@@ -73,7 +73,7 @@ struct App : Program {
             database.meshes.clear();
             for(auto&& tm : database.tmeshes) {
                 database.meshes.push_back(std::make_shared<eng::Mesh>(
-                    agl::engine::render_mesh(*tm, database.materials)));
+                    agl::engine::triangle_mesh(*tm, database.materials)));
             }
 
             // wireframe = std::make_shared<eng::Mesh>(
