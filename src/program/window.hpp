@@ -9,7 +9,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "agl/all.hpp"
+#include <agl/opengl/all.hpp>
 
 #include <cstdlib>
 #include <iostream>
