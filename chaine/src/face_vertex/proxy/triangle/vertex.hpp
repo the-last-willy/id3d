@@ -8,7 +8,7 @@
 
 #include "face_vertex/proxy/vertex/proxy.hpp"
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 
 namespace face_vertex {
 

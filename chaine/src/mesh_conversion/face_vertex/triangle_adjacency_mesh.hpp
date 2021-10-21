@@ -2,7 +2,7 @@
 
 #include "face_vertex/all.hpp"
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 #include <agl/engine/mesh.hpp>
 
 #include <range/v3/view/enumerate.hpp>

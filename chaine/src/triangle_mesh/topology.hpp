@@ -3,7 +3,7 @@
 #include "triangle_index.hpp"
 #include "triangle_topology.hpp"
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 #include <agl/engine/all.hpp>
 
 #include <memory>

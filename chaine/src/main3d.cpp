@@ -11,7 +11,7 @@
 #include <local/all.hpp>
 #include "program/all.hpp"
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 #include <agl/format/off/all.hpp>
 
 // External libraries.

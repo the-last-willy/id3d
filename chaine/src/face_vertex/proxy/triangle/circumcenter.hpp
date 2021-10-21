@@ -3,7 +3,7 @@
 #include "proxy.hpp"
 #include "vertex.hpp"
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 #include <cmath>
 
 namespace face_vertex {

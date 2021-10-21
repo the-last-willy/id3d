@@ -5,7 +5,7 @@
 
 #include "face_vertex/proxy/vertex/position.hpp"
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 
 namespace face_vertex {
 

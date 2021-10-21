@@ -1,6 +1,6 @@
 #pragma once
 
-#include <agl/all.hpp>
+#include <agl/opengl/all.hpp>
 
 #include <vector>
 
