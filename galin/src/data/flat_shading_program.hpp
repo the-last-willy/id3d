@@ -16,8 +16,8 @@ auto flat_shading_program(eng::ShaderCompiler& sc) {
             "/mesh/flat_shading.frag"
         }
     });
-    p.capabilities.emplace_back(agl::Capability::cull_face, []() {
-        glCullFace(GL_BACK); });
+    // p.capabilities.emplace_back(agl::Capability::cull_face, []() {
+    //     glCullFace(GL_BACK); });
     p.capabilities.emplace_back(agl::Capability::depth_test, []() {
         glDepthFunc(GL_LEQUAL); });
     return p;
