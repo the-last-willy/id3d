@@ -43,15 +43,12 @@ struct App : Program {
     agl::engine::RenderPass mesh_pass;
     agl::engine::RenderPass wireframe_pass;
 
+    std::shared_ptr<eng::Mesh> triangulation;
     std::shared_ptr<eng::Mesh> wireframe;
 
     agl::format::wavefront::Content database;
 
     float time = 0.f;
-
-    void load_mesh() {
-        
-    }
 
     void init() override {
         { // Shader compiler.
@@ -76,14 +73,28 @@ struct App : Program {
                     agl::engine::triangle_mesh(*tm, database.materials)));
             }
 
-            // wireframe = std::make_shared<eng::Mesh>(
-            //     agl::engine::wireframe(*database.tmeshes.front()));
+            wireframe = std::make_shared<eng::Mesh>(
+                agl::engine::wireframe(*database.tmeshes.front()));
+        }
+        { // Control grid.
+            auto control_points = Grid<agl::Vec3>({3, 3});
+            for(uint32_t i = 0; i < size(control_points, 0); ++i)
+            for(uint32_t j = 0; j < size(control_points, 1); ++j) {
+                at(control_points, i, j) = agl::vec3(float(i), float(j), 0.f);
+            }
+            at(control_points, 1, 0) = agl::vec3(1.f, 0.f, 2.f);
+            at(control_points, 1, 2) = agl::vec3(1.f, 2.f, 2.f);
+            at(control_points, 0, 1) = agl::vec3(0.f, 1.f, 2.f);
+            at(control_points, 2, 1) = agl::vec3(2.f, 1.f, 2.f);
+            at(control_points, 1, 1) = agl::vec3(1.f, 1.f, 3.f);
+            triangulation = std::make_shared<eng::Mesh>(
+                agl::engine::triangle_mesh(sampled_mesh(control_points, 50, 50), {}));
+            wireframe = std::make_shared<eng::Mesh>(
+                agl::engine::wireframe(control_mesh(control_points)));
         }
         { // 
-            for(auto&& m : database.meshes) {
-                subscribe(mesh_pass, m);
-            }
-            // subscribe(wireframe_pass, wireframe);
+            subscribe(mesh_pass, triangulation);
+            subscribe(wireframe_pass, wireframe);
         }
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
