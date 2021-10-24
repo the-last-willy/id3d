@@ -16,7 +16,6 @@
 // External libraries.
 
 #include <agl/engine/all.hpp>
-#include <agl/format/wavefront/all.hpp>
 #include <agl/standard/all.hpp>
 
 #include <glad/glad.h>
@@ -44,13 +43,13 @@ CubicBezierMesh load_teapot() {
         uint32_t patch_count;
         file >> patch_count;
         cbm.patches.resize(patch_count);
-        for(auto& pis : patch_indices) {
-            file >> pis[0];
-            pis[0] -= 1;
+        for(auto& p : cbm.patches) {
+            file >> p[0];
+            p[0] -= 1;
             for(uint32_t i = 1; i < 16; ++i) {
                 file.ignore(1); // ','
-                file >> pis[i];
-                pis[i] -= 1;
+                file >> p[i];
+                p[i] -= 1;
             }
         }
     }
@@ -58,7 +57,7 @@ CubicBezierMesh load_teapot() {
         uint32_t vertex_count;
         file >> vertex_count;
         cbm.vertices.resize(vertex_count);
-        for(auto& v : vertices) {
+        for(auto& v : cbm.vertices) {
             file >> v[0];
             for(uint32_t i = 1; i < 3; ++i) {
                 file.ignore(1); // ','
@@ -82,55 +81,30 @@ struct App : Program {
     std::shared_ptr<eng::Mesh> triangulation;
     std::shared_ptr<eng::Mesh> wireframe;
 
-    agl::format::wavefront::Content database;
-
     float time = 0.f;
 
     void init() override {
         { // Shader compiler.
             shader_compiler.log_folder = "logs/";
-            shader_compiler.root = "galin/src/shader";
+            shader_compiler.root = "galin_2/src/shader";
         }
         { // Render passes.
-            mesh_pass.program = std::make_shared<eng::Program>(
+            assign_program(mesh_pass,
                 data::flat_shading_program(shader_compiler));
-            wireframe_pass.program = std::make_shared<eng::Program>(
+            assign_program(wireframe_pass,
                 data::wireframe_program(shader_compiler));
         }
         { // Load mesh.
-            database = agl::format::wavefront::load(
-                "D:/data/cornell-box/cornell-box.obj",
-                "D:/data/cornell-box");
-                // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
-                // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-            database.meshes.clear();
-            for(auto&& tm : database.tmeshes) {
-                database.meshes.push_back(std::make_shared<eng::Mesh>(
-                    agl::engine::triangle_mesh(*tm, database.materials)));
+            auto cbm = load_teapot();
+            for(auto& p : cbm.patches) {
+                auto g = Grid<agl::Vec3>({4, 4});
+                for(uint32_t i = 0; i < 4; ++i)
+                for(uint32_t j = 0; j < 4; ++j) {
+                    at(g, i, j) = cbm.vertices[p[4 * i + j]];
+                }
+                subscribe(mesh_pass, agl::engine::triangle_mesh(sampled_mesh(g, 10, 10), {}));
+                subscribe(mesh_pass, agl::engine::wireframe(control_mesh(g)));
             }
-
-            wireframe = std::make_shared<eng::Mesh>(
-                agl::engine::wireframe(*database.tmeshes.front()));
-        }
-        { // Control grid.
-            auto control_points = Grid<agl::Vec3>({3, 3});
-            for(uint32_t i = 0; i < size(control_points, 0); ++i)
-            for(uint32_t j = 0; j < size(control_points, 1); ++j) {
-                at(control_points, i, j) = agl::vec3(float(i), float(j), 0.f);
-            }
-            at(control_points, 1, 0) = agl::vec3(1.f, 0.f, 2.f);
-            at(control_points, 1, 2) = agl::vec3(1.f, 2.f, 2.f);
-            at(control_points, 0, 1) = agl::vec3(0.f, 1.f, 2.f);
-            at(control_points, 2, 1) = agl::vec3(2.f, 1.f, 2.f);
-            at(control_points, 1, 1) = agl::vec3(1.f, 1.f, 3.f);
-            triangulation = std::make_shared<eng::Mesh>(
-                agl::engine::triangle_mesh(sampled_mesh(control_points, 50, 50), {}));
-            wireframe = std::make_shared<eng::Mesh>(
-                agl::engine::wireframe(control_mesh(control_points)));
-        }
-        { // 
-            subscribe(mesh_pass, triangulation);
-            subscribe(wireframe_pass, wireframe);
         }
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {

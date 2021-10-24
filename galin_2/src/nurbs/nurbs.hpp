@@ -24,6 +24,11 @@ struct Grid {
 };
 
 template<typename G>
+uint32_t dimension(const Grid<G>& g) {
+    return static_cast<uint32_t>(size(g.dimensions));
+}
+
+template<typename G>
 auto index(const Grid<G>& g, uint32_t i, uint32_t j) {
     return g.dimensions[0] * j + i;
 }
@@ -39,6 +44,16 @@ auto& at(Grid<G>& g, uint32_t i, uint32_t j) {
 }
 
 template<typename G>
+const auto& at(const Grid<G>& g, uint32_t i) {
+    return g.elements[i];
+}
+
+template<typename G>
+auto& at(Grid<G>& g, uint32_t i) {
+    return g.elements[i];
+}
+
+template<typename G>
 auto& size(const Grid<G>& g) {
     return g.dimensions;
 }
@@ -46,6 +61,23 @@ auto& size(const Grid<G>& g) {
 template<typename G>
 uint32_t size(const Grid<G>& g, uint32_t d) {
     return g.dimensions[d];
+}
+
+template<typename G>
+auto bezier(const Grid<G>& g, float u) {
+    if(dimension(g) != 1) {
+        throw std::logic_error("Bezier curve: wrong dimension.");
+    }
+    auto tmp0 = std::vector<agl::Vec3>(size(g, 0));
+    for(uint32_t i = 0; i < size(g, 0); ++i) {
+        tmp0[i] = at(g, i);
+    }
+    for(uint32_t i = 0; i < size(g, 0) - 1; ++i) {
+        for(uint32_t j = 1; j < size(g, 0) - i; ++j) {
+            tmp0[j - 1] = (1.f - u) * tmp0[j - 1] + u * tmp0[j];
+        }
+    }
+    return tmp0[0];
 }
 
 template<typename G>
@@ -142,3 +174,47 @@ agl::engine::TriangleMesh control_mesh(const Grid<agl::Vec3>& g) {
     }
     return m;
 }
+
+template<typename Curve>
+agl::engine::TriangleMesh revolution_surface(
+    const Curve& c,
+    const agl::Mat4& tr,
+    uint32_t s0,
+    uint32_t s1)
+{
+    auto itr = inverse(tr);
+    auto m = agl::engine::TriangleMesh();
+    auto vertices = Grid<agl::engine::MutableVertexProxy>({s0, s1});
+    for(uint32_t i = 0; i < s1; ++i) {
+        auto angle = 2.f * agl::constant::pi * i / s1;
+        auto rev = tr * agl::rotation_y(angle) * itr;
+        for(uint32_t j = 0; j < s0; ++j) {
+            auto&& v = at(vertices, i, j) = create_vertex(m);
+            position(v) = (rev * vec4(bezier(c, float(j) / (s0 - 1)), 1.f)).xyz();
+        }
+    }
+    
+    for(uint32_t i = 1; i < s0; ++i)
+    for(uint32_t j = 1; j < s1; ++j) {
+        auto&& ft0 = topology(create_face(m, 3));
+        ft0.incident_vertices[0] = index(at(vertices, i - 1, j - 1));
+        ft0.incident_vertices[1] = index(at(vertices, i    , j - 1));
+        ft0.incident_vertices[2] = index(at(vertices, i - 1, j    ));
+        auto&& ft1 = topology(create_face(m, 3));
+        ft1.incident_vertices[0] = index(at(vertices, i    , j    ));
+        ft1.incident_vertices[1] = index(at(vertices, i - 1, j    ));
+        ft1.incident_vertices[2] = index(at(vertices, i    , j - 1));
+    }
+    for(uint32_t j = 1; j < s1; ++j) {
+        auto&& ft0 = topology(create_face(m, 3));
+        ft0.incident_vertices[0] = index(at(vertices, s0 - 1, j - 1));
+        ft0.incident_vertices[1] = index(at(vertices, 0     , j - 1));
+        ft0.incident_vertices[2] = index(at(vertices, s0 - 1, j    ));
+        auto&& ft1 = topology(create_face(m, 3));
+        ft1.incident_vertices[0] = index(at(vertices, 0     , j    ));
+        ft1.incident_vertices[1] = index(at(vertices, s0 - 1, j    ));
+        ft1.incident_vertices[2] = index(at(vertices, 0     , j - 1));
+    }
+    return m;
+}
+
