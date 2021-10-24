@@ -1,9 +1,4 @@
-// Definitions.
-
-#define GLFW_INCLUDE_NONE
-#define TINYGLTF_IMPLEMENTATION
-
-// Disabled warnings.
+// Disable warnings.
 
 #pragma warning(disable : 4005 4996)
 
@@ -32,6 +27,8 @@
 #include <iostream>
 
 //
+
+
 
 struct App : Program {
     Settings settings;

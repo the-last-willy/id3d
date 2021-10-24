@@ -5,7 +5,3 @@
 # add_executable(galin_codegen src/codegen.cpp)
 # target_include_directories(galin_codegen PRIVATE src)
 # target_link_libraries(galin_codegen PRIVATE common)
-
-add_executable(galin1_mesh src/application/mesh/main.cpp)
-target_include_directories(galin1_mesh PRIVATE src)
-target_link_libraries(galin1_mesh PRIVATE common)

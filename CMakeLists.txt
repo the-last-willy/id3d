@@ -41,6 +41,7 @@ INTERFACE
 
 add_subdirectory(chaine)
 add_subdirectory(galin)
+add_subdirectory(galin_2)
 add_subdirectory(iehl)
 
 add_executable(dear_imgui_demo src/dear_imgui_demo.cpp)
