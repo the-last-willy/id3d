@@ -12,5 +12,6 @@
 #include "topology.hpp"
 #include "triangle.hpp"
 #include "triangles.hpp"
+#include "vertex_count.hpp"
 #include "vertices.hpp"
 #include "split.hpp"
