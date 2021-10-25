@@ -14,19 +14,25 @@ bool can_collapse(const TriangleEdgeProxy& tep) {
     auto va = vertex_after(t0, opposite_vertex(t0, t1));
     auto vb = vertex_after(t1, opposite_vertex(t1, t0));
 
-    if(index(va) == index(vb)) {
+    if(index(opposite_vertex(t0, t1)) == index(opposite_vertex(t1, t0))) {
         return false;
     }
 
     auto vas = std::vector<VertexIndex>();
+    // std::cout << "va" << index(va) << ": ";
     for(auto&& ata : adjacent_triangles(va)) {
         vas.push_back(index(vertex_after(ata, va)));
+        // std::cout << index(vertex_after(ata, va)) << " ";
     }
+    // std::cout << std::endl;
 
     auto vbs = std::vector<VertexIndex>();
+    // std::cout << "vb" << index(vb) << ": ";
     for(auto&& atb : adjacent_triangles(vb)) {
         vbs.push_back(index(vertex_after(atb, vb)));
+        // std::cout << index(vertex_after(atb, vb)) << " ";
     }
+    // std::cout << std::endl;
 
     auto count = uint32_t(0);
     for(auto a : vas) {
@@ -37,6 +43,8 @@ bool can_collapse(const TriangleEdgeProxy& tep) {
             }
         }
     }
+
+    // std::cout << count << std::endl;
 
     return count == 2;
 }
