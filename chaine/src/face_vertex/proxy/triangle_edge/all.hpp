@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adjacent_triangle.hpp"
+#include "can_collapse.hpp"
 #include "collapse.hpp"
 #include "flip.hpp"
 #include "index.hpp"
