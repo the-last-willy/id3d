@@ -46,6 +46,8 @@ struct RenderSettings {
 
     float line_width = 1.f;
     float point_size = 1.f;
+
+    float speed = 3.f / 100.f;
 };
 
 struct App : Program {
@@ -62,6 +64,41 @@ struct App : Program {
     agl::engine::RenderPass vertex_pass;
 
     std::array<agl::engine::RenderPass, 3> triangle_passes;
+
+    face_vertex::Mesh face_vertex_mesh;
+
+    void refresh_mesh() {
+        { // Edge pass.
+            auto m = std::make_shared<eng::Mesh>(edges_mesh(face_vertex_mesh));
+            edge_pass.subscriptions.clear();
+            subscribe(edge_pass, m);
+        }
+        { // Edge pass 2.
+            auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(face_vertex_mesh));
+            edge_pass2.subscriptions.clear();
+            subscribe(edge_pass2, m);
+        }
+        { // Triangle pass.
+            auto m = std::make_shared<eng::Mesh>(triangles_mesh(face_vertex_mesh));
+            for(auto& tp : triangle_passes) {
+                tp.subscriptions.clear();
+                subscribe(tp, m);
+            }
+        }
+        { // Vertex pass.
+            auto m = std::make_shared<eng::Mesh>(vertices_mesh(face_vertex_mesh));
+            vertex_pass.subscriptions.clear();
+            subscribe(vertex_pass, m);
+        }
+
+        { // Camera.
+            if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
+                pp->aspect_ratio = 16.f / 9.f;
+                pp->z_far = 10.f;
+                pp->z_near = 0.01f;
+            }
+        }
+    }
 
     void init() override {
         shader_compiler.log_folder = "logs/";
@@ -82,9 +119,9 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("data/cube.off");
+        auto off = format::off::read("chaine/data/cube.off");
 
-        auto mesh = triangle_mesh::Mesh();
+        triangle_mesh::Mesh mesh;
         { // Off to triangle mesh.
             mesh.topology.triangles.resize(size(off.triangle_indices));
             for(std::size_t i = 0; i < size(off.triangle_indices); ++i) {
@@ -100,7 +137,7 @@ struct App : Program {
             }
         }
 
-        auto face_vertex_mesh = to_face_vertex_mesh(mesh);
+        face_vertex_mesh = to_face_vertex_mesh(mesh);
         
         // IDK WHAT I WAS TRYING TO DO HERE.
         // for(uint32_t i = 0; i < 100; ++i) {
@@ -165,32 +202,7 @@ struct App : Program {
             }
         }
 
-        { // Edge pass.
-            auto m = triangle_mesh::edge_mesh(mesh);
-            subscribe(edge_pass, m);
-        }
-        { // Edge pass 2.
-            auto m = std::make_shared<eng::Mesh>(triangle_adjacency_mesh(face_vertex_mesh));
-            subscribe(edge_pass2, m);
-        }
-        { // Triangle pass.
-            auto m = std::make_shared<eng::Mesh>(triangles_mesh(face_vertex_mesh));
-            for(auto& tp : triangle_passes) {
-                subscribe(tp, m);
-            }
-        }
-        { // Vertex pass.
-            auto m = std::make_shared<eng::Mesh>(vertices_mesh(face_vertex_mesh));
-            subscribe(vertex_pass, m);
-        }
-
-        { // Camera.
-            if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
-                pp->aspect_ratio = 16.f / 9.f;
-                pp->z_far = 10.f;
-                pp->z_near = 0.01f;
-            }
-        }
+        refresh_mesh();
     }
 
     void update(float) override {
@@ -208,19 +220,19 @@ struct App : Program {
         {
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
                 auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                camera.view.position = camera.view.position - direction / 100.f;
+                camera.view.position = camera.view.position - direction * render_settings.speed;
             }
             if(glfwGetKey(window.window, GLFW_KEY_D)) {
                 auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                camera.view.position = camera.view.position + direction / 100.f;
+                camera.view.position = camera.view.position + direction * render_settings.speed;
             }
             if(glfwGetKey(window.window, GLFW_KEY_S)) {
                 auto direction = rotation(camera.view)[2].xyz();
-                camera.view.position = camera.view.position + direction / 100.f;
+                camera.view.position = camera.view.position + direction * render_settings.speed;
             }
             if(glfwGetKey(window.window, GLFW_KEY_W)) {
                 auto direction = rotation(camera.view)[2].xyz();
-                camera.view.position = camera.view.position - direction / 100.f;
+                camera.view.position = camera.view.position - direction * render_settings.speed;
             }
         }
     }
@@ -273,6 +285,24 @@ struct App : Program {
             auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
             ImGui::Combo("Render mode", &render_settings.selected_render_mode,
                 std::data(render_modes), static_cast<int>(size(render_modes)));
+
+            if(ImGui::Button("Collapse random edge")) {
+                for(int i = 0; i < 1; ++i) {
+                    int j;
+                    for(j = 0; j < 100; ++j) {
+                        auto&& rte = random_triangle_edge(face_vertex_mesh, random_generator);
+                        if(can_collapse(rte)) {
+                            collapse(rte);
+                            break;
+                        }
+                    }
+                    if(j == 100) {
+                        std::cout << "STOP" << std::endl;
+                        break;
+                    }
+                }
+                refresh_mesh();
+            }
 
             ImGui::End();
         }

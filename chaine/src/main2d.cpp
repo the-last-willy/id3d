@@ -249,7 +249,13 @@ struct App : Program {
                 std::data(render_modes), static_cast<int>(size(render_modes)));
 
             if(ImGui::Button("Collapse random edge")) {
-                collapse(random_triangle_edge(mesh, random_generator));
+                while(true) {
+                    auto&& rte = random_triangle_edge(mesh, random_generator);
+                    if(is_inner(rte) and can_collapse(rte)) {
+                        collapse(rte);
+                        break;
+                    }
+                }
                 refresh_mesh();
             }
 
