@@ -10,7 +10,7 @@
 namespace face_vertex {
 
 inline
-VertexProxy substitute(VertexProxy vp, VertexIndex vi) {
+VertexProxy substitute_by(VertexProxy vp, VertexIndex vi) {
     auto triangles = std::vector<TriangleProxy>();
     // Get all adjacent triangles.
     for(auto&& t : adjacent_triangles(vp)) {

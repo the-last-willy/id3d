@@ -10,5 +10,5 @@
 #include "mesh.hpp"
 #include "normal.hpp"
 #include "proxy.hpp"
-#include "substitute.hpp"
+#include "substitute_by.hpp"
 #include "topology.hpp"
