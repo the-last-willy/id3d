@@ -14,6 +14,10 @@ struct TriangleTopology {
 
     // DO SOMETHING BETTER, TOO EXPENSIVE.
     bool is_ghost = false;
+
+
+    // std::array<TriangleIndex, 3> adjacent_triangles;
+    // std::array<VertexIndex, 3> incident_vertices;
 };
 
 }

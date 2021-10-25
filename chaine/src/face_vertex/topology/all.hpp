@@ -1,5 +1,5 @@
 #pragma once
 
-#include "mesh.hpp"
-#include "triangle.hpp"
-#include "vertex.hpp"
+#include "mesh/all.hpp"
+#include "triangle/all.hpp"
+#include "vertex/all.hpp"

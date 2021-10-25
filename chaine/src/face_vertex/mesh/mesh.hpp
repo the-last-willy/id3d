@@ -2,7 +2,7 @@
 
 #include "geometry.hpp"
 
-#include "face_vertex/topology/mesh.hpp"
+#include "face_vertex/topology/mesh/topology.hpp"
 
 namespace face_vertex {
 

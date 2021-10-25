@@ -13,6 +13,8 @@ struct VertexTopology {
     // Maybe reserving index 0 or max_val for invalid values.
     bool is_ghost = false;
     bool is_valid = true;
+
+    // TriangleIndex adjacent_triangle;
 };
 
 }
