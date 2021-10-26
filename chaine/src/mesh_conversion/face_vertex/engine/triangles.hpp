@@ -22,6 +22,7 @@ auto triangles_mesh(face_vertex::Mesh& m) {
         }
         primitive_ptr->indices = std::make_shared<eng::Accessor>(
             agl::engine::accessor(std::span(indices)));
+        primitive_ptr->primitive_count = agl::Count<GLsizei>(GLsizei(size(indices)));
     }
     {
         auto& primitive = *primitive_ptr;
@@ -32,7 +33,6 @@ auto triangles_mesh(face_vertex::Mesh& m) {
         primitive.attributes["POSITION"] = std::make_shared<eng::Accessor>(
             agl::engine::accessor(std::span(m.geometry.vertex_positions)));
         primitive.draw_type = agl::DrawType::unsigned_int;
-        primitive.primitive_count = agl::Count<GLsizei>(GLsizei(3 * triangle_count(m)));
     }
     return eng::Mesh({std::move(primitive_ptr)});
 }
