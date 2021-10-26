@@ -12,20 +12,19 @@ namespace face_vertex {
 
 template<typename Random>
 TriangleEdgeProxy random_triangle_edge(Mesh& m, Random& r) {
-    auto tc = triangle_count(m);
+    auto tc = uint32_t(size(topology(m).triangles));
     auto triangle_d = std::uniform_int_distribution<uint32_t>(0, tc - 1);
     auto t = triangle(m, triangle_d(r));
     while(not is_valid(t)) {
         t = triangle(m, triangle_d(r));
     }
-    for(uint32_t i = 0; i < adjacent_triangle_count(t); ++i) {
-        auto ti = adjacent_triangle(t, i);
-        if(is_valid(ti)) {
-            return proxy(m,
-                TriangleEdgeIndex(std::array{index(t), index(ti)}));
-        }
+    auto opposite_d = std::uniform_int_distribution<uint32_t>(
+        0, adjacent_triangle_count(t) - 1);
+    auto ot = adjacent_triangle(t, opposite_d(r));
+    while(not is_valid(ot)) {
+        ot = adjacent_triangle(t, opposite_d(r));
     }
-    throw std::logic_error("Free standing triangle.");
+    return proxy(m, TriangleEdgeIndex(std::array{index(t), index(ot)}));
 }
 
 }
