@@ -1,5 +1,6 @@
 #pragma once
 
+#include "has_adjacent_triangle.hpp"
 #include "index.hpp"
 #include "invalidate.hpp"
 #include "is_valid.hpp"
