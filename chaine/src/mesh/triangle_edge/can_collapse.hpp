@@ -10,9 +10,17 @@ inline
 bool can_collapse(const TriangleEdgeProxy& tep) {
     auto t0 = adjacent_triangle(tep, 0);
     auto t1 = adjacent_triangle(tep, 1);
+
+    // std::cout << index(t0) << " " << index(t1) << std::endl;
+
+    if(index(t0) == index(t1)) {
+        return false;
+    }
     
     auto va = vertex_after(t0, opposite_vertex(t0, t1));
     auto vb = vertex_after(t1, opposite_vertex(t1, t0));
+
+    // std::cout << index(va) << " " << index(vb) << std::endl;
 
     if(index(opposite_vertex(t0, t1)) == index(opposite_vertex(t1, t0))) {
         return false;
