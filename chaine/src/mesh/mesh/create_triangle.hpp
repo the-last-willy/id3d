@@ -9,8 +9,7 @@ namespace face_vertex {
 
 inline
 TriangleProxy create_triangle(Mesh& m) {
-    topology(m).triangles.emplace_back();
-    return proxy(m, TriangleIndex(triangle_count(m) - 1));
+    return proxy(m, index(create_triangle(topology(m))));
 }
 
 }
