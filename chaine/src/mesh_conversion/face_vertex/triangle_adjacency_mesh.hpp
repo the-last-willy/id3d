@@ -1,6 +1,6 @@
 #pragma once
 
-#include "face_vertex/all.hpp"
+#include "mesh/all.hpp"
 
 #include <agl/opengl/all.hpp>
 #include <agl/engine/mesh.hpp>
@@ -20,17 +20,17 @@ eng::Mesh triangle_adjacency_mesh(face_vertex::Mesh& m) {
         auto positions = std::vector<agl::Vec3>();
         for(auto&& t : triangles(m)) {
             auto at0 = adjacent_triangle(t, 0);
-            if(not is_ghost(at0)) {
+            if(is_valid(at0)) {
                 positions.push_back(barycenter(t));
                 positions.push_back(barycenter(at0));
             }
             auto at1 = adjacent_triangle(t, 1);
-            if(not is_ghost(at1)) {
+            if(is_valid(at1)) {
                 positions.push_back(barycenter(t));
                 positions.push_back(barycenter(at1));
             }
             auto at2 = adjacent_triangle(t, 2);
-            if(not is_ghost(at2)) {
+            if(is_valid(at2)) {
                 positions.push_back(barycenter(t));
                 positions.push_back(barycenter(at2));
             }

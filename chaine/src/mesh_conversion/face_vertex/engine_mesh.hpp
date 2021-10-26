@@ -1,6 +1,6 @@
 #pragma once
 
-#include "face_vertex/all.hpp"
+#include "mesh/all.hpp"
 
 #include <agl/opengl/all.hpp>
 #include <agl/engine/mesh.hpp>

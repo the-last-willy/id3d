@@ -1,6 +1,6 @@
 #pragma once
 
-#include "face_vertex/all.hpp"
+#include "mesh/all.hpp"
 
 #include <agl/engine/all.hpp>
 
@@ -16,9 +16,9 @@ auto triangles_mesh(face_vertex::Mesh& m) {
     {
         auto indices = std::vector<uint32_t>();
         for(auto&& t : triangles(m)) {
-            indices.push_back(topology(t).vertices[0]);
-            indices.push_back(topology(t).vertices[1]);
-            indices.push_back(topology(t).vertices[2]);
+            indices.push_back(topology(t)->vertices[0]);
+            indices.push_back(topology(t)->vertices[1]);
+            indices.push_back(topology(t)->vertices[2]);
         }
         primitive_ptr->indices = std::make_shared<eng::Accessor>(
             agl::engine::accessor(std::span(indices)));
