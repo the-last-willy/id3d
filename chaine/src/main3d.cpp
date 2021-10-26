@@ -122,7 +122,7 @@ struct App : Program {
                 data::smooth_normal_program(shader_compiler));
         }
 
-        auto off = format::off::read("chaine/data/cube.off");
+        auto off = format::off::read("chaine/data/queen.off");
 
         triangle_mesh::Mesh mesh;
         { // Off to triangle mesh.
@@ -290,12 +290,20 @@ struct App : Program {
                 std::data(render_modes), static_cast<int>(size(render_modes)));
 
             if(ImGui::Button("Collapse random edge")) {
-                for(int i = 0; i < 1; ++i) {
+                std::cout << vertex_count(face_vertex_mesh) << std::endl;
+                for(int i = 0; i < 1000; ++i) {
+                // while(vertex_count(face_vertex_mesh) > 1000) {
+                    // std::cout << vertex_count(face_vertex_mesh) << std::endl;
                     int j;
                     for(j = 0; j < 100; ++j) {
                         auto&& rte = random_triangle_edge(face_vertex_mesh, random_generator);
                         if(can_collapse(rte)) {
-                            collapse(rte);
+                            auto t0 = adjacent_triangle(rte, 0);
+                            auto t1 = adjacent_triangle(rte, 1);
+                            auto va = vertex_after(t0, opposite_vertex(t0, t1));
+                            auto vb = vertex_after(t1, opposite_vertex(t1, t0));
+                            auto&& v = collapse(rte);
+                            position(v) = (position(va) + position(vb)) / 2.f;
                             break;
                         }
                     }
@@ -303,8 +311,9 @@ struct App : Program {
                         std::cout << "STOP" << std::endl;
                         break;
                     }
+                    refresh_mesh();
                 }
-                refresh_mesh();
+                
             }
 
             ImGui::End();

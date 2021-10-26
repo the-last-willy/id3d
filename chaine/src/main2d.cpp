@@ -215,16 +215,16 @@ struct App : Program {
             ImGui::Combo("Render mode", &render_settings.selected_render_mode,
                 std::data(render_modes), static_cast<int>(size(render_modes)));
 
-            // if(ImGui::Button("Collapse random edge")) {
-            //     while(true) {
-            //         auto&& rte = random_triangle_edge(mesh, random_generator);
-            //         if(is_inner(rte) and can_collapse(rte)) {
-            //             collapse(rte);
-            //             break;
-            //         }
-            //     }
-            //     refresh_mesh();
-            // }
+            if(ImGui::Button("Collapse random edge")) {
+                while(true) {
+                    auto&& rte = random_triangle_edge(mesh, random_generator);
+                    if(can_collapse(rte)) {
+                        collapse(rte);
+                        break;
+                    }
+                }
+                refresh_mesh();
+            }
 
             ImGui::End();
         }
