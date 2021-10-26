@@ -3,8 +3,8 @@
 #include "mesh/all.hpp"
 #include "triangle_mesh/all.hpp"
 
-#include <vector>
 #include <map>
+#include <vector>
 
 namespace chaine {
 
@@ -21,7 +21,9 @@ face_vertex::Mesh to_face_vertex_mesh(triangle_mesh::Mesh mesh) {
         fvmesh.geometry.vertex_positions = mesh.geometry.vertex_positions;
     }
     { // Topology.
+        fvmesh.topology.vertex_count = vertex_count(mesh);
         fvmesh.topology.vertices.resize(vertex_count(mesh));
+        fvmesh.topology.triangle_count = triangle_count(mesh);
         fvmesh.topology.triangles.resize(triangle_count(mesh));
         for(face_vertex::TriangleIndex i(0); i < triangle_count(mesh); ++i.value) {
             auto& indices = fvmesh.topology.triangles[i].vertices;
