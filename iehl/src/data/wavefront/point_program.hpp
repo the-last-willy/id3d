@@ -16,6 +16,8 @@ eng::Program point_program(eng::ShaderCompiler& sc) {
             "/wavefront/point.frag"
         }
     });
+    p.capabilities.emplace_back(agl::Capability::depth_test, []() {
+        glDepthFunc(GL_LEQUAL); });
     return p;
 }
 
