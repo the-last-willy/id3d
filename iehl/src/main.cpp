@@ -4,6 +4,9 @@
 
 // Local headers.
 
+#include "application/settings.hpp"
+#include "ray/all.hpp"
+
 #include <agl/format/gltf2/all.hpp>
 #include <agl/format/wavefront/all.hpp>
 #include <agl/standard/all.hpp>
@@ -61,11 +64,7 @@ void load_model(GltfProgram& program, const std::string& filepath);
 struct GltfProgram : Program {
     eng::ShaderCompiler shader_compiler = {};
 
-    // glTF file.
     agl::format::wavefront::Content database = {};
-
-    // Default sampler.
-    agl::Sampler default_sampler;
 
     // Ambient lighting.
     eng::Material ambient_light_mat = {};
@@ -79,16 +78,21 @@ struct GltfProgram : Program {
     agl::engine::RenderPass blinn_phong_pass;
 
     agl::engine::RenderPass point_pass;
-
-    // Gizmo gizmo;
     
     float time = 0.f;
+
+    RayTracer ray_tracer;
+    Scene scene;
+
+    int ray_n = 0;
 
     agl::engine::TriangleMesh inter_mesh;
 
     bool toggle_rasterization = true;
     
     std::default_random_engine random_generator = create_random_generator();
+
+    RayTracingSettings ray_tracing_settings;
 
     void reload_shaders() {
         try {
@@ -119,11 +123,22 @@ struct GltfProgram : Program {
         }
     }
 
+    bool new_mesh = true;
+
     void reload_points() {
-        auto render_inter_mesh = std::make_shared<eng::Mesh>(
-            agl::engine::point_mesh(inter_mesh, database.materials));
-        point_pass.subscriptions.clear();
-        subscribe(point_pass, render_inter_mesh);
+        if(vertex_count(inter_mesh) > 100'000) {
+            // If enough points. Leave the previous mesh and work on a new one.
+            inter_mesh = agl::engine::TriangleMesh();
+            new_mesh = true;
+        } else {
+            if(not new_mesh) {
+                point_pass.subscriptions.pop_back();
+            }
+            new_mesh = false;
+            auto render_inter_mesh = std::make_shared<eng::Mesh>(
+                agl::engine::point_mesh(inter_mesh, database.materials));
+            subscribe(point_pass, render_inter_mesh);
+        }
     }
 
     void init() override {
@@ -165,6 +180,20 @@ struct GltfProgram : Program {
                 }
             }
         }
+        {
+            auto& tmesh = *database.tmeshes.front();
+            for(uint32_t fi = 0; fi < face_count(tmesh); ++fi) {
+                scene.all_faces.push_back(face(tmesh, fi));
+            }
+            for(auto& f : scene.all_faces) {
+                for(uint32_t vi = 0; vi < incident_vertex_count(f); ++vi) {
+                    auto mid = geometry(tmesh).vertex_material_ids[index(incident_vertex(f, vi))];
+                    if(mid == 0) { // Light material.
+                        scene.emissive_faces.push_back(f);
+                    }
+                }
+            }
+        }
 
         { // Render passes.
             reload_shaders();
@@ -176,7 +205,11 @@ struct GltfProgram : Program {
                 pp->aspect_ratio = 16.f / 9.f;
             }
         }
-
+        { // Ray tracer.
+            ray_tracer.x_distribution = std::uniform_real_distribution<float>(-1.f, 1.f);
+            ray_tracer.y_distribution = std::uniform_real_distribution<float>(-1.f, 1.f);
+            ray_tracer.random = &random_generator;
+        }
         { // Point pass.
             point_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::point_program(shader_compiler));
@@ -188,17 +221,17 @@ struct GltfProgram : Program {
             time += dt;
         }
         if(not ImGui::GetIO().WantCaptureMouse) {
-        if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
-            glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
-            camera->view.yaw -= d[0] / 500.f;
-            camera->view.pitch -= d[1] / 500.f;
+            if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
+                glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
+                camera->view.yaw -= d[0] / 500.f;
+                camera->view.pitch -= d[1] / 500.f;
 
-            previous_cursor_pos = current_cursor_pos;
-        } else {
-            glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            previous_cursor_pos = current_cursor_pos;
-        }
+                previous_cursor_pos = current_cursor_pos;
+            } else {
+                glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                previous_cursor_pos = current_cursor_pos;
+            }
         }
         { // Camera controls.
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
@@ -227,62 +260,74 @@ struct GltfProgram : Program {
         if(glfwGetKey(window.window, GLFW_KEY_SPACE)) {
             toggle_rasterization = not toggle_rasterization;
         }
-
-        // rtx(); // on
-        // reload_points();
+        if(ray_tracing_settings.ray_per_frame > 0){
+            rtx(); // on
+            reload_points();
+        }
     }
 
-    
-
     void rtx() {
-        auto& tmesh = *database.tmeshes.front();
         auto ro = camera->view.position;
         
+        auto distrib01 = std::uniform_real_distribution<float>(0.f, 1.f);
+        auto norm_distrib = std::uniform_real_distribution<float>(-1.f, 1.f);
 
-        auto n = 300.f;
+        float n = float(ray_tracing_settings.ray_per_frame);
         for(float i = 0; i < n; ++i) {    
-            auto radius = i / 200.f + std::uniform_real_distribution<float>(0.f, agl::constant::pi / 100.f)(random_generator);
-            auto angle = i + std::uniform_real_distribution<float>(0.f, 1.f)(random_generator);
-            auto dir = normalize(agl::vec3(
-                radius * std::cos(angle), radius * std::sin(angle), -1.f));
-            auto rd = (rotation(camera->view) * agl::vec4(dir, 0.f)).xyz();
+
+            auto x = norm_distrib(random_generator) * ray_tracing_settings.range;
+            auto y = norm_distrib(random_generator) * ray_tracing_settings.range;
+
+            auto rd = (agl::engine::rotation(*camera) * agl::vec4(x, y, -1.f, 0.f)).xyz(); 
+
             auto r = agl::engine::Ray(ro, rd);
-
-            float ray_t = 1000.f;
-            auto pos = agl::vec3(0.f);
-            uint32_t fi = 0;
-
-            uint32_t t = 0;
-            for(; t < face_count(tmesh); ++t) {
-                auto tr = face(tmesh, t);
-                auto h = intersection(r, tr);
-                if(h) {
-                    pos = h->position;
-                    ray_t = h->ray;
-                    fi = t;
-                    break;
-                }
-            }
-            for(++t; t < face_count(tmesh); ++t) {
-                auto tr = face(tmesh, t);
-                auto h = intersection(r, tr);
-                if(h and h->ray < ray_t) {
-                    pos = h->position;
-                    ray_t = h->ray;
-                    fi = t;
-                }
-            }
-            if(ray_t < 1000.f) {
+            
+            auto inter = ray_trace(scene, r);
+            if(inter) {
                 auto v = create_vertex(inter_mesh);
-                position(v) = pos;
-                auto ivert = incident_vertex(face(tmesh, fi), 0);
+                position(v) = inter->hit.position;
+                auto ivert = incident_vertex(inter->triangle, 0);
                 normal(v) = normal(ivert);
+                auto lightened = false;
+                auto light_f = scene.emissive_faces.front();
+                auto light_p = agl::vec3(0.f);
+                {
+                    auto r0 = distrib01(random_generator);
+                    auto r1 = distrib01(random_generator);
+                    if(r0 + r1 > 1.f) {
+                        r0 = 1.f - r0;
+                        r1 = 1.f - r1;
+                    }
+                    light_p = r0 * position(incident_vertex(light_f, 0))
+                    + r1 * position(incident_vertex(light_f, 1))
+                    + (1.f - r0 - r1) * position(incident_vertex(light_f, 2));
+                }
+                auto light_r = agl::engine::Ray(position(v), light_p - position(v));
+                auto lh = ray_trace(scene, light_r);
+                if(lh) {
+                    if(length(lh->hit.position - light_p) < 0.01) {
+                        lightened = true;
+                    }
+                }
+                auto lambertian = 0.f;
+                if(lightened) {
+                    auto light_dif = light_p - position(v);
+                    auto d_to_l_2 = dot(light_dif);
+                    lambertian = std::max(dot(normal(v), normalize(light_dif)), 0.f) * 30.f / d_to_l_2;
+                }
+                bool is_emissive = false;
+                for(auto& ef : scene.emissive_faces) {
+                    if(index(ef) == index(inter->triangle)) {
+                        is_emissive = true;
+                    }
+                }
+                if(is_emissive) {
+                    lambertian = 1.f;
+                }
                 auto mid = material_id(ivert);
                 auto& m = database.materials[mid];
                 if(auto ptr = dynamic_cast<eng::Uniform<agl::Vec3>*>(m->uniforms["Kd"])) {
-                    color(v) = ptr->value;
-                } else {
-                    std::cout << "no color" << std::endl;
+                    color(v) = lambertian * ptr->value;
                 }
             }
         }
@@ -347,6 +392,7 @@ struct GltfProgram : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(v_tr);
             agl::engine::render(point_pass);
         }
+
         { // UI
             ImGui::Begin("Camera");
 
@@ -355,6 +401,21 @@ struct GltfProgram : Program {
             ImGui::InputFloat("Z", &camera->view.position[2], 0.f, 0.f, "%.3f");
 
             ImGui::End();
+
+            if(ImGui::Begin("Ray Tracing")) {
+                ImGui::DragFloat("Range",
+                    &ray_tracing_settings.range,
+                    0.01f, 0.f, 1, "%.3f %%", ImGuiSliderFlags_AlwaysClamp);
+                {
+                    auto i = int(ray_tracing_settings.ray_per_frame);
+                    ImGui::DragInt("Ray per frame",
+                        &i,
+                        1, 0, 1000, "%d", ImGuiSliderFlags_AlwaysClamp);
+                    ray_tracing_settings.ray_per_frame = uint32_t(i);
+                }
+                
+                ImGui::End();
+            }   
         }
     }
 };
