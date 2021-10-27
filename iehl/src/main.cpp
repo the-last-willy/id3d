@@ -187,6 +187,7 @@ struct GltfProgram : Program {
         { // Increment time.
             time += dt;
         }
+        if(not ImGui::GetIO().WantCaptureMouse) {
         if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
@@ -197,6 +198,7 @@ struct GltfProgram : Program {
         } else {
             glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             previous_cursor_pos = current_cursor_pos;
+        }
         }
         { // Camera controls.
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
@@ -344,6 +346,15 @@ struct GltfProgram : Program {
             point_pass.uniforms["world_to_eye"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(v_tr);
             agl::engine::render(point_pass);
+        }
+        { // UI
+            ImGui::Begin("Camera");
+
+            ImGui::InputFloat("X", &camera->view.position[0], 0.f, 0.f, "%.3f");
+            ImGui::InputFloat("Y", &camera->view.position[1], 0.f, 0.f, "%.3f");
+            ImGui::InputFloat("Z", &camera->view.position[2], 0.f, 0.f, "%.3f");
+
+            ImGui::End();
         }
     }
 };
