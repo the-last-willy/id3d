@@ -15,4 +15,9 @@ auto proxy(Mesh& m, TriangleEdgeIndex tei) {
     return TriangleEdgeProxy(m, tei);
 }
 
+inline
+auto proxy(Mesh& m, TriangleIndex t0, TriangleIndex t1) {
+    return proxy(m, TriangleEdgeIndex(std::array{t0, t1}));
+}
+
 }
