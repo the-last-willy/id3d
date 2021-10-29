@@ -5,6 +5,6 @@
 #include "collapse.hpp"
 #include "flip.hpp"
 #include "index.hpp"
-#include "is_locally_delaunay.hpp"
+#include "is_valid.hpp"
 #include "mesh.hpp"
 #include "proxy.hpp"
