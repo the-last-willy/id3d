@@ -32,6 +32,11 @@
 
 //
 
+#include "insert.hpp"
+#include "is_delaunay.hpp"
+#include "lawson.hpp"
+#include "paraboloid.hpp"
+
 using namespace chaine;
 
 inline
@@ -42,7 +47,7 @@ auto create_random_generator() {
 
 struct RenderSettings {
     bool show_edges = true;
-    bool show_triangles = true;
+    bool show_triangles = false;
     bool show_vertices = false;
 
     int selected_render_mode = 0;
@@ -107,11 +112,11 @@ struct App : Program {
         mesh = face_vertex::Mesh();
         {
             auto v0 = create_vertex(mesh);
-            position(v0) = agl::vec3(-1.f, -1.f, 0.f);
+            position(v0) = paraboloid(-1.f, -1.f);
             auto v1 = create_vertex(mesh);
-            position(v1) = agl::vec3(1.f, -1.f, 0.f);
+            position(v1) = paraboloid(1.f, -1.f);
             auto v2 = create_vertex(mesh);
-            position(v2) = agl::vec3(-1.f, 1.f, 0.f);
+            position(v2) = paraboloid(-1.f, 1.f);
             auto t = create_triangle(mesh);
             topology(t)->vertices[0] = v0;
             topology(t)->vertices[1] = v1;
@@ -125,15 +130,17 @@ struct App : Program {
 
         { // Camera.
             auto op = agl::engine::OrthographicProjection();
-            op.z_far = 10.f;
-            op.z_near = -10.f;
+            op.z_far = 1000.f;
+            op.z_near = -1000.f;
             camera.projection = std::move(op);
         }
     }
 
+    bool mouse_state = false;
+
     void update(float) override {
         {
-            if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2)) {
+            if(not mouse_state and glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2)) {
                 double xpos, ypos;
                 glfwGetCursorPos(window.window, &xpos, &ypos);
                 xpos = 2.f * xpos / window.width() - 1.f;
@@ -141,8 +148,7 @@ struct App : Program {
                 
                 auto pos = (transform(camera) * agl::vec4(float(xpos), float(ypos), 0.f, 1.f)).xyz();
 
-                insert_vertex(mesh, pos);
-
+                insert(mesh, pos.xy());
                 refresh_mesh();
             }
         }
@@ -163,6 +169,9 @@ struct App : Program {
                 auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
                 camera.view.position = camera.view.position - direction / 50.f;
             }
+        }
+        {
+            mouse_state = glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2);
         }
     }
 
@@ -214,6 +223,16 @@ struct App : Program {
             auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
             ImGui::Combo("Render mode", &render_settings.selected_render_mode,
                 std::data(render_modes), static_cast<int>(size(render_modes)));
+
+            if(ImGui::Button("Make Delaunay")) {
+                lawson(mesh);
+                refresh_mesh();
+            }
+
+            if(ImGui::Button("Lawson once")) {
+                lawson_once(mesh);
+                refresh_mesh();
+            }
 
             if(ImGui::Button("Collapse random edge")) {
                 while(true) {

@@ -1,23 +1,21 @@
-add_executable(chaine2d src/main2d.cpp)
-
-target_include_directories(chaine2d
-PRIVATE
+add_library(chaine_common INTERFACE)
+target_include_directories(chaine_common
+INTERFACE
     src
 )
-
-target_link_libraries(chaine2d
-PRIVATE
+target_link_libraries(chaine_common
+INTERFACE
     common
 )
 
-add_executable(chaine3d src/main3d.cpp)
-
-target_include_directories(chaine3d
+add_executable(chaine_2d src/application/2d/main.cpp)
+target_link_libraries(chaine_2d
 PRIVATE
-    src
+    chaine_common
 )
 
-target_link_libraries(chaine3d
+add_executable(chaine_3d src/application/3d/main.cpp)
+target_link_libraries(chaine_3d
 PRIVATE
-    common
+    chaine_common
 )
