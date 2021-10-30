@@ -25,8 +25,8 @@ void flip(TriangleEdgeProxy tep) {
     auto tt1 = topology(t1);
 
     {
-        tt0->vertices[(t0_t1_i + 2) % 3] = tt1->vertices[t1_t0_i];
-        tt1->vertices[(t1_t0_i + 2) % 3] = tt0->vertices[t0_t1_i];
+        tt0->vertices[t0_at0_i] = tt1->vertices[t1_t0_i];
+        tt1->vertices[t1_at1_i = tt0->vertices[t0_t1_i];
     }
 
     topology(t0)->triangles[t0_at0_i] = index(t1);

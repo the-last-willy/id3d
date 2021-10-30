@@ -30,6 +30,7 @@ void lawson(face_vertex::Mesh& m) {
         auto edge = agl::standard::take_back(v);
         if(is_valid(edge) and not is_delaunay(edge)) {
             flip(edge);
+            is_valid(topology(m));
             auto t0 = adjacent_triangle(edge, 0);
             auto t1 = adjacent_triangle(edge, 1);
             auto t01 = adjacent_triangle(t0, relative_index(t0, t1) + 1);
