@@ -25,6 +25,7 @@ void lawson(face_vertex::Mesh& m) {
             }
         }
     }
+    is_valid(topology(m));
     while(not empty(v)) {
         auto edge = agl::standard::take_back(v);
         if(is_valid(edge) and not is_delaunay(edge)) {
@@ -52,6 +53,7 @@ void lawson(face_vertex::Mesh& m) {
                 v.push_back(e12);
             }
         }
+        is_valid(topology(m));
     }
 }
 
