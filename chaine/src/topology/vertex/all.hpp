@@ -1,5 +1,6 @@
 #pragma once
 
+#include "any_incident_triangle.hpp"
 #include "index.hpp"
 #include "invalidate.hpp"
 #include "is_valid.hpp"
