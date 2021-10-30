@@ -12,7 +12,7 @@ VertexProxy split(TriangleProxy triangle) {
 	topology(p)->triangle = triangle;
 
 	auto vt2 = vertex(triangle, 2);
-	topology(vt2)->triangle = adjacent_triangle(triangle, 0);
+	
 
 	substitute_vertex(triangle, vt2, p);
 	
@@ -21,6 +21,8 @@ VertexProxy split(TriangleProxy triangle) {
 	topology(t0)->vertices[1] = vertex(triangle, 1);
 	topology(t0)->vertices[2] = vt2;
 	topology(t0)->triangles[2] = triangle;
+
+	topology(vt2)->triangle = index(t0);
 
 	auto t1 = create_triangle(mesh(triangle));
 	topology(t1)->vertices[0] = p;
