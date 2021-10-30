@@ -112,11 +112,11 @@ struct App : Program {
         mesh = face_vertex::Mesh();
         {
             auto v0 = create_vertex(mesh);
-            position(v0) = paraboloid(-1.f, -1.f);
+            position(v0) = paraboloid(-0.2f, -0.2f);
             auto v1 = create_vertex(mesh);
-            position(v1) = paraboloid(1.f, -1.f);
+            position(v1) = paraboloid(0.2f, -0.2f);
             auto v2 = create_vertex(mesh);
-            position(v2) = paraboloid(-1.f, 1.f);
+            position(v2) = paraboloid(-0.2f, 0.2f);
             auto t = create_triangle(mesh);
             topology(t)->vertices[0] = v0;
             topology(t)->vertices[1] = v1;
@@ -124,6 +124,7 @@ struct App : Program {
             topology(v0)->triangle = t;
             topology(v1)->triangle = t;
             topology(v2)->triangle = t;
+            std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
         }
 
         refresh_mesh();
@@ -149,6 +150,7 @@ struct App : Program {
                 auto pos = (transform(camera) * agl::vec4(float(xpos), float(ypos), 0.f, 1.f)).xyz();
 
                 insert(mesh, pos.xy());
+                std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
                 refresh_mesh();
             }
         }
@@ -226,11 +228,13 @@ struct App : Program {
 
             if(ImGui::Button("Make Delaunay")) {
                 lawson(mesh);
+                std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
                 refresh_mesh();
             }
 
             if(ImGui::Button("Lawson once")) {
                 lawson_once(mesh);
+                std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
                 refresh_mesh();
             }
 
