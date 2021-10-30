@@ -10,9 +10,11 @@
 inline
 void insert(face_vertex::Mesh& m, agl::Vec2 v) {
     auto dst = walk_toward(m, v);
+    is_valid(topology(m));
     if(contains(dst, v)) {
         // Interior.
         auto s = split(dst);
+        is_valid(topology(m));
         position(s) = paraboloid(v);
     } else {
         // Exterior.
@@ -24,8 +26,11 @@ void insert(face_vertex::Mesh& m, agl::Vec2 v) {
         auto p2 = position(v2).xy();
 
         auto vert = create_vertex(m);
-        position(vert) = paraboloid(v);
         auto tr = create_triangle(m);
+
+        topology(vert)->triangle = tr;
+        position(vert) = paraboloid(v);
+        
 
         topology(tr)->triangles[0] = index(dst);
         topology(tr)->vertices[0] = index(vert);
@@ -55,12 +60,10 @@ void insert(face_vertex::Mesh& m, agl::Vec2 v) {
 
         { // CCW
             auto prev_tr = tr;
-            auto next_tr = tr;
             auto prev_e = e1;
-            auto next_e = e1;
             while(true) {
-                next_tr = find_border_triangle_ccw(prev_e, next_tr);
-                next_e = vertex(next_tr, relative_index(next_tr, prev_e) + 1);
+                auto next_tr = find_border_triangle_ccw(prev_e, prev_tr);
+                auto next_e = vertex(next_tr, relative_index(next_tr, prev_e) + 1);
                 if(orientation(v, position(next_e).xy(), position(prev_e).xy())) {
                     auto new_tr = create_triangle(m);
                     
@@ -70,13 +73,12 @@ void insert(face_vertex::Mesh& m, agl::Vec2 v) {
 
                     topology(new_tr)->triangles[0] = index(next_tr);
                     topology(new_tr)->triangles[1] = index(prev_tr);
-
+                    
                     topology(next_tr)->triangles[(relative_index(next_tr, next_e) + 1) % 3] = index(new_tr);
                     topology(prev_tr)->triangles[(relative_index(prev_tr, prev_e) + 1) % 3] = index(new_tr);
 
-                    prev_tr = next_tr = new_tr;
+                    prev_tr = new_tr;
                     prev_e = next_e;
-                    std::cout << "CCW" << std::endl;
                 } else {
                     break;
                 }
@@ -85,28 +87,25 @@ void insert(face_vertex::Mesh& m, agl::Vec2 v) {
 
         { // CW
             auto prev_tr = tr;
-            auto next_tr = tr;
             auto prev_e = e0;
-            auto next_e = e0;
             while(true) {
-                prev_tr = find_border_triangle_cw(next_e, prev_tr);
-                prev_e = vertex(next_tr, relative_index(next_tr, prev_e) + 2);
-                if(orientation(v, position(next_e).xy(), position(prev_e).xy())) {
+                auto next_tr = find_border_triangle_cw(prev_e, prev_tr);
+                auto next_e = vertex(next_tr, relative_index(next_tr, prev_e) + 2);
+                if(orientation(v, position(prev_e).xy(), position(next_e).xy())) {
                     auto new_tr = create_triangle(m);
                     
                     topology(new_tr)->vertices[0] = index(vert);
-                    topology(new_tr)->vertices[1] = index(next_e);
-                    topology(new_tr)->vertices[2] = index(prev_e);
+                    topology(new_tr)->vertices[1] = index(prev_e);
+                    topology(new_tr)->vertices[2] = index(next_e);
 
-                    topology(new_tr)->triangles[0] = index(prev_tr);
-                    topology(new_tr)->triangles[2] = index(next_tr);
+                    topology(new_tr)->triangles[0] = index(next_tr);
+                    topology(new_tr)->triangles[2] = index(prev_tr);
                     
                     topology(next_tr)->triangles[(relative_index(next_tr, next_e) + 2) % 3] = index(new_tr);
                     topology(prev_tr)->triangles[(relative_index(prev_tr, prev_e) + 2) % 3] = index(new_tr);
 
-                    prev_tr = next_tr = new_tr;
-                    next_e = prev_e;
-                    std::cout << "CW" << std::endl;
+                    prev_tr = new_tr;
+                    prev_e = next_e;
                 } else {
                     break;
                 }
