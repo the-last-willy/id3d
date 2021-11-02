@@ -4,7 +4,7 @@
 
 // Local headers.
 
-#include "application/settings.hpp"
+#include "settings.hpp"
 #include "ray/all.hpp"
 
 #include <agl/format/gltf2/all.hpp>
@@ -148,12 +148,12 @@ struct GltfProgram : Program {
         }
         
         database = agl::format::wavefront::load(
-            "D:/data/cornell-box/cornell-box.obj",
-            "D:/data/cornell-box");
+            // "D:/data/cornell-box/cornell-box.obj",
+            // "D:/data/cornell-box");
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-            // "D:/data/bistro-small/exterior.obj",
-            // "D:/data/bistro-small/");
+            "D:/data/bistro-small/exterior.obj",
+            "D:/data/bistro-small/");
             // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
             // "C:/Users/Willy/Desktop/data/bistro-small/");
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
@@ -167,14 +167,24 @@ struct GltfProgram : Program {
         // }
 
         { // Normalize data.
+            auto default_albedo = std::make_shared<eng::Texture>(
+                data::uniform_texture(agl::vec3(1.f)));
             auto default_emissive = std::make_shared<eng::Texture>(
                 data::uniform_texture(agl::vec3(0.f)));
+            auto default_specular = std::make_shared<eng::Texture>(
+                data::uniform_texture(agl::vec3(0.f, 1.f, 0.f)));
             for(auto&& me : database.meshes | ranges::views::indirect) {
                 for(auto&& p : me.primitives | ranges::views::indirect) {
                     if(p.material) {
                         auto&& ma = *p.material;
+                        if(not ma.textures.contains("map_Kd")) {
+                            ma.textures["map_Kd"] = default_albedo;
+                        }
                         if(not ma.textures.contains("map_Ke")) {
                             ma.textures["map_Ke"] = default_emissive;
+                        }
+                        if(not ma.textures.contains("map_Ks")) {
+                            ma.textures["map_Ks"] = default_specular;
                         }
                     }
                 }
@@ -343,13 +353,13 @@ struct GltfProgram : Program {
         auto light_position = (agl::vec4(0.f, 0.f, 0.f, 1.f)).xyz();
         auto view_position = (vec4(camera->view.position, 1.f)).xyz();
 
-        if constexpr(true) {
+        if constexpr(false) {
             for(auto& s : ambient_pass.subscriptions) {
                 s.mesh->uniforms["mvp_transform"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             }
         }
-        if constexpr(false) {
+        if constexpr(true) {
             for(auto& s : blinn_phong_pass.subscriptions) {
                 s.mesh->uniforms["mvp_transform"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
@@ -373,7 +383,7 @@ struct GltfProgram : Program {
                 agl::engine::render(ambient_pass);
             }
         }
-        if constexpr(false) {
+        if constexpr(true) {
             if(blinn_phong_pass_loaded) { // Blinn Phong pass.
                 blinn_phong_pass.uniforms["light_position"]
                 = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);
