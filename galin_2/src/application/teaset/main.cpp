@@ -97,7 +97,8 @@ struct App : Program {
         { // Load mesh.
             auto cbm = load_teapot();
             for(auto& p : cbm.patches) {
-                auto g = Grid<agl::Vec3>({4, 4});
+                auto g = agl::common::Grid<agl::Vec3>(
+                    agl::common::grid_indexing({4, 4}));
                 for(uint32_t i = 0; i < 4; ++i)
                 for(uint32_t j = 0; j < 4; ++j) {
                     at(g, i, j) = cbm.vertices[p[4 * i + j]];

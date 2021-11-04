@@ -6,65 +6,8 @@
 #include <numeric>
 #include <vector>
 
-template<typename T>
-struct Grid {
-    std::vector<uint32_t> dimensions;
-    std::vector<T> elements;
-
-    Grid(std::vector<uint32_t> dimensions)
-        : dimensions(std::move(dimensions))
-    {
-        auto count = std::reduce(
-            begin(this->dimensions),
-            end(this->dimensions),
-            uint32_t(1),
-            std::multiplies<>());
-        elements.resize(count);
-    }
-};
-
 template<typename G>
-uint32_t dimension(const Grid<G>& g) {
-    return static_cast<uint32_t>(size(g.dimensions));
-}
-
-template<typename G>
-auto index(const Grid<G>& g, uint32_t i, uint32_t j) {
-    return g.dimensions[0] * j + i;
-}
-
-template<typename G>
-const auto& at(const Grid<G>& g, uint32_t i, uint32_t j) {
-    return g.elements[index(g, i, j)];
-}
-
-template<typename G>
-auto& at(Grid<G>& g, uint32_t i, uint32_t j) {
-    return g.elements[index(g, i, j)];
-}
-
-template<typename G>
-const auto& at(const Grid<G>& g, uint32_t i) {
-    return g.elements[i];
-}
-
-template<typename G>
-auto& at(Grid<G>& g, uint32_t i) {
-    return g.elements[i];
-}
-
-template<typename G>
-auto& size(const Grid<G>& g) {
-    return g.dimensions;
-}
-
-template<typename G>
-uint32_t size(const Grid<G>& g, uint32_t d) {
-    return g.dimensions[d];
-}
-
-template<typename G>
-auto bezier(const Grid<G>& g, float u) {
+auto bezier(const agl::common::Grid<G>& g, float u) {
     if(dimension(g) != 1) {
         throw std::logic_error("Bezier curve: wrong dimension.");
     }
@@ -81,7 +24,7 @@ auto bezier(const Grid<G>& g, float u) {
 }
 
 template<typename G>
-auto bezier(const Grid<G>& g, float u, float v) {
+auto bezier(const agl::common::Grid<G>& g, float u, float v) {
     auto tmp0 = std::vector<agl::Vec3>(size(g, 0));
     auto tmp1 = std::vector<agl::Vec3>(size(g, 1));
     for(uint32_t i = 0; i < size(g, 0); ++i) {
@@ -126,12 +69,13 @@ struct DeBoorsAlgorithm {
 
 inline
 agl::engine::TriangleMesh sampled_mesh(
-    const Grid<agl::Vec3>& g,
+    const agl::common::Grid<agl::Vec3>& g,
     uint32_t w,
     uint32_t h)
 {
     auto m = agl::engine::TriangleMesh();
-    auto vertices = Grid<agl::engine::MutableVertexProxy>({w, h});
+    auto vertices = agl::common::Grid<agl::engine::MutableVertexProxy>(
+        agl::common::grid_indexing({w, h}));
     for(uint32_t i = 0; i < w; ++i)
     for(uint32_t j = 0; j < h; ++j) {
         auto&& v = at(vertices, i, j) = create_vertex(m);
@@ -152,9 +96,9 @@ agl::engine::TriangleMesh sampled_mesh(
 }
 
 inline
-agl::engine::TriangleMesh control_mesh(const Grid<agl::Vec3>& g) {
+agl::engine::TriangleMesh control_mesh(const agl::common::Grid<agl::Vec3>& g) {
     auto m = agl::engine::TriangleMesh();
-    auto vertices = Grid<agl::engine::MutableVertexProxy>(size(g));
+    auto vertices = agl::common::Grid<agl::engine::MutableVertexProxy>(indexing(g));
     for(uint32_t i = 0; i < size(g, 0); ++i)
     for(uint32_t j = 0; j < size(g, 1); ++j) {
         auto&& v = at(vertices, i, j) = create_vertex(m);
