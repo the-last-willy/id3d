@@ -71,6 +71,10 @@ struct GltfProgram : Program {
 
     RayTracingSettings ray_tracing_settings;
 
+    agl::engine::RenderPass wireframe_pass;
+
+    std::shared_ptr<eng::Mesh> bounding_box_gizmo;
+
     void reload_shaders() {
         try {
             ambient_pass.program = std::make_shared<eng::Program>(
@@ -198,8 +202,19 @@ struct GltfProgram : Program {
             ray_tracer.random = &random_generator;
         }
         { // Point pass.
-            point_pass.program = std::make_shared<eng::Program>(
+            assign_program(point_pass,
                 data::wavefront::point_program(shader_compiler));
+        }
+        { // Wireframe pass.
+            assign_program(wireframe_pass, 
+                data::shader::wireframe(shader_compiler));
+        }
+        { // Gizmos.
+            bounding_box_gizmo = std::make_shared<eng::Mesh>(
+                agl::engine::wireframe(data::gizmo::bounding_box()));
+        }
+        {
+            
         }
     }
 
