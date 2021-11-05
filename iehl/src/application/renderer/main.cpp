@@ -32,34 +32,11 @@
 
 //
 
-// struct DirectionalLight {
-//     agl::Vec3 direction = {};
-//     agl::Mat4 transform = {};
-
-//     std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
-// };
-
-// struct SpotLight {
-//     agl::Vec3 direction = {};
-//     agl::Mat4 transform = {};
-
-//     std::shared_ptr<eng::Texture> shadow_map = std::make_shared<eng::Texture>();;
-// };
-
-// struct PointLight {
-//     agl::Vec3 position = {};
-// };
-
 inline
 auto create_random_generator() {
     auto rd = std::random_device();
     return std::default_random_engine(rd());
 }
-
-struct GltfProgram;
-
-inline
-void load_model(GltfProgram& program, const std::string& filepath);
 
 struct GltfProgram : Program {
     eng::ShaderCompiler shader_compiler = {};
