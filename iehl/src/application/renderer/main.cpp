@@ -365,19 +365,19 @@ struct GltfProgram : Program {
                 = std::make_shared<eng::Uniform<agl::Mat4>>(vp_tr);
             }
         }
-        if constexpr(false) { // Frustrum culling.
-            auto frustrum = agl::engine::bounding_box(*camera);
+        // if constexpr(false) { // Frustrum culling.
+        //     auto frustrum = agl::engine::bounding_box(*camera);
             
-            int count = 0;
-            for(auto& s : ambient_pass.subscriptions) {
-                auto bb = bounding_box(*s.mesh);
-                s.mesh->enabled = false;
-                if(are_intersecting(bb, frustrum)) {
-                    s.mesh->enabled = true;
-                    count += 1;
-                }
-            }
-        }
+        //     int count = 0;
+        //     for(auto& s : ambient_pass.subscriptions) {
+        //         auto bb = bounding_box(*s.mesh);
+        //         s.mesh->enabled = false;
+        //         if(are_intersecting(bb, frustrum)) {
+        //             s.mesh->enabled = true;
+        //             count += 1;
+        //         }
+        //     }
+        // }
         if(toggle_rasterization) {
             if constexpr(false) {
                 if(ambient_pass_loaded) { // Ambient pass.
