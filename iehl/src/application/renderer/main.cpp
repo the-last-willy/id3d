@@ -213,9 +213,6 @@ struct GltfProgram : Program {
             bounding_box_gizmo = std::make_shared<eng::Mesh>(
                 agl::engine::wireframe(data::gizmo::bounding_box()));
         }
-        {
-            
-        }
     }
 
     void update(float dt) override {
@@ -266,6 +263,7 @@ struct GltfProgram : Program {
             rtx(); // on
             reload_points();
         }
+        update_render_passes();
     }
 
     void rtx() {
@@ -335,6 +333,21 @@ struct GltfProgram : Program {
         }
     }
 
+    void update_render_passes() {
+        auto wtc = agl::engine::world_to_clip(*camera);
+        { // Update wireframe pass.
+            clear(wireframe_pass);
+            for(auto& m : database.tmeshes) {
+                auto bb = bounding_box(*m);
+                auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+                assign_uniform(
+                    *instance,
+                    "world_to_clip",
+                    wtc * data::gizmo::bounding_box_model_to_world(bb));
+            }
+        }
+    }
+
     void render() override {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
@@ -396,6 +409,10 @@ struct GltfProgram : Program {
             point_pass.uniforms["world_to_eye"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(v_tr);
             agl::engine::render(point_pass);
+        }
+
+        if constexpr(true) { // Wireframe pass.
+            agl::engine::render(wireframe_pass);
         }
 
         { // UI
