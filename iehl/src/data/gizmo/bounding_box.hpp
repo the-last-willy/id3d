@@ -24,49 +24,53 @@ agl::engine::TriangleMesh bounding_box() {
     auto v111 = create_vertex(tm);
     position(v111) = agl::vec3(0.5f, 0.5f, 0.5f);
     {
-        auto f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v000);
-        f.incident_vertices[1] = index(v001);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v000);
-        f.incident_vertices[1] = index(v010);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v000);
-        f.incident_vertices[1] = index(v100);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v001);
-        f.incident_vertices[1] = index(v011);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v001);
-        f.incident_vertices[1] = index(v101);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v010);
-        f.incident_vertices[1] = index(v011);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v010);
-        f.incident_vertices[1] = index(v110);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v011);
-        f.incident_vertices[1] = index(v111);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v100);
-        f.incident_vertices[1] = index(v101);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v100);
-        f.incident_vertices[1] = index(v110);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v101);
-        f.incident_vertices[1] = index(v111);
-        f = topology(create_face(tm, 2));
-        f.incident_vertices[0] = index(v110);
-        f.incident_vertices[1] = index(v111);
+        auto f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v000);
+        f->incident_vertices[1] = index(v001);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v000);
+        f->incident_vertices[1] = index(v010);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v000);
+        f->incident_vertices[1] = index(v100);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v001);
+        f->incident_vertices[1] = index(v011);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v001);
+        f->incident_vertices[1] = index(v101);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v010);
+        f->incident_vertices[1] = index(v011);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v010);
+        f->incident_vertices[1] = index(v110);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v011);
+        f->incident_vertices[1] = index(v111);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v100);
+        f->incident_vertices[1] = index(v101);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v100);
+        f->incident_vertices[1] = index(v110);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v101);
+        f->incident_vertices[1] = index(v111);
+        f = &topology(create_face(tm, 2));
+        f->incident_vertices[0] = index(v110);
+        f->incident_vertices[1] = index(v111);
+    }
+    {
     }
     return tm;
 }
 
 inline
-auto bounding_box_transform(const agl::engine::BoundingBox& bb) {
-    return transform(bb) * agl::scaling3(length(bb.aabb));
+agl::Mat4 bounding_box_model_to_world(const agl::engine::BoundingBox& bb) {
+    return mat4(transform(bb))
+    * agl::translation(midpoint(bb.aabb))
+    * agl::scaling3(length(bb.aabb));
 }
 
 }
