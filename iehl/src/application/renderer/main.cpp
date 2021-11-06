@@ -48,6 +48,7 @@ struct GltfProgram : Program {
 
     // Active camera.
     std::shared_ptr<eng::Camera> camera = {};
+    std::shared_ptr<eng::Camera> frustrum_camera = {};
 
     bool ambient_pass_loaded = false;
     agl::engine::RenderPass ambient_pass;
@@ -194,7 +195,9 @@ struct GltfProgram : Program {
             auto& c = *(camera = std::make_shared<eng::Camera>());
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
                 pp->aspect_ratio = 16.f / 9.f;
+                pp->z_far = 10.f;
             }
+            frustrum_camera = std::make_shared<eng::Camera>(*camera);
         }
         { // Ray tracer.
             ray_tracer.x_distribution = std::uniform_real_distribution<float>(-1.f, 1.f);
@@ -345,6 +348,13 @@ struct GltfProgram : Program {
                     "world_to_clip",
                     wtc * data::gizmo::bounding_box_model_to_world(bb));
             }
+            { // Frustrum gizmo.
+                auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+                assign_uniform(
+                    *instance,
+                    "world_to_clip",
+                    wtc * data::gizmo::bounding_box_model_to_world(*frustrum_camera));
+            }
         }
     }
 
@@ -421,6 +431,10 @@ struct GltfProgram : Program {
             ImGui::InputFloat("X", &camera->view.position[0], 0.f, 0.f, "%.3f");
             ImGui::InputFloat("Y", &camera->view.position[1], 0.f, 0.f, "%.3f");
             ImGui::InputFloat("Z", &camera->view.position[2], 0.f, 0.f, "%.3f");
+
+            if(ImGui::Button("Frustrum")) {
+                *frustrum_camera = *camera;
+            }
 
             ImGui::End();
 
