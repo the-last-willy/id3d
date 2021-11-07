@@ -6,16 +6,13 @@
 
 #include "settings.hpp"
 #include "ray/all.hpp"
+#include "settings/all.hpp"
+#include "statistics/all.hpp"
 
 #include <agl/format/gltf2/all.hpp>
 #include <agl/format/wavefront/all.hpp>
 #include <agl/standard/all.hpp>
-
-#include <local/all.hpp>
-#include "data/all.hpp"
-#include "program/all.hpp"
-
-#include "gizmo/gizmo.hpp"
+#include <id3d/common/all.hpp>
 
 // External libraries.
 
@@ -38,13 +35,23 @@ auto create_random_generator() {
     return std::default_random_engine(rd());
 }
 
+struct Object {
+    std::shared_ptr<agl::engine::TriangleMesh> cpu_mesh;
+    std::shared_ptr<eng::Mesh> gpu_mesh;
+
+    // Model space.
+    agl::engine::BoundingBox bounding_box;
+};
+
+struct RasterizationScene {
+    std::vector<Object> objects;
+    std::vector<std::shared_ptr<eng::Material>> materials;
+};
+
 struct GltfProgram : Program {
     eng::ShaderCompiler shader_compiler = {};
 
-    agl::format::wavefront::Content database = {};
-
-    // Ambient lighting.
-    eng::Material ambient_light_mat = {};
+    RasterizationScene rasterization_scene;
 
     // Active camera.
     std::shared_ptr<eng::Camera> camera = {};
@@ -76,14 +83,13 @@ struct GltfProgram : Program {
 
     std::shared_ptr<eng::Mesh> bounding_box_gizmo;
 
+    AllSettings settings;
+    AllStatistics statistics;
+
     void reload_shaders() {
         try {
             ambient_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::forward_ambient_program(shader_compiler));
-            ambient_pass.subscriptions.clear();
-            for(auto& m : database.meshes) {
-                subscribe(ambient_pass, m);
-            }
             ambient_pass_loaded = true;
         } catch(...) {
             ambient_pass.program.reset();
@@ -93,10 +99,6 @@ struct GltfProgram : Program {
         try {
             blinn_phong_pass.program = std::make_shared<eng::Program>(
                 data::wavefront::forward_blinn_phong_program(shader_compiler));
-                blinn_phong_pass.subscriptions.clear();
-            for(auto& m : database.meshes) {
-                subscribe(blinn_phong_pass, m);
-            }
             blinn_phong_pass_loaded = true;
         } catch(...) {
             blinn_phong_pass.program.reset();
@@ -118,7 +120,7 @@ struct GltfProgram : Program {
             }
             new_mesh = false;
             auto render_inter_mesh = std::make_shared<eng::Mesh>(
-                agl::engine::point_mesh(inter_mesh, database.materials));
+                agl::engine::point_mesh(inter_mesh, rasterization_scene.materials));
             subscribe(point_pass, render_inter_mesh);
         }
     }
@@ -128,25 +130,26 @@ struct GltfProgram : Program {
             shader_compiler.log_folder = "logs/";
             shader_compiler.root = "iehl/src/shader";
         }
-        
-        database = agl::format::wavefront::load(
-            "D:/data/cornell-box/cornell-box.obj",
-            "D:/data/cornell-box");
-            // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
-            // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-            // "D:/data/bistro-small/exterior.obj",
-            // "D:/data/bistro-small/");
-            // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-            // "C:/Users/Willy/Desktop/data/bistro-small/");
-            // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
-            // "C:/Users/yoanp/Documents/bistro-small/");
-
-        // CLEAR GPU MESHES BECAUSE OF BADNESS ???
-        // database.meshes.clear();
-        // for(auto&& tm : database.tmeshes) {
-        //     database.meshes.push_back(std::make_shared<eng::Mesh>(
-        //         agl::engine::triangle_mesh(*tm, database.materials)));
-        // }
+        { // Read objects from file.
+            auto content = agl::format::wavefront::load(
+                // "D:/data/cornell-box/cornell-box.obj",
+                // "D:/data/cornell-box");
+                // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
+                // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
+                "D:/data/bistro-small/exterior.obj",
+                "D:/data/bistro-small/");
+                // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+                // "C:/Users/Willy/Desktop/data/bistro-small/");
+                // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
+                // "C:/Users/yoanp/Documents/bistro-small/");
+            for(std::size_t i = 0; i < size(content.meshes); ++i) {
+                auto& o = rasterization_scene.objects.emplace_back();
+                o.cpu_mesh = content.tmeshes[i];
+                o.gpu_mesh = content.meshes[i];
+                o.bounding_box = bounding_box(*o.cpu_mesh);
+            }
+            rasterization_scene.materials = std::move(content.materials);
+        }
 
         { // Normalize data.
             auto default_albedo = std::make_shared<eng::Texture>(
@@ -155,8 +158,8 @@ struct GltfProgram : Program {
                 data::uniform_texture(agl::vec3(0.f)));
             auto default_specular = std::make_shared<eng::Texture>(
                 data::uniform_texture(agl::vec3(0.f, 1.f, 0.f)));
-            for(auto&& me : database.meshes | ranges::views::indirect) {
-                for(auto&& p : me.primitives | ranges::views::indirect) {
+            for(auto& o : rasterization_scene.objects) {
+                for(auto&& p : o.gpu_mesh->primitives | ranges::views::indirect) {
                     if(p.material) {
                         auto&& ma = *p.material;
                         if(not ma.textures.contains("map_Kd")) {
@@ -172,19 +175,19 @@ struct GltfProgram : Program {
                 }
             }
         }
-        {
-            auto& tmesh = *database.tmeshes.front();
-            for(uint32_t fi = 0; fi < face_count(tmesh); ++fi) {
-                scene.all_faces.push_back(face(tmesh, fi));
-            }
-            for(auto& f : scene.all_faces) {
-                for(uint32_t vi = 0; vi < incident_vertex_count(f); ++vi) {
-                    auto mid = geometry(tmesh).vertex_material_ids[index(incident_vertex(f, vi))];
-                    if(mid == 0) { // Light material.
-                        scene.emissive_faces.push_back(f);
-                    }
-                }
-            }
+        if constexpr(false) {
+            // auto& tmesh = *database.tmeshes.front();
+            // for(uint32_t fi = 0; fi < face_count(tmesh); ++fi) {
+            //     scene.all_faces.push_back(face(tmesh, fi));
+            // }
+            // for(auto& f : scene.all_faces) {
+            //     for(uint32_t vi = 0; vi < incident_vertex_count(f); ++vi) {
+            //         auto mid = geometry(tmesh).vertex_material_ids[index(incident_vertex(f, vi))];
+            //         if(mid == 0) { // Light material.
+            //             scene.emissive_faces.push_back(f);
+            //         }
+            //     }
+            // }
         }
 
         { // Render passes.
@@ -195,7 +198,7 @@ struct GltfProgram : Program {
             auto& c = *(camera = std::make_shared<eng::Camera>());
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&c.projection)) {
                 pp->aspect_ratio = 16.f / 9.f;
-                pp->z_far = 10.f;
+                pp->z_far = 100.f;
             }
             frustrum_camera = std::make_shared<eng::Camera>(*camera);
         }
@@ -266,6 +269,9 @@ struct GltfProgram : Program {
             rtx(); // on
             reload_points();
         }
+        if(not settings.debugging.is_frustrum_anchored) {
+            *frustrum_camera = *camera;
+        }
         update_render_passes();
     }
 
@@ -328,7 +334,7 @@ struct GltfProgram : Program {
                     lambertian = 1.f;
                 }
                 auto mid = material_id(ivert);
-                auto& m = database.materials[mid];
+                auto& m = rasterization_scene.materials[mid];
                 if(auto ptr = dynamic_cast<eng::Uniform<agl::Vec3>*>(m->uniforms["Kd"])) {
                     color(v) = lambertian * ptr->value;
                 }
@@ -337,25 +343,80 @@ struct GltfProgram : Program {
     }
 
     void update_render_passes() {
+        clear(ambient_pass);
+        clear(blinn_phong_pass);
+        clear(wireframe_pass);
+
         auto wtc = agl::engine::world_to_clip(*camera);
         { // Update wireframe pass.
-            clear(wireframe_pass);
-            for(auto& m : database.tmeshes) {
-                auto bb = bounding_box(*m);
-                auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
-                assign_uniform(
-                    *instance,
-                    "world_to_clip",
-                    wtc * data::gizmo::bounding_box_model_to_world(bb));
-            }
+            // for(auto& o : rasterization_scene.objects) {
+            //     auto& m = *o.cpu_mesh;
+            //     auto bb = bounding_box(m);
+            //     auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+            //     assign_uniform(
+            //         *instance,
+            //         "world_to_clip",
+            //         wtc * data::gizmo::bounding_box_model_to_world(bb));
+            // }
             { // Frustrum gizmo.
                 auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+                instance->uniforms["rgb"]
+                    = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 1.f, 1.f));
                 assign_uniform(
                     *instance,
                     "world_to_clip",
-                    wtc * data::gizmo::bounding_box_model_to_world(*frustrum_camera));
+                    wtc * data::gizmo::bounding_box_model_to_world(
+                        agl::engine::bounding_box(*frustrum_camera)));
             }
         }
+        if(settings.frustrum_culling.enabled) { // Frustrum culling.
+            statistics.frustrum_culling.accepted_count = 0;
+            statistics.frustrum_culling.rejected_count = 0;
+            auto fbb = agl::engine::bounding_box(*frustrum_camera);
+            for(auto& o : rasterization_scene.objects) {
+                auto& obb = o.bounding_box;
+                if(are_intersecting(obb, fbb)) {
+                    statistics.frustrum_culling.accepted_count += 1;
+                    if(ambient_pass_loaded) {
+                        subscribe(ambient_pass, o.gpu_mesh);
+                    }
+                    if(blinn_phong_pass_loaded) {
+                        subscribe(blinn_phong_pass, o.gpu_mesh);
+                    }
+                } else {
+                    statistics.frustrum_culling.rejected_count += 1;
+                    if(settings.frustrum_culling.draw_rejected_bounding_boxes) {
+                        auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+                        assign_uniform(
+                            *instance,
+                            "world_to_clip",
+                            wtc * data::gizmo::bounding_box_model_to_world(obb));
+                        instance->uniforms["rgb"]
+                        = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 0.f, 0.f));
+                    }
+                    if(settings.frustrum_culling.draw_rejected_objects) {
+                        if(ambient_pass_loaded) {
+                            subscribe(ambient_pass, o.gpu_mesh);
+                        }
+                        if(blinn_phong_pass_loaded) {
+                            subscribe(blinn_phong_pass, o.gpu_mesh);
+                        }
+                    }
+                }
+            }
+        } else {
+            statistics.frustrum_culling.accepted_count = 0;
+            statistics.frustrum_culling.rejected_count = 0;
+            for(auto& o : rasterization_scene.objects) {
+                if(ambient_pass_loaded) {
+                    subscribe(ambient_pass, o.gpu_mesh);
+                }
+                if(blinn_phong_pass_loaded) {
+                    subscribe(blinn_phong_pass, o.gpu_mesh);
+                }
+            }
+        }
+        
     }
 
     void render() override {
@@ -426,32 +487,78 @@ struct GltfProgram : Program {
         }
 
         { // UI
+            if(ImGui::BeginMainMenuBar()) {
+                ImGui::MenuItem("Settings", NULL, &settings.ui.show_settings);
+                ImGui::EndMainMenuBar();
+            }
+            if(settings.ui.show_settings and ImGui::Begin("Settings", &settings.ui.show_settings)) {
+                if(ImGui::CollapsingHeader("Rasterization")) {
+                    if(ImGui::TreeNode("Optimization")) {
+                        if(ImGui::TreeNode("Rendering")) {
+                            ImGui::TreePop();
+                        }
+                        if(ImGui::TreeNode("Z-prepass")) {
+                            ImGui::TreePop();
+                        }
+                        if(ImGui::TreeNode("Z-sorting")) {
+                            ImGui::TreePop();
+                        }
+                        ImGui::Separator();
+                        if(ImGui::TreeNode("Frustrum culling")) {
+                            ImGui::Checkbox("Enabled",
+                                &settings.frustrum_culling.enabled);
+                            ImGui::NewLine();
+                            ImGui::Text("Statistics:");
+                            ImGui::Text("Accepted: %i (%f%%)", 
+                                statistics.frustrum_culling.accepted_count,
+                                accepted_percentage(statistics.frustrum_culling));
+                            ImGui::Text("Rejected: %i (%f%%)",
+                                statistics.frustrum_culling.rejected_count,
+                                rejected_percentage(statistics.frustrum_culling));
+                            ImGui::Text("Total: %i",
+                                total_count(statistics.frustrum_culling));
+                            ImGui::NewLine();
+                            ImGui::Text("Debugging:");
+                            ImGui::Checkbox("Anchor frustrum",
+                                &settings.debugging.is_frustrum_anchored);
+                            ImGui::Checkbox("Draw rejected bounding boxes",
+                                &settings.frustrum_culling.draw_rejected_bounding_boxes);
+                            ImGui::Checkbox("Draw rejected objects",
+                                &settings.frustrum_culling.draw_rejected_objects);
+                            ImGui::TreePop();
+                        }
+                        if(ImGui::TreeNode("Occlusion culling")) {
+                            ImGui::TreePop();
+                        }
+                        ImGui::Separator();
+                        ImGui::TreePop();
+                    }
+                    if(ImGui::TreeNode("Statistics")) {
+                        ImGui::TreePop();
+                    }
+                }
+                if(ImGui::CollapsingHeader("Ray tracing")) {
+                    ImGui::DragFloat("Range",
+                    &ray_tracing_settings.range,
+                    0.01f, 0.f, 1, "%.3f %%", ImGuiSliderFlags_AlwaysClamp);
+                    {
+                        auto i = int(ray_tracing_settings.ray_per_frame);
+                        ImGui::DragInt("Ray per frame",
+                            &i,
+                            1, 0, 1000, "%d", ImGuiSliderFlags_AlwaysClamp);
+                        ray_tracing_settings.ray_per_frame = uint32_t(i);
+                    }
+                }
+                
+                ImGui::End();
+            }
+
             ImGui::Begin("Camera");
 
             ImGui::InputFloat("X", &camera->view.position[0], 0.f, 0.f, "%.3f");
             ImGui::InputFloat("Y", &camera->view.position[1], 0.f, 0.f, "%.3f");
             ImGui::InputFloat("Z", &camera->view.position[2], 0.f, 0.f, "%.3f");
-
-            if(ImGui::Button("Frustrum")) {
-                *frustrum_camera = *camera;
-            }
-
             ImGui::End();
-
-            if(ImGui::Begin("Ray Tracing")) {
-                ImGui::DragFloat("Range",
-                    &ray_tracing_settings.range,
-                    0.01f, 0.f, 1, "%.3f %%", ImGuiSliderFlags_AlwaysClamp);
-                {
-                    auto i = int(ray_tracing_settings.ray_per_frame);
-                    ImGui::DragInt("Ray per frame",
-                        &i,
-                        1, 0, 1000, "%d", ImGuiSliderFlags_AlwaysClamp);
-                    ray_tracing_settings.ray_per_frame = uint32_t(i);
-                }
-                
-                ImGui::End();
-            }   
         }
     }
 };
