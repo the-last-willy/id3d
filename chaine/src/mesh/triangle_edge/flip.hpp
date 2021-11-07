@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adjacent_triangle.hpp"
+#include "is_valid.hpp"
 #include "proxy.hpp"
 
 #include "mesh/triangle/opposite_vertex.hpp"
@@ -10,6 +11,10 @@ namespace face_vertex {
 
 inline
 void flip(TriangleEdgeProxy tep) {
+    if(not is_valid(tep)) {
+        throw std::logic_error("Invalid edge.");
+    }
+
     auto t0 = adjacent_triangle(tep, 0);
     auto t1 = adjacent_triangle(tep, 1);
 
@@ -38,10 +43,14 @@ void flip(TriangleEdgeProxy tep) {
     if(index(at0) != index(t0)) {
         topology(t1)->triangles[t1_t0_i] = index(at0);
         substitute_adjacent_triangle(at0, t0, t1);
+    } else {
+        topology(t1)->triangles[t1_t0_i] = index(t1);
     }
     if(index(at1) != index(t1)) {
         topology(t0)->triangles[t0_t1_i] = index(at1);
         substitute_adjacent_triangle(at1, t1, t0);
+    }  else {
+        topology(t0)->triangles[t0_t1_i] = index(t0);
     }
 }
 
