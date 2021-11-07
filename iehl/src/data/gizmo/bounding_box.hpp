@@ -68,15 +68,9 @@ agl::engine::TriangleMesh bounding_box() {
 
 inline
 agl::Mat4 bounding_box_model_to_world(const agl::engine::BoundingBox& bb) {
-    return mat4(transform(bb))
+    return inverse(mat4(transform(bb)))
     * agl::translation(midpoint(bb.aabb))
     * agl::scaling3(length(bb.aabb));
-}
-
-inline
-agl::Mat4 bounding_box_model_to_world(const eng::Camera& c) {
-    return agl::engine::clip_to_world(c)
-    * agl::scaling3(2.f);
 }
 
 }
