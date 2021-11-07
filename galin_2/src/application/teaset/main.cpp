@@ -6,17 +6,13 @@
 
 #include "settings.hpp"
 
-#include "data/all.hpp"
 #include "nurbs/all.hpp"
-
-#include "error_callback.hpp"
-
-#include <program/all.hpp>
-
-// External libraries.
 
 #include <agl/engine/all.hpp>
 #include <agl/standard/all.hpp>
+#include <id3d/common/all.hpp>
+
+// External libraries.
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

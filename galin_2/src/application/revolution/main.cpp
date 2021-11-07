@@ -6,17 +6,13 @@
 
 #include "settings.hpp"
 
-#include "data/all.hpp"
 #include "nurbs/all.hpp"
-
-#include "error_callback.hpp"
-
-#include <program/all.hpp>
-
-// External libraries.
 
 #include <agl/engine/all.hpp>
 #include <agl/standard/all.hpp>
+#include <id3d/common/all.hpp>
+
+// External libraries.
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -95,7 +91,7 @@ struct App : Program {
                 data::wireframe_program(shader_compiler));
         }
         { // Load mesh.
-            auto curve = Grid<agl::Vec3>({10});
+            auto curve = agl::common::Grid<agl::Vec3>({10});
             for(uint32_t i = 0; i < 10; ++i) {
                 at(curve, i) = agl::vec3(2.f + std::cos(float(i)), float(i), 0.f);
             }

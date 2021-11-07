@@ -11,11 +11,9 @@
 #include "mesh_conversion/all.hpp"
 #include "all.hpp"
 
-#include <local/all.hpp>
-#include "program/all.hpp"
-
 #include <agl/opengl/all.hpp>
 #include <agl/format/off/all.hpp>
+#include <id3d/common/all.hpp>
 
 // External libraries.
 

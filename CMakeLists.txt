@@ -16,33 +16,9 @@ elseif()
     add_compile_options(/std=c++20 /Wall)
 endif()
 
-# Library 'common'.
-
-add_library(common INTERFACE)
-
-target_include_directories(common
-INTERFACE
-    src
-)
-
-target_link_libraries(common
-INTERFACE
-    abstractgl
-    dear_imgui
-    glad
-    glfw
-    range-v3
-    stb_all
-    tinygltf
-    tinyobjloader
-)
-
-# Executables.
+add_subdirectory(common)
 
 add_subdirectory(chaine)
 add_subdirectory(galin)
 add_subdirectory(galin_2)
 add_subdirectory(iehl)
-
-add_executable(dear_imgui_demo src/dear_imgui_demo.cpp)
-target_link_libraries(dear_imgui_demo PRIVATE common)
