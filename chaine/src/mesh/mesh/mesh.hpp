@@ -1,5 +1,6 @@
 #pragma once
 
+#include "topology/all.hpp"
 #include "geometry.hpp"
 
 namespace face_vertex {

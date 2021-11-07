@@ -4,12 +4,16 @@
 
 // Local headers.
 
-#include "geometry/all.hpp"
-#include "topology/all.hpp"
-
 #include "data/all.hpp"
+#include "geometry/all.hpp"
 #include "mesh_conversion/all.hpp"
+#include "topology/all.hpp"
 #include "all.hpp"
+#include "insert.hpp"
+#include "is_delaunay.hpp"
+#include "lawson.hpp"
+#include "paraboloid.hpp"
+#include "settings.hpp"
 
 #include <agl/opengl/all.hpp>
 #include <agl/format/off/all.hpp>
@@ -19,7 +23,6 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include <range/v3/view/indirect.hpp>
 #include <range/v3/view/take.hpp>
 
@@ -29,11 +32,6 @@
 #include <random>
 
 //
-
-#include "insert.hpp"
-#include "is_delaunay.hpp"
-#include "lawson.hpp"
-#include "paraboloid.hpp"
 
 using namespace chaine;
 
@@ -70,6 +68,8 @@ struct App : Program {
     agl::engine::RenderPass triangle_pass = {};
 
     face_vertex::Mesh mesh;
+
+    Settings settings;
 
     void refresh_mesh() {
         { // Edge pass.
@@ -122,7 +122,6 @@ struct App : Program {
             topology(v0)->triangle = t;
             topology(v1)->triangle = t;
             topology(v2)->triangle = t;
-            std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
         }
 
         refresh_mesh();
@@ -148,7 +147,9 @@ struct App : Program {
                 auto pos = (transform(camera) * agl::vec4(float(xpos), float(ypos), 0.f, 1.f)).xyz();
 
                 insert(mesh, pos.xy());
-                std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
+                if(settings.delaunay_insertion) {
+                    lawson(mesh);
+                }
                 refresh_mesh();
             }
         }
@@ -204,50 +205,67 @@ struct App : Program {
             agl::engine::render(edge_pass2);
         }
         { // UI
-            ImGui::Begin("Settings");
-
-            ImGui::Checkbox("Show vertices", &render_settings.show_vertices);
-
-            ImGui::SliderFloat("Point size", &render_settings.point_size, 1.0f, 10.0f);
-
-            ImGui::Separator();
-
-            ImGui::Checkbox("Show edges", &render_settings.show_edges);
-
-            ImGui::SliderFloat("Line width", &render_settings.line_width, 1.0f, 10.0f);
-
-            ImGui::Separator();
-
-            ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
-
-            auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
-            ImGui::Combo("Render mode", &render_settings.selected_render_mode,
-                std::data(render_modes), static_cast<int>(size(render_modes)));
-
-            if(ImGui::Button("Make Delaunay")) {
-                lawson(mesh);
-                std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
-                refresh_mesh();
+            if(ImGui::BeginMainMenuBar()) {
+                ImGui::MenuItem("Settings", NULL, &settings.show_settings);
+                ImGui::MenuItem("Help", NULL, &settings.show_help);
             }
-
-            if(ImGui::Button("Lawson once")) {
-                lawson_once(mesh);
-                std::cout << "Validity " << is_valid(topology(mesh)) << std::endl;
-                refresh_mesh();
+            ImGui::EndMainMenuBar();
+            if(settings.show_help) {
+                if(ImGui::Begin("Help")) {
+                    ImGui::Text("2D mode: ...");
+                    ImGui::Text("3D mode: ...");
+                }
+                ImGui::End();
             }
+            if(settings.show_settings) {
+                if(ImGui::Begin("Settings", &settings.show_settings)) {
+                    ImGui::Checkbox("Delaunay insertion",
+                        &settings.delaunay_insertion);
+                    ImGui::NewLine();
+                    ImGui::Checkbox("Show voronoi",
+                        &settings.show_voronoi);
 
-            if(ImGui::Button("Collapse random edge")) {
-                while(true) {
-                    auto&& rte = random_triangle_edge(mesh, random_generator);
-                    if(can_collapse(rte)) {
-                        collapse(rte);
-                        break;
+                    ImGui::Checkbox("Show vertices", &render_settings.show_vertices);
+
+                    ImGui::SliderFloat("Point size", &render_settings.point_size, 1.0f, 10.0f);
+
+                    ImGui::Separator();
+
+                    ImGui::Checkbox("Show edges", &render_settings.show_edges);
+
+                    ImGui::SliderFloat("Line width", &render_settings.line_width, 1.0f, 10.0f);
+
+                    ImGui::Separator();
+
+                    ImGui::Checkbox("Show triangles", &render_settings.show_triangles);
+
+                    auto render_modes = std::array{"flat shading", "mean curvature", "smooth normal"};
+                    ImGui::Combo("Render mode", &render_settings.selected_render_mode,
+                        std::data(render_modes), static_cast<int>(size(render_modes)));
+
+                    if(ImGui::Button("Make Delaunay")) {
+                        lawson(mesh);
+                        refresh_mesh();
+                    }
+
+                    if(ImGui::Button("Lawson once")) {
+                        lawson_once(mesh);
+                        refresh_mesh();
+                    }
+
+                    if(ImGui::Button("Collapse random edge")) {
+                        while(true) {
+                            auto&& rte = random_triangle_edge(mesh, random_generator);
+                            if(can_collapse(rte)) {
+                                collapse(rte);
+                                break;
+                            }
+                        }
+                        refresh_mesh();
                     }
                 }
-                refresh_mesh();
+                ImGui::End(); 
             }
-
-            ImGui::End();
         }
     }
 
