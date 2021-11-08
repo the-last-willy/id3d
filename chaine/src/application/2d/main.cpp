@@ -126,54 +126,112 @@ struct App : Program {
 
         refresh_mesh();
 
-        { // Camera.
-            auto op = agl::engine::OrthographicProjection();
-            op.z_far = 1000.f;
-            op.z_near = -1000.f;
-            camera.projection = std::move(op);
-        }
+        transit_to_2d();
     }
 
     bool mouse_state = false;
 
-    void update(float) override {
-        {
-            if(not mouse_state and glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2)) {
-                double xpos, ypos;
-                glfwGetCursorPos(window.window, &xpos, &ypos);
-                xpos = 2.f * xpos / window.width() - 1.f;
-                ypos = -2.f * ypos / window.height() + 1.f;
-                
-                auto pos = (transform(camera) * agl::vec4(float(xpos), float(ypos), 0.f, 1.f)).xyz();
+    void transit_to_2d() {
+        settings.view_mode = ViewMode::_2D;
+        { // Camera.
+            auto op = agl::engine::OrthographicProjection();
+            op.z_far = 10.f;
+            op.z_near = -10.f;
+            camera.projection = std::move(op);
+            camera.view.roll = 0.f;
+            camera.view.pitch = 0.f;
+            camera.view.yaw = 0.f;
+            camera.view.position[2] = 0.f;
+        }
+    }
 
-                insert(mesh, pos.xy());
-                if(settings.delaunay_insertion) {
-                    lawson(mesh);
+    void update_2d() {
+        if(not ImGui::GetIO().WantCaptureMouse) {
+            { // Dragging.
+                if(ImGui::IsMouseDown(0)) {
+                    auto dx = 2.f * ImGui::GetIO().MouseDelta.x / (window.width() - 1);
+                    auto dy = 2.f * ImGui::GetIO().MouseDelta.y / (window.height() - 1);
+                    camera.view.position += agl::vec3(-dx, dy, 0.f);
                 }
-                refresh_mesh();
+            }
+            { // Insertion.
+                if(ImGui::IsMouseClicked(1)) {
+                    auto x = 2.f * ImGui::GetIO().MousePos.x / window.width() - 1.f;
+                    auto y = -2.f * ImGui::GetIO().MousePos.y / window.height() + 1.f;
+                    auto pos = (transform(camera) * agl::vec4(x, y, 0.f, 1.f)).xyz();
+                    insert(mesh, pos.xy());
+                    if(settings.delaunay_insertion) {
+                        lawson(mesh);
+                    }
+                    refresh_mesh();
+                }
             }
         }
-        {
-            if(glfwGetKey(window.window, GLFW_KEY_A)) {
-                auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                camera.view.position = camera.view.position - direction / 50.f;
+
+    }
+
+    void transit_to_3d() {
+        settings.view_mode = ViewMode::_3D;
+    }
+
+    void update_3d() {
+        if(not ImGui::GetIO().WantCaptureKeyboard) {
+            { // Orientation.
+                if(ImGui::IsMouseDown(0)) {
+                    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    float dx = ImGui::GetIO().MouseDelta.x;
+                    float dy = ImGui::GetIO().MouseDelta.y;
+                    camera.view.yaw -= dx / 500.f;
+                    camera.view.pitch -= dy / 500.f;
+                } else {
+                    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                }
             }
-            if(glfwGetKey(window.window, GLFW_KEY_D)) {
-                auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-                camera.view.position = camera.view.position + direction / 50.f;
-            }
-            if(glfwGetKey(window.window, GLFW_KEY_S)) {
-                auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
-                camera.view.position = camera.view.position + direction / 50.f;
-            }
-            if(glfwGetKey(window.window, GLFW_KEY_W)) {
-                auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
-                camera.view.position = camera.view.position - direction / 50.f;
+            { // Camera controls.
+
             }
         }
-        {
-            mouse_state = glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2);
-        }
+    }
+
+    void update(float) override {
+        update_2d();
+        // {
+        //     if(not mouse_state and glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2)) {
+        //         double xpos, ypos;
+        //         glfwGetCursorPos(window.window, &xpos, &ypos);
+        //         xpos = 2.f * xpos / window.width() - 1.f;
+        //         ypos = -2.f * ypos / window.height() + 1.f;
+                
+        //         auto pos = (transform(camera) * agl::vec4(float(xpos), float(ypos), 0.f, 1.f)).xyz();
+
+        //         insert(mesh, pos.xy());
+        //         if(settings.delaunay_insertion) {
+        //             lawson(mesh);
+        //         }
+        //         refresh_mesh();
+        //     }
+        // }
+        // {
+        //     if(glfwGetKey(window.window, GLFW_KEY_A)) {
+        //         auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+        //         camera.view.position = camera.view.position - direction / 50.f;
+        //     }
+        //     if(glfwGetKey(window.window, GLFW_KEY_D)) {
+        //         auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
+        //         camera.view.position = camera.view.position + direction / 50.f;
+        //     }
+        //     if(glfwGetKey(window.window, GLFW_KEY_S)) {
+        //         auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
+        //         camera.view.position = camera.view.position + direction / 50.f;
+        //     }
+        //     if(glfwGetKey(window.window, GLFW_KEY_W)) {
+        //         auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
+        //         camera.view.position = camera.view.position - direction / 50.f;
+        //     }
+        // }
+        // {
+        //     mouse_state = glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2);
+        // }
     }
 
     void render() override {
@@ -221,7 +279,13 @@ struct App : Program {
                 if(ImGui::Begin("Settings", &settings.show_settings)) {
                     ImGui::Text("View mode: ");
                     ImGui::SameLine();
-                    // if(ImGui::RadioButton("2D");
+                    if(ImGui::RadioButton("2D", settings.view_mode == ViewMode::_2D)) {
+                        settings.view_mode = ViewMode::_2D;
+                    }
+                    ImGui::SameLine();
+                    if(ImGui::RadioButton("3D", settings.view_mode == ViewMode::_3D)) {
+                        settings.view_mode = ViewMode::_3D;
+                    }
                     ImGui::Checkbox("Delaunay insertion",
                         &settings.delaunay_insertion);
                     ImGui::NewLine();
