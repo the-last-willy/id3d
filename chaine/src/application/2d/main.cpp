@@ -219,6 +219,9 @@ struct App : Program {
             }
             if(settings.show_settings) {
                 if(ImGui::Begin("Settings", &settings.show_settings)) {
+                    ImGui::Text("View mode: ");
+                    ImGui::SameLine();
+                    // if(ImGui::RadioButton("2D");
                     ImGui::Checkbox("Delaunay insertion",
                         &settings.delaunay_insertion);
                     ImGui::NewLine();
