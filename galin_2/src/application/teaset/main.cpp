@@ -4,9 +4,8 @@
 
 // Local headers.
 
-#include "settings.hpp"
-
 #include "nurbs/all.hpp"
+#include "settings.hpp"
 
 #include <agl/engine/all.hpp>
 #include <agl/standard/all.hpp>
@@ -77,18 +76,19 @@ struct App : Program {
     std::shared_ptr<eng::Mesh> triangulation;
     std::shared_ptr<eng::Mesh> wireframe;
 
+    std::shared_ptr<eng::Mesh> sphere;
+
     float time = 0.f;
 
     void init() override {
         { // Shader compiler.
             shader_compiler.log_folder = "logs/";
-            shader_compiler.root = "galin_2/src/shader";
         }
         { // Render passes.
             assign_program(mesh_pass,
-                data::flat_shading_program(shader_compiler));
+                shader::flat_shading(shader_compiler));
             assign_program(wireframe_pass,
-                data::wireframe_program(shader_compiler));
+                shader::wireframe(shader_compiler));
         }
         { // Load mesh.
             auto cbm = load_teapot();
@@ -99,9 +99,14 @@ struct App : Program {
                 for(uint32_t j = 0; j < 4; ++j) {
                     at(g, i, j) = cbm.vertices[p[4 * i + j]];
                 }
-                subscribe(mesh_pass, agl::engine::triangle_mesh(sampled_mesh(g, 10, 10), {}));
-                subscribe(mesh_pass, agl::engine::wireframe(control_mesh(g)));
+                // subscribe(mesh_pass, agl::engine::triangle_mesh(sampled_mesh(g, 10, 10), {}));
+                // subscribe(wireframe_pass, agl::engine::wireframe(control_mesh(g)));
             }
+        }
+        { // Sphere gizmo.
+            sphere = std::make_shared<eng::Mesh>(
+                agl::engine::triangle_mesh(gizmo::uv_sphere(), {}));
+            subscribe(mesh_pass, sphere);
         }
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
@@ -155,14 +160,15 @@ struct App : Program {
         auto wtc = agl::engine::world_to_clip(camera);
         auto wte = agl::engine::world_to_eye(camera);
         if(settings.show_mesh) {
-            mesh_pass.uniforms["world_to_clip"]
+            mesh_pass.uniforms["model_to_clip"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
-            mesh_pass.uniforms["world_to_eye"]
+            mesh_pass.uniforms["model_to_eye"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(wte);
             agl::engine::render(mesh_pass);
         }
-        if(settings.show_wireframe) {
-            wireframe_pass.uniforms["world_to_clip"]
+        // if(settings.show_wireframe) {'
+        {
+            wireframe_pass.uniforms["model_to_clip"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
             agl::engine::render(wireframe_pass);
         }
