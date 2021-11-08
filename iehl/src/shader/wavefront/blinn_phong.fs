@@ -41,5 +41,6 @@ void main() {
     float lambertian = max(dot(l, n), 0.);
     float specular = pow(blinn_phong_specular(h, n), 90.);
 
+    // fragment_color = vec3(texture(map_Ks, vertex_texcoords).rgb);
     fragment_color = ambient + (lambertian * .5) * albedo + vec3(specular);
 }
