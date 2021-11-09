@@ -1,0 +1,26 @@
+#version 450 core
+
+layout(std430, binding = 0) readonly buffer Input {
+    int ivalues[];
+};
+
+layout(std430, binding = 1) writeonly buffer Output {
+    int ovalues[];
+};
+
+layout(std430, binding = 2) coherent buffer Counter {
+    int count;
+};
+
+layout(local_size_x = 8) in;
+
+void main() {
+    uint idx = gl_LocalInvocationIndex;
+
+    if(i < ovalues.length()) {
+        if(ivalues[idx] % 2 == 0) {
+            uint pos = atomicAdd(count, 1);
+            ovalues[pos] = ivalues[idx];
+        }
+    }
+}
