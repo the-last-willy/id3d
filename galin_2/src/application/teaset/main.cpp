@@ -63,6 +63,13 @@ CubicBezierMesh load_teapot() {
     return cbm;
 }
 
+struct Object {
+    std::shared_ptr<agl::engine::TriangleMesh> cpu_tessellated_mesh;
+
+    std::shared_ptr<agl::engine::MeshInstance> gpu_control_mesh;
+    std::shared_ptr<agl::engine::MeshInstance> gpu_tessellated_mesh;
+};
+
 struct App : Program {
     Settings settings;
 
@@ -73,10 +80,11 @@ struct App : Program {
     agl::engine::RenderPass mesh_pass;
     agl::engine::RenderPass wireframe_pass;
 
-    std::shared_ptr<eng::Mesh> triangulation;
-    std::shared_ptr<eng::Mesh> wireframe;
+    std::shared_ptr<eng::Mesh> sphere_gizmo;
 
-    std::shared_ptr<eng::Mesh> sphere;
+    std::vector<Object> objects;
+
+    std::shared_ptr<agl::engine::MeshInstance> transform_aoe;
 
     float time = 0.f;
 
@@ -90,29 +98,17 @@ struct App : Program {
             assign_program(wireframe_pass,
                 shader::wireframe(shader_compiler));
         }
-        { // Load mesh.
-            auto cbm = load_teapot();
-            for(auto& p : cbm.patches) {
-                auto g = agl::common::Grid<agl::Vec3>(
-                    agl::common::grid_indexing({4, 4}));
-                for(uint32_t i = 0; i < 4; ++i)
-                for(uint32_t j = 0; j < 4; ++j) {
-                    at(g, i, j) = cbm.vertices[p[4 * i + j]];
-                }
-                // subscribe(mesh_pass, agl::engine::triangle_mesh(sampled_mesh(g, 10, 10), {}));
-                // subscribe(wireframe_pass, agl::engine::wireframe(control_mesh(g)));
-            }
-        }
         { // Sphere gizmo.
-            sphere = std::make_shared<eng::Mesh>(
+            sphere_gizmo = std::make_shared<eng::Mesh>(
                 agl::engine::triangle_mesh(gizmo::uv_sphere(), {}));
-            subscribe(mesh_pass, sphere);
+            transform_aoe = subscribe(mesh_pass, sphere_gizmo);
         }
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
                 pp->aspect_ratio = 16.f / 9.f;
             }
         }
+        update_mesh();
     }
 
     void update(float dt) override {
@@ -150,28 +146,121 @@ struct App : Program {
         }
     }
 
-    void ui() {
-        
+    void update_mesh() {
+        objects.clear();
+        { // Load mesh.
+            auto cbm = load_teapot();
+            for(auto& p : cbm.patches) {
+                auto g = agl::common::Grid<agl::Vec3>(
+                    agl::common::grid_indexing({4, 4}));
+                for(uint32_t i = 0; i < 4; ++i)
+                for(uint32_t j = 0; j < 4; ++j) {
+                    at(g, i, j) = cbm.vertices[p[4 * i + j]];
+                }
+                auto& o = objects.emplace_back();
+                o.cpu_tessellated_mesh = agl::standard::unique(sampled_mesh(
+                    g, settings.tesselation_resolution, settings.tesselation_resolution));
+                o.gpu_control_mesh = agl::standard::shared(
+                    agl::engine::instance(agl::engine::wireframe(control_mesh(g))));
+            }
+        }
+        { // Apply transformation.
+            for(auto& o : objects) {
+                for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
+                    auto d = settings.transform_position - p;
+                    auto l = length(d);
+                    // d = -(settings.transform_radius - l) * normalize(d);
+                    l = std::max(1.f - l / settings.transform_radius, 0.f);
+                    // if(l > 0.f) {
+                    //     l = 1.f - l;
+                    // }
+                    p += l * d * settings.transform_intensity;
+                }
+            }
+        }
+        { // To GPU.
+            for(auto& o : objects) {
+                o.gpu_tessellated_mesh = agl::standard::shared(
+                    agl::engine::instance(agl::engine::triangle_mesh(*o.cpu_tessellated_mesh, {})));
+            }
+        }
     }
 
     void render() override {
         clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
+        clear(mesh_pass);
+        clear(wireframe_pass);
+
         auto wtc = agl::engine::world_to_clip(camera);
         auto wte = agl::engine::world_to_eye(camera);
-        if(settings.show_mesh) {
-            mesh_pass.uniforms["model_to_clip"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
-            mesh_pass.uniforms["model_to_eye"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(wte);
-            agl::engine::render(mesh_pass);
+
+        
+        if(settings.show_triangulation) {
+            for(auto& o : objects) {
+                o.gpu_tessellated_mesh->uniforms["model_to_clip"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
+                o.gpu_tessellated_mesh->uniforms["model_to_eye"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(wte);
+                subscribe(mesh_pass, o.gpu_tessellated_mesh);
+            }
         }
-        // if(settings.show_wireframe) {'
-        {
-            wireframe_pass.uniforms["model_to_clip"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
-            agl::engine::render(wireframe_pass);
+        if(settings.show_control_points) {
+            for(auto& o : objects) {
+                o.gpu_control_mesh->uniforms["model_to_clip"]
+                = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
+                subscribe(wireframe_pass, o.gpu_control_mesh);
+            }
         }
+        if(settings.show_gizmo) {
+            auto model_to_world = agl::translation(settings.transform_position)
+            * agl::scaling3(settings.transform_radius);
+            transform_aoe->uniforms["model_to_clip"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc * model_to_world);
+            subscribe(mesh_pass, transform_aoe);
+        }
+        
+        agl::engine::render(mesh_pass);
+        agl::engine::render(wireframe_pass);
+
+        ui();
+    }
+
+    void ui() {
+        if(ImGui::BeginMainMenuBar()) {
+            ImGui::MenuItem("Settings", NULL, &settings.show_settings);
+        }
+        ImGui::EndMainMenuBar();
+        if(ImGui::Begin("Settings")) {
+            if(ImGui::Button("Reload")) {
+                update_mesh();
+            }
+            if(ImGui::TreeNode("Debugging")) {
+                ImGui::Checkbox("Show control points",
+                    &settings.show_control_points);
+                ImGui::Checkbox("Show gizmo",
+                    &settings.show_gizmo);
+                ImGui::Checkbox("Show triangulation",
+                    &settings.show_triangulation);
+                ImGui::TreePop();
+            }
+            if(ImGui::TreeNode("Tessellation")) {
+                ImGui::SliderInt("Resolution",
+                    &settings.tesselation_resolution, 2, 30);
+                ImGui::TreePop();
+            }
+            if(ImGui::TreeNode("Transform")) {
+                ImGui::SliderFloat("Intensity",
+                    &settings.transform_intensity, 0.f, 1.f);
+                ImGui::DragFloat3("Position", 
+                    data(settings.transform_position), 0.05f);
+                ImGui::SliderFloat("Radius",
+                    &settings.transform_radius, 0.f, 5.f);
+                ImGui::TreePop();
+            }
+            
+        }
+        ImGui::End();
     }
 };
 
