@@ -4,8 +4,9 @@
 
 // Local headers.
 
-#include "settings.hpp"
+#include "data/all.hpp"
 #include "ray/all.hpp"
+#include "settings.hpp"
 #include "settings/all.hpp"
 #include "statistics/all.hpp"
 
@@ -217,7 +218,7 @@ struct GltfProgram : Program {
         }
         { // Gizmos.
             bounding_box_gizmo = std::make_shared<eng::Mesh>(
-                agl::engine::wireframe(data::gizmo::bounding_box()));
+                agl::engine::wireframe(gizmo::box_wireframe()));
         }
     }
 
@@ -356,7 +357,7 @@ struct GltfProgram : Program {
             //     assign_uniform(
             //         *instance,
             //         "world_to_clip",
-            //         wtc * data::gizmo::bounding_box_model_to_world(bb));
+            //         wtc * gizmo::box_wireframe_model_to_world(bb));
             // }
             { // Frustrum gizmo.
                 auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
@@ -365,7 +366,7 @@ struct GltfProgram : Program {
                 assign_uniform(
                     *instance,
                     "world_to_clip",
-                    wtc * data::gizmo::bounding_box_model_to_world(
+                    wtc * gizmo::box_wireframe_model_to_world(
                         agl::engine::bounding_box(*frustrum_camera)));
             }
         }
@@ -390,7 +391,7 @@ struct GltfProgram : Program {
                         assign_uniform(
                             *instance,
                             "world_to_clip",
-                            wtc * data::gizmo::bounding_box_model_to_world(obb));
+                            wtc * gizmo::box_wireframe_model_to_world(obb));
                         instance->uniforms["rgb"]
                         = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 0.f, 0.f));
                     }

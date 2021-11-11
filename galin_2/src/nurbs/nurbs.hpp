@@ -1,5 +1,7 @@
 #pragma once
 
+#include "control_mesh.hpp"
+
 #include <agl/engine/all.hpp>
 
 #include <functional>
@@ -11,39 +13,53 @@ auto bezier(const agl::common::Grid<G>& g, float u) {
     if(dimension(g) != 1) {
         throw std::logic_error("Bezier curve: wrong dimension.");
     }
-    auto tmp0 = std::vector<agl::Vec3>(size(g, 0));
+    auto tmp = std::vector<agl::Vec3>(size(g, 0));
     for(uint32_t i = 0; i < size(g, 0); ++i) {
-        tmp0[i] = at(g, i);
+        tmp[i] = at(g, i);
     }
     for(uint32_t i = 0; i < size(g, 0) - 1; ++i) {
         for(uint32_t j = 1; j < size(g, 0) - i; ++j) {
-            tmp0[j - 1] = (1.f - u) * tmp0[j - 1] + u * tmp0[j];
+            tmp[j - 1] = (1.f - u) * tmp[j - 1] + u * tmp[j];
         }
     }
-    return tmp0[0];
+    return tmp[0];
 }
 
 template<typename G>
 auto bezier(const agl::common::Grid<G>& g, float u, float v) {
-    auto tmp0 = std::vector<agl::Vec3>(size(g, 0));
-    auto tmp1 = std::vector<agl::Vec3>(size(g, 1));
+    auto sub = agl::common::Grid<G>(agl::common::grid_indexing(size(g, 0)));
+    auto tmp = std::vector<agl::Vec3>(size(g, 1));
     for(uint32_t i = 0; i < size(g, 0); ++i) {
         for(uint32_t j = 0; j < size(g, 1); ++j) {
-            tmp1[j] = at(g, i, j);
+            tmp[j] = at(g, i, j);
         }
         for(uint32_t j = 0; j < size(g, 1) - 1; ++j) {
             for(uint32_t k = 1; k < size(g, 1) - j; ++k) {
-                tmp1[k - 1] = (1.f - v) * tmp1[k - 1] + v * tmp1[k];
+                tmp[k - 1] = (1.f - v) * tmp[k - 1] + v * tmp[k];
             }
         }
-        tmp0[i] = tmp1[0];
+        at(sub, i) = tmp[0];
     }
-    for(uint32_t j = 0; j < size(g, 1) - 1; ++j) {
-        for(uint32_t k = 1; k < size(g, 1) - j; ++k) {
-            tmp0[k - 1] = (1.f - u) * tmp0[k - 1] + u * tmp0[k];
+    return bezier(sub, u);
+}
+
+template<typename G>
+auto bezier(const agl::common::Grid<G>& g, float u, float v, float w) {
+    auto sub = Grid<G>(agl::common::grid_indexing(size(g, 0), size(g, 1)));
+    auto tmp = std::vector<agl::Vec3>(size(g, 2));
+    for(uint32_t h = 0; h < size(g, 0); ++h)
+    for(uint32_t i = 0; i < size(g, 1); ++i) {
+        for(uint32_t j = 0; j < size(g, 2); ++j) {
+            tmp[j] = at(g, i, j);
         }
+        for(uint32_t j = 0; j < size(g, 2) - 1; ++j) {
+            for(uint32_t k = 1; k < size(g, 2) - j; ++k) {
+                tmp[k - 1] = (1.f - v) * tmp[k - 1] + v * tmp[k];
+            }
+        }
+        at(sub, h, i) = tmp[0];
     }
-    return tmp0[0];
+    return bezier(g, u, v);
 }
 
 template<typename T> constexpr
@@ -91,30 +107,6 @@ agl::engine::TriangleMesh sampled_mesh(
         ft1.incident_vertices[0] = index(at(vertices, i    , j    ));
         ft1.incident_vertices[1] = index(at(vertices, i - 1, j    ));
         ft1.incident_vertices[2] = index(at(vertices, i    , j - 1));
-    }
-    return m;
-}
-
-inline
-agl::engine::TriangleMesh control_mesh(const agl::common::Grid<agl::Vec3>& g) {
-    auto m = agl::engine::TriangleMesh();
-    auto vertices = agl::common::Grid<agl::engine::MutableVertexProxy>(indexing(g));
-    for(uint32_t i = 0; i < size(g, 0); ++i)
-    for(uint32_t j = 0; j < size(g, 1); ++j) {
-        auto&& v = at(vertices, i, j) = create_vertex(m);
-        position(v) = at(g, i, j);
-    }
-    for(uint32_t i = 1; i < size(g, 0); ++i)
-    for(uint32_t j = 0; j < size(g, 1); ++j) {
-        auto&& ft = topology(create_face(m, 2));
-        ft.incident_vertices[0] = index(at(vertices, i - 1, j));
-        ft.incident_vertices[1] = index(at(vertices, i, j));
-    }
-    for(uint32_t i = 0; i < size(g, 0); ++i)
-    for(uint32_t j = 1; j < size(g, 1); ++j) {
-        auto&& ft = topology(create_face(m, 2));
-        ft.incident_vertices[0] = index(at(vertices, i, j - 1));
-        ft.incident_vertices[1] = index(at(vertices, i, j));
     }
     return m;
 }

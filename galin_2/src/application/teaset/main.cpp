@@ -5,6 +5,7 @@
 // Local headers.
 
 #include "nurbs/all.hpp"
+#include "ffd.hpp"
 #include "settings.hpp"
 
 #include <agl/engine/all.hpp>
@@ -70,6 +71,11 @@ struct Object {
     std::shared_ptr<agl::engine::MeshInstance> gpu_tessellated_mesh;
 };
 
+struct Scene {
+    agl::engine::BoundingBox cpu_bounding_box;
+    std::shared_ptr<agl::engine::MeshInstance> gpu_bounding_box;
+};
+
 struct App : Program {
     Settings settings;
 
@@ -83,6 +89,8 @@ struct App : Program {
     std::shared_ptr<eng::Mesh> sphere_gizmo;
 
     std::vector<Object> objects;
+
+    Scene scene;
 
     std::shared_ptr<agl::engine::MeshInstance> transform_aoe;
 
@@ -178,6 +186,29 @@ struct App : Program {
                 }
             }
         }
+        { // Scene bounding box.
+            if(not empty(objects)) {
+                auto& bb = scene.cpu_bounding_box;
+                bb = bounding_box(*objects.front().cpu_tessellated_mesh);
+                for(std::size_t i = 1; i < size(objects); ++i) {
+                    auto obb = bounding_box(*objects[i].cpu_tessellated_mesh).aabb;
+                    bb.aabb = union_bounds(bb.aabb, obb);
+                }
+            }
+            scene.gpu_bounding_box = agl::standard::shared(
+                agl::engine::instance(
+                    agl::engine::wireframe(
+                        gizmo::box_wireframe())));
+        }
+        { // FFD.
+            if(settings.ffd_enabled) {
+                for(auto& o : objects) {
+                for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
+                        
+                    }
+                }
+            }
+        }
         { // To GPU.
             for(auto& o : objects) {
                 o.gpu_tessellated_mesh = agl::standard::shared(
@@ -219,11 +250,44 @@ struct App : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(wtc * model_to_world);
             subscribe(mesh_pass, transform_aoe);
         }
-        
+        if(settings.show_bounding_box) {
+            scene.gpu_bounding_box->uniforms["model_to_clip"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc
+                * gizmo::box_wireframe_model_to_world(scene.cpu_bounding_box));
+            subscribe(wireframe_pass, scene.gpu_bounding_box);
+        }
+        { // FFD.
+            if(settings.ffd_show_control_grid) {
+                if(ffd_control_mesh) {
+                    ffd_control_mesh->uniforms["model_to_clip"]
+                    = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
+                    subscribe(wireframe_pass, ffd_control_mesh);
+                }
+            }
+        }
         agl::engine::render(mesh_pass);
         agl::engine::render(wireframe_pass);
 
         ui();
+    }
+
+    std::optional<FFD> ffd;
+    std::shared_ptr<agl::engine::MeshInstance> ffd_control_mesh;
+
+    void generate_ffd() {
+        ffd = ::ffd(
+            {
+                std::size_t(settings.ffd.resolution[0]),
+                std::size_t(settings.ffd.resolution[1]),
+                std::size_t(settings.ffd.resolution[2])
+            },
+            scene.cpu_bounding_box.aabb);
+        { // Control mesh.
+            ffd_control_mesh = agl::standard::shared(
+                agl::engine::instance(
+                    agl::engine::wireframe(
+                        control_mesh3(ffd->control_points))));
+        }
     }
 
     void ui() {
@@ -235,7 +299,9 @@ struct App : Program {
             if(ImGui::Button("Reload")) {
                 update_mesh();
             }
-            if(ImGui::TreeNode("Debugging")) {
+            if(ImGui::TreeNode("View")) {
+                ImGui::Checkbox("Show bounding box",
+                    &settings.show_bounding_box);
                 ImGui::Checkbox("Show control points",
                     &settings.show_control_points);
                 ImGui::Checkbox("Show gizmo",
@@ -258,7 +324,48 @@ struct App : Program {
                     &settings.transform_radius, 0.f, 5.f);
                 ImGui::TreePop();
             }
-            
+            if(ImGui::TreeNode("FFD")) {
+                ImGui::Checkbox("Enabled", &settings.ffd_enabled);
+
+                ImGui::NewLine();
+
+                ImGui::Checkbox("Show control grid", &settings.ffd_show_control_grid);
+
+                ImGui::NewLine();
+
+                ImGui::SliderInt3("Resolution",
+                    data(settings.ffd.resolution), 2, 4);
+                if(ImGui::Button("Generate")) {
+                    generate_ffd();
+                }
+
+                ImGui::NewLine();
+
+                if(ImGui::TreeNode("Points")) {
+                    if(ffd) {
+                        auto updated = false;
+                        auto& f = *ffd;
+                        for(std::size_t i = 0; i < size(f.control_points, 0); ++i)
+                        for(std::size_t j = 0; j < size(f.control_points, 1); ++j)
+                        for(std::size_t k = 0; k < size(f.control_points, 2); ++k) {
+                            auto s = "(" + std::to_string(i) + ", " + std::to_string(j) + ", " + std::to_string(k) + ")";
+                            updated |= ImGui::DragFloat3(s.c_str(),
+                                data(at(f.control_points, i, j, k)), 0.05f);
+                        }
+                        if(updated) {
+                            ffd_control_mesh = agl::standard::shared(
+                                agl::engine::instance(
+                                    agl::engine::wireframe(
+                                        control_mesh3(ffd->control_points))));
+                        }
+                    } else {
+                        ImGui::Text("You need to generate them first.");
+                    }
+                    ImGui::TreePop();
+                }
+
+                ImGui::TreePop();
+            }
         }
         ImGui::End();
     }
