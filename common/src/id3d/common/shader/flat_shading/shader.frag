@@ -12,10 +12,6 @@ vec3 flat_normal() {
         dFdy(vertex_position)));
 }
 
-// vec3 smooth_normal() {
-//     return normalize(vertex_normal);
-// }
-
 //
 
 void main() {
