@@ -5,6 +5,8 @@
 // Local headers.
 
 #include "nurbs/all.hpp"
+#include "object.hpp"
+#include "patch.hpp"
 #include "ffd.hpp"
 #include "settings.hpp"
 
@@ -64,7 +66,7 @@ CubicBezierMesh load_teapot() {
     return cbm;
 }
 
-struct Object {
+struct Object2 {
     std::shared_ptr<agl::engine::TriangleMesh> cpu_tessellated_mesh;
 
     std::shared_ptr<agl::engine::MeshInstance> gpu_control_mesh;
@@ -88,13 +90,12 @@ struct App : Program {
 
     std::shared_ptr<eng::Mesh> sphere_gizmo;
 
-    std::vector<Object> objects;
-
-    Scene scene;
-
     std::shared_ptr<agl::engine::MeshInstance> transform_aoe;
 
-    float time = 0.f;
+    Object object;
+
+    std::optional<FFD> ffd;
+    std::shared_ptr<agl::engine::MeshInstance> ffd_control_mesh;
 
     void init() override {
         { // Shader compiler.
@@ -116,11 +117,10 @@ struct App : Program {
                 pp->aspect_ratio = 16.f / 9.f;
             }
         }
-        update_mesh();
+        update_object();
     }
 
-    void update(float dt) override {
-        time += dt;
+    void update(float) override {
         if(not ImGui::GetIO().WantCaptureMouse) {
             if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
                 glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -154,9 +154,74 @@ struct App : Program {
         }
     }
 
-    void update_mesh() {
-        objects.clear();
-        { // Load mesh.
+    // void update_mesh() {
+    //     objects.clear();
+    //     { // Load mesh.
+    //         auto cbm = load_teapot();
+    //         for(auto& p : cbm.patches) {
+    //             auto g = agl::common::Grid<agl::Vec3>(
+    //                 agl::common::grid_indexing({4, 4}));
+    //             for(uint32_t i = 0; i < 4; ++i)
+    //             for(uint32_t j = 0; j < 4; ++j) {
+    //                 at(g, i, j) = cbm.vertices[p[4 * i + j]];
+    //             }
+    //             auto& o = objects.emplace_back();
+    //             o.cpu_tessellated_mesh = agl::standard::unique(sampled_mesh(
+    //                 g, settings.tesselation_resolution, settings.tesselation_resolution));
+    //             o.gpu_control_mesh = agl::standard::shared(
+    //                 agl::engine::instance(agl::engine::wireframe(control_mesh(g))));
+    //         }
+    //     }
+    //     { // Apply transformation.
+    //         for(auto& o : objects) {
+    //             for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
+    //                 auto d = settings.transform_position - p;
+    //                 auto l = length(d);
+    //                 // d = -(settings.transform_radius - l) * normalize(d);
+    //                 l = std::max(1.f - l / settings.transform_radius, 0.f);
+    //                 // if(l > 0.f) {
+    //                 //     l = 1.f - l;
+    //                 // }
+    //                 p += l * d * settings.transform_intensity;
+    //             }
+    //         }
+    //     }
+    //     { // Scene bounding box.
+    //         if(not empty(objects)) {
+    //             auto& bb = scene.cpu_bounding_box;
+    //             bb = bounding_box(*objects.front().cpu_tessellated_mesh);
+    //             for(std::size_t i = 1; i < size(objects); ++i) {
+    //                 auto obb = bounding_box(*objects[i].cpu_tessellated_mesh).aabb;
+    //                 bb.aabb = union_bounds(bb.aabb, obb);
+    //             }
+    //         }
+    //         scene.gpu_bounding_box = agl::standard::shared(
+    //             agl::engine::instance(
+    //                 agl::engine::wireframe(
+    //                     gizmo::box_wireframe())));
+    //     }
+    //     { // FFD.
+    //         if(settings.ffd_enabled) {
+    //             auto norm_a = 1.f / length(scene.cpu_bounding_box.aabb);
+    //             auto norm_b = -lower_bound(scene.cpu_bounding_box.aabb) * norm_a;
+    //             for(auto& o : objects) {
+    //             for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
+    //                     auto uvw = norm_a * p + norm_b;
+    //                     p = bezier(ffd->control_points, uvw[0], uvw[1], uvw[2]);
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     { // To GPU.
+    //         for(auto& o : objects) {
+    //             o.gpu_tessellated_mesh = agl::standard::shared(
+    //                 agl::engine::instance(agl::engine::triangle_mesh(*o.cpu_tessellated_mesh, {})));
+    //         }
+    //     }
+    // }
+
+    void update_object() {
+        { // Load patchs.
             auto cbm = load_teapot();
             for(auto& p : cbm.patches) {
                 auto g = agl::common::Grid<agl::Vec3>(
@@ -165,55 +230,27 @@ struct App : Program {
                 for(uint32_t j = 0; j < 4; ++j) {
                     at(g, i, j) = cbm.vertices[p[4 * i + j]];
                 }
-                auto& o = objects.emplace_back();
-                o.cpu_tessellated_mesh = agl::standard::unique(sampled_mesh(
-                    g, settings.tesselation_resolution, settings.tesselation_resolution));
-                o.gpu_control_mesh = agl::standard::shared(
-                    agl::engine::instance(agl::engine::wireframe(control_mesh(g))));
+                auto& pa = object.patchs.emplace_back();
+                pa.control_points = std::move(g);
+                update_control_mesh(pa);
             }
         }
-        { // Apply transformation.
-            for(auto& o : objects) {
-                for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
-                    auto d = settings.transform_position - p;
-                    auto l = length(d);
-                    // d = -(settings.transform_radius - l) * normalize(d);
-                    l = std::max(1.f - l / settings.transform_radius, 0.f);
-                    // if(l > 0.f) {
-                    //     l = 1.f - l;
-                    // }
-                    p += l * d * settings.transform_intensity;
-                }
-            }
-        }
-        { // Scene bounding box.
-            if(not empty(objects)) {
-                auto& bb = scene.cpu_bounding_box;
-                bb = bounding_box(*objects.front().cpu_tessellated_mesh);
-                for(std::size_t i = 1; i < size(objects); ++i) {
-                    auto obb = bounding_box(*objects[i].cpu_tessellated_mesh).aabb;
-                    bb.aabb = union_bounds(bb.aabb, obb);
-                }
-            }
-            scene.gpu_bounding_box = agl::standard::shared(
-                agl::engine::instance(
-                    agl::engine::wireframe(
-                        gizmo::box_wireframe())));
+        { // Tesselation.
+            tesselate(object, std::size_t(settings.tesselation_resolution));
         }
         { // FFD.
             if(settings.ffd_enabled) {
-                for(auto& o : objects) {
-                for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
-                        
-                    }
-                }
+                update_bounding_box(object);
+                auto norm_a = 1.f / length(object.bounding_box);
+                auto norm_b = -lower_bound(object.bounding_box) * norm_a;
+                transform(object, [&](agl::Vec3 p) {
+                    auto uvw = norm_a * p + norm_b;
+                    return bezier(ffd->control_points, uvw[0], uvw[1], uvw[2]);
+                });
             }
         }
-        { // To GPU.
-            for(auto& o : objects) {
-                o.gpu_tessellated_mesh = agl::standard::shared(
-                    agl::engine::instance(agl::engine::triangle_mesh(*o.cpu_tessellated_mesh, {})));
-            }
+        { // GPU.
+            update_gpu(object);
         }
     }
 
@@ -228,19 +265,19 @@ struct App : Program {
 
         
         if(settings.show_triangulation) {
-            for(auto& o : objects) {
-                o.gpu_tessellated_mesh->uniforms["model_to_clip"]
+            for(auto& p : object.patchs) {
+                p.gpu_tesselation->uniforms["model_to_clip"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
-                o.gpu_tessellated_mesh->uniforms["model_to_eye"]
+                p.gpu_tesselation->uniforms["model_to_eye"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(wte);
-                subscribe(mesh_pass, o.gpu_tessellated_mesh);
+                subscribe(mesh_pass, p.gpu_tesselation);
             }
         }
         if(settings.show_control_points) {
-            for(auto& o : objects) {
-                o.gpu_control_mesh->uniforms["model_to_clip"]
+            for(auto& p : object.patchs) {
+                p.gpu_control_mesh->uniforms["model_to_clip"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
-                subscribe(wireframe_pass, o.gpu_control_mesh);
+                subscribe(wireframe_pass, p.gpu_control_mesh);
             }
         }
         if(settings.show_gizmo) {
@@ -250,11 +287,23 @@ struct App : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(wtc * model_to_world);
             subscribe(mesh_pass, transform_aoe);
         }
+        { // FFD.
+            // if(settings.ffd_enabled) {
+            //     auto norm_a = 1.f / length(scene.cpu_bounding_box.aabb);
+            //     auto norm_b = -lower_bound(scene.cpu_bounding_box.aabb) * norm_a;
+            //     for(auto& o : objects) {
+            //     for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
+            //             auto uvw = norm_a * p + norm_b;
+            //             p = bezier(ffd->control_points, uvw[0], uvw[1], uvw[2]);
+            //         }
+            //     }
+            // }
+        }
         if(settings.show_bounding_box) {
-            scene.gpu_bounding_box->uniforms["model_to_clip"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc
-                * gizmo::box_wireframe_model_to_world(scene.cpu_bounding_box));
-            subscribe(wireframe_pass, scene.gpu_bounding_box);
+            // scene.gpu_bounding_box->uniforms["model_to_clip"]
+            // = std::make_shared<eng::Uniform<agl::Mat4>>(wtc
+            //     * gizmo::box_wireframe_model_to_world(scene.cpu_bounding_box));
+            // subscribe(wireframe_pass, scene.gpu_bounding_box);
         }
         { // FFD.
             if(settings.ffd_show_control_grid) {
@@ -271,17 +320,17 @@ struct App : Program {
         ui();
     }
 
-    std::optional<FFD> ffd;
-    std::shared_ptr<agl::engine::MeshInstance> ffd_control_mesh;
+    
 
     void generate_ffd() {
+
         ffd = ::ffd(
             {
                 std::size_t(settings.ffd.resolution[0]),
                 std::size_t(settings.ffd.resolution[1]),
                 std::size_t(settings.ffd.resolution[2])
             },
-            scene.cpu_bounding_box.aabb);
+            object.bounding_box);
         { // Control mesh.
             ffd_control_mesh = agl::standard::shared(
                 agl::engine::instance(
@@ -297,7 +346,7 @@ struct App : Program {
         ImGui::EndMainMenuBar();
         if(ImGui::Begin("Settings")) {
             if(ImGui::Button("Reload")) {
-                update_mesh();
+                update_object();
             }
             if(ImGui::TreeNode("View")) {
                 ImGui::Checkbox("Show bounding box",
