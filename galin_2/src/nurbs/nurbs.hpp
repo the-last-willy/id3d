@@ -27,6 +27,9 @@ auto bezier(const agl::common::Grid<G>& g, float u) {
 
 template<typename G>
 auto bezier(const agl::common::Grid<G>& g, float u, float v) {
+    if(dimension(g) != 2) {
+        throw std::logic_error("Bezier surface: wrong dimension.");
+    }
     auto sub = agl::common::Grid<G>(agl::common::grid_indexing(size(g, 0)));
     auto tmp = std::vector<agl::Vec3>(size(g, 1));
     for(uint32_t i = 0; i < size(g, 0); ++i) {
@@ -39,27 +42,32 @@ auto bezier(const agl::common::Grid<G>& g, float u, float v) {
             }
         }
         at(sub, i) = tmp[0];
+        // std::cout << "v[" << i << "]" << tmp[0] << "\n";
     }
     return bezier(sub, u);
 }
 
 template<typename G>
 auto bezier(const agl::common::Grid<G>& g, float u, float v, float w) {
-    auto sub = Grid<G>(agl::common::grid_indexing(size(g, 0), size(g, 1)));
+    if(dimension(g) != 3) {
+        throw std::logic_error("Bezier volume: wrong dimension.");
+    }
+    auto sub = agl::common::Grid<G>(agl::common::grid_indexing(size(g, 0), size(g, 1)));
     auto tmp = std::vector<agl::Vec3>(size(g, 2));
     for(uint32_t h = 0; h < size(g, 0); ++h)
     for(uint32_t i = 0; i < size(g, 1); ++i) {
         for(uint32_t j = 0; j < size(g, 2); ++j) {
-            tmp[j] = at(g, i, j);
+            tmp[j] = at(g, h, i, j);
         }
         for(uint32_t j = 0; j < size(g, 2) - 1; ++j) {
             for(uint32_t k = 1; k < size(g, 2) - j; ++k) {
-                tmp[k - 1] = (1.f - v) * tmp[k - 1] + v * tmp[k];
+                tmp[k - 1] = (1.f - w) * tmp[k - 1] + w * tmp[k];
             }
         }
         at(sub, h, i) = tmp[0];
+        // std::cout << "w[" << h << "," << i << "]" << tmp[0] << "\n";
     }
-    return bezier(g, u, v);
+    return bezier(sub, u, v);
 }
 
 template<typename T> constexpr
@@ -110,6 +118,34 @@ agl::engine::TriangleMesh sampled_mesh(
     }
     return m;
 }
+
+// inline
+// agl::engine::TriangleMesh sampled_mesh(
+//     const agl::common::Grid<agl::Vec4>& g,
+//     uint32_t w,
+//     uint32_t h)
+// {
+//     auto m = agl::engine::TriangleMesh();
+//     auto vertices = agl::common::Grid<agl::engine::MutableVertexProxy>(
+//         agl::common::grid_indexing({w, h}));
+//     for(uint32_t i = 0; i < w; ++i)
+//     for(uint32_t j = 0; j < h; ++j) {
+//         auto&& v = at(vertices, i, j) = create_vertex(m);
+//         position(v) = bezier(g, float(i) / (w - 1), float(j) / (h - 1));
+//     }
+//     for(uint32_t i = 1; i < w; ++i)
+//     for(uint32_t j = 1; j < h; ++j) {
+//         auto&& ft0 = topology(create_face(m, 3));
+//         ft0.incident_vertices[0] = index(at(vertices, i - 1, j - 1));
+//         ft0.incident_vertices[1] = index(at(vertices, i    , j - 1));
+//         ft0.incident_vertices[2] = index(at(vertices, i - 1, j    ));
+//         auto&& ft1 = topology(create_face(m, 3));
+//         ft1.incident_vertices[0] = index(at(vertices, i    , j    ));
+//         ft1.incident_vertices[1] = index(at(vertices, i - 1, j    ));
+//         ft1.incident_vertices[2] = index(at(vertices, i    , j - 1));
+//     }
+//     return m;
+// }
 
 template<typename Curve>
 agl::engine::TriangleMesh revolution_surface(
