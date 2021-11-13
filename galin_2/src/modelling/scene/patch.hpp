@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nurbs/all.hpp"
+#include "nurbs.hpp"
 
 #include <agl/engine/all.hpp>
 
@@ -11,6 +11,10 @@ struct Patch {
 
     // [x, y, z, weight].
     agl::common::Grid<agl::Vec3> control_points;
+
+    // Style.
+
+    agl::Vec4 color = agl::vec4(1.f);
 
     //
 
@@ -67,4 +71,6 @@ void update_gpu(Patch& p) {
         agl::engine::instance(
             agl::engine::triangle_mesh(
                 *p.cpu_tesselation, {})));
+    p.gpu_tesselation->uniforms["color_factor"]
+    = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
 }

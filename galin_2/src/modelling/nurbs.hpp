@@ -89,8 +89,6 @@ struct DeBoorsAlgorithm {
 
 // SURFACE OF REVOLUTION
 
-// TWIST, TAPER -> NORMAL MATRIX
-
 inline
 agl::engine::TriangleMesh sampled_mesh(
     const agl::common::Grid<agl::Vec3>& g,
@@ -156,7 +154,7 @@ agl::engine::TriangleMesh revolution_surface(
 {
     auto itr = inverse(tr);
     auto m = agl::engine::TriangleMesh();
-    auto vertices = Grid<agl::engine::MutableVertexProxy>({s0, s1});
+    auto vertices = agGrid<agl::engine::MutableVertexProxy>(agl::common::grid_indexing(s0, s1));
     for(uint32_t i = 0; i < s1; ++i) {
         auto angle = 2.f * agl::constant::pi * i / s1;
         auto rev = tr * agl::rotation_y(angle) * itr;
