@@ -67,6 +67,12 @@ agl::engine::TriangleMesh box_wireframe() {
 }
 
 inline
+agl::Mat4 box_wireframe_model_to_world(const agl::common::Interval<3>& i) {
+    return agl::translation(midpoint(i))
+    * agl::scaling3(length(i));
+}
+
+inline
 agl::Mat4 box_wireframe_model_to_world(const agl::engine::BoundingBox& bb) {
     return inverse(mat4(transform(bb)))
     * agl::translation(midpoint(bb.aabb))
