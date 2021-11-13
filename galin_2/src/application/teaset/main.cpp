@@ -4,10 +4,7 @@
 
 // Local headers.
 
-#include "nurbs/all.hpp"
-#include "object.hpp"
-#include "patch.hpp"
-#include "ffd.hpp"
+#include "modelling/all.hpp"
 #include "settings.hpp"
 
 #include <agl/engine/all.hpp>
@@ -23,6 +20,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <random>
 
 //
 
@@ -61,6 +59,7 @@ CubicBezierMesh load_teapot() {
                 file.ignore(1); // ','
                 file >> v[i];
             }
+            std::swap(v[1], v[2]);
         }
     }
     return cbm;
@@ -79,6 +78,9 @@ struct Scene {
 };
 
 struct App : Program {
+    std::default_random_engine random_generator
+    = std::default_random_engine(agl::standard::random_seed());
+
     Settings settings;
 
     eng::ShaderCompiler shader_compiler;
@@ -86,6 +88,7 @@ struct App : Program {
     eng::Camera camera;
 
     agl::engine::RenderPass mesh_pass;
+    agl::engine::RenderPass blend_pass;
     agl::engine::RenderPass wireframe_pass;
 
     std::shared_ptr<eng::Mesh> sphere_gizmo;
@@ -154,89 +157,37 @@ struct App : Program {
         }
     }
 
-    // void update_mesh() {
-    //     objects.clear();
-    //     { // Load mesh.
-    //         auto cbm = load_teapot();
-    //         for(auto& p : cbm.patches) {
-    //             auto g = agl::common::Grid<agl::Vec3>(
-    //                 agl::common::grid_indexing({4, 4}));
-    //             for(uint32_t i = 0; i < 4; ++i)
-    //             for(uint32_t j = 0; j < 4; ++j) {
-    //                 at(g, i, j) = cbm.vertices[p[4 * i + j]];
-    //             }
-    //             auto& o = objects.emplace_back();
-    //             o.cpu_tessellated_mesh = agl::standard::unique(sampled_mesh(
-    //                 g, settings.tesselation_resolution, settings.tesselation_resolution));
-    //             o.gpu_control_mesh = agl::standard::shared(
-    //                 agl::engine::instance(agl::engine::wireframe(control_mesh(g))));
-    //         }
-    //     }
-    //     { // Apply transformation.
-    //         for(auto& o : objects) {
-    //             for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
-    //                 auto d = settings.transform_position - p;
-    //                 auto l = length(d);
-    //                 // d = -(settings.transform_radius - l) * normalize(d);
-    //                 l = std::max(1.f - l / settings.transform_radius, 0.f);
-    //                 // if(l > 0.f) {
-    //                 //     l = 1.f - l;
-    //                 // }
-    //                 p += l * d * settings.transform_intensity;
-    //             }
-    //         }
-    //     }
-    //     { // Scene bounding box.
-    //         if(not empty(objects)) {
-    //             auto& bb = scene.cpu_bounding_box;
-    //             bb = bounding_box(*objects.front().cpu_tessellated_mesh);
-    //             for(std::size_t i = 1; i < size(objects); ++i) {
-    //                 auto obb = bounding_box(*objects[i].cpu_tessellated_mesh).aabb;
-    //                 bb.aabb = union_bounds(bb.aabb, obb);
-    //             }
-    //         }
-    //         scene.gpu_bounding_box = agl::standard::shared(
-    //             agl::engine::instance(
-    //                 agl::engine::wireframe(
-    //                     gizmo::box_wireframe())));
-    //     }
-    //     { // FFD.
-    //         if(settings.ffd_enabled) {
-    //             auto norm_a = 1.f / length(scene.cpu_bounding_box.aabb);
-    //             auto norm_b = -lower_bound(scene.cpu_bounding_box.aabb) * norm_a;
-    //             for(auto& o : objects) {
-    //             for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
-    //                     auto uvw = norm_a * p + norm_b;
-    //                     p = bezier(ffd->control_points, uvw[0], uvw[1], uvw[2]);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     { // To GPU.
-    //         for(auto& o : objects) {
-    //             o.gpu_tessellated_mesh = agl::standard::shared(
-    //                 agl::engine::instance(agl::engine::triangle_mesh(*o.cpu_tessellated_mesh, {})));
-    //         }
-    //     }
-    // }
-
     void update_object() {
-        { // Load patchs.
+        { // Load patches.
             auto cbm = load_teapot();
-            for(auto& p : cbm.patches) {
+            object.patches.resize(size(cbm.patches));
+            for(std::size_t h = 0; h < size(cbm.patches); ++h) {
+                auto& p = cbm.patches[h];
                 auto g = agl::common::Grid<agl::Vec3>(
                     agl::common::grid_indexing({4, 4}));
                 for(uint32_t i = 0; i < 4; ++i)
                 for(uint32_t j = 0; j < 4; ++j) {
                     at(g, i, j) = cbm.vertices[p[4 * i + j]];
                 }
-                auto& pa = object.patchs.emplace_back();
+                auto& pa = object.patches[h];
                 pa.control_points = std::move(g);
                 update_control_mesh(pa);
             }
         }
         { // Tesselation.
             tesselate(object, std::size_t(settings.tesselation_resolution));
+        }
+        { // Transform.
+            if(settings.transform_enabled) {
+                auto attenuation = attenuation_function(
+                    TransformAttenuation(settings.transform_attenuation));
+                auto transformation = std::function<agl::Vec3(agl::Vec3)>();
+                transform(object, [&](agl::Vec3 p) {
+                    auto d = settings.transform_position - p;
+                    auto a = attenuation((settings.transform_position - p) / settings.transform_radius);
+                    return p + a * d * settings.transform_intensity;
+                });
+            }
         }
         { // FFD.
             if(settings.ffd_enabled) {
@@ -250,6 +201,7 @@ struct App : Program {
             }
         }
         { // GPU.
+            update_bounding_box(object);
             update_gpu(object);
         }
     }
@@ -265,7 +217,7 @@ struct App : Program {
 
         
         if(settings.show_triangulation) {
-            for(auto& p : object.patchs) {
+            for(auto& p : object.patches) {
                 p.gpu_tesselation->uniforms["model_to_clip"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
                 p.gpu_tesselation->uniforms["model_to_eye"]
@@ -274,7 +226,7 @@ struct App : Program {
             }
         }
         if(settings.show_control_points) {
-            for(auto& p : object.patchs) {
+            for(auto& p : object.patches) {
                 p.gpu_control_mesh->uniforms["model_to_clip"]
                 = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
                 subscribe(wireframe_pass, p.gpu_control_mesh);
@@ -287,23 +239,11 @@ struct App : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(wtc * model_to_world);
             subscribe(mesh_pass, transform_aoe);
         }
-        { // FFD.
-            // if(settings.ffd_enabled) {
-            //     auto norm_a = 1.f / length(scene.cpu_bounding_box.aabb);
-            //     auto norm_b = -lower_bound(scene.cpu_bounding_box.aabb) * norm_a;
-            //     for(auto& o : objects) {
-            //     for(auto& p : o.cpu_tessellated_mesh->geometry.vertex_positions) {
-            //             auto uvw = norm_a * p + norm_b;
-            //             p = bezier(ffd->control_points, uvw[0], uvw[1], uvw[2]);
-            //         }
-            //     }
-            // }
-        }
         if(settings.show_bounding_box) {
-            // scene.gpu_bounding_box->uniforms["model_to_clip"]
-            // = std::make_shared<eng::Uniform<agl::Mat4>>(wtc
-            //     * gizmo::box_wireframe_model_to_world(scene.cpu_bounding_box));
-            // subscribe(wireframe_pass, scene.gpu_bounding_box);
+            object.gpu_bounding_box->uniforms["model_to_clip"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc
+                * gizmo::box_wireframe_model_to_world(object.bounding_box));
+            subscribe(wireframe_pass, object.gpu_bounding_box);
         }
         { // FFD.
             if(settings.ffd_show_control_grid) {
@@ -319,8 +259,6 @@ struct App : Program {
 
         ui();
     }
-
-    
 
     void generate_ffd() {
 
@@ -348,15 +286,55 @@ struct App : Program {
             if(ImGui::Button("Reload")) {
                 update_object();
             }
+            if(ImGui::TreeNode("File")) {
+                ImGui::TreePop();
+            }
             if(ImGui::TreeNode("View")) {
                 ImGui::Checkbox("Show bounding box",
                     &settings.show_bounding_box);
                 ImGui::Checkbox("Show control points",
                     &settings.show_control_points);
-                ImGui::Checkbox("Show gizmo",
-                    &settings.show_gizmo);
+                
                 ImGui::Checkbox("Show triangulation",
                     &settings.show_triangulation);
+                ImGui::TreePop();
+            }
+            if(ImGui::TreeNode("Scene")) {
+                if(ImGui::TreeNode("Patchs")) {
+                    if(ImGui::Button("Randomize colors")) {
+                        auto d01 = std::uniform_real_distribution<float>(0.f, 1.f);
+                        using agl::constant::tau;
+                        for(auto& p : object.patches) {
+                            auto t = d01(random_generator);
+                            auto a = agl::vec3(0.5f);
+                            auto b = agl::vec3(0.5f);
+                            auto c = agl::vec3(1.f);
+                            auto d = agl::vec3(0.f, 1.f / 3.f, 2.f / 3.f);
+                            auto rgb = a + b * agl::cos(tau * (c * t + d));
+                            p.color = agl::vec4(rgb, 1.f);
+                            p.gpu_tesselation->uniforms["color_factor"]
+                            = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
+                        }
+                    }
+                    if(ImGui::Button("Reset colors")) {
+                        for(auto& p : object.patches) {
+                            p.color = agl::vec4(agl::vec3(1.f), 1.f);
+                            p.gpu_tesselation->uniforms["color_factor"]
+                            = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
+                        }
+                    }
+                    for(std::size_t i = 0; i < size(object.patches); ++i) {
+                        auto& patch = object.patches[i];
+                        if(ImGui::TreeNode(("#" + std::to_string(i)).c_str())) {
+                            if(ImGui::SliderFloat3(("Color##" + std::to_string(i)).c_str(), data(patch.color), 0.f, 1.f)) {
+                                patch.gpu_tesselation->uniforms["color_factor"]
+                                = std::make_shared<eng::Uniform<agl::Vec4>>(patch.color);
+                            }
+                            ImGui::TreePop();
+                        }
+                    }
+                    ImGui::TreePop();
+                }
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Tessellation")) {
@@ -365,15 +343,28 @@ struct App : Program {
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Transform")) {
+                ImGui::Checkbox("Enabled", &settings.transform_enabled);
+                ImGui::NewLine();
+
+                ImGui::Combo("Area of effect", &settings.transform_attenuation, "none\0linear\0cubic\0\0");
+                ImGui::Combo("Type", &settings.transform_type, "none\0scaling\0twist\0\0");
+                ImGui::NewLine();
+
                 ImGui::SliderFloat("Intensity",
                     &settings.transform_intensity, 0.f, 1.f);
                 ImGui::DragFloat3("Position", 
                     data(settings.transform_position), 0.05f);
                 ImGui::SliderFloat("Radius",
                     &settings.transform_radius, 0.f, 5.f);
-                ImGui::TreePop();
+
+                ImGui::NewLine();
+
+                ImGui::Checkbox("Show gizmo",
+                    &settings.show_gizmo);
+
+                    ImGui::TreePop();
             }
-            if(ImGui::TreeNode("FFD")) {
+            if(ImGui::TreeNode("Free form deformation")) {
                 ImGui::Checkbox("Enabled", &settings.ffd_enabled);
 
                 ImGui::NewLine();

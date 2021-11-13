@@ -86,12 +86,12 @@ struct App : Program {
         }
         { // Render passes.
             assign_program(mesh_pass,
-                data::flat_shading_program(shader_compiler));
+                shader::flat_shading(shader_compiler));
             assign_program(wireframe_pass,
-                data::wireframe_program(shader_compiler));
+                shader::flat_shading(shader_compiler));
         }
         { // Load mesh.
-            auto curve = agl::common::Grid<agl::Vec3>({10});
+            auto curve = agl::common::Grid<agl::Vec3>(agl::common::grid_indexing(10));
             for(uint32_t i = 0; i < 10; ++i) {
                 at(curve, i) = agl::vec3(2.f + std::cos(float(i)), float(i), 0.f);
             }
