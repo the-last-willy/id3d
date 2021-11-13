@@ -293,64 +293,61 @@ struct App : Program {
         }
         ImGui::EndMainMenuBar();
         if(ImGui::Begin("Settings")) {
-            if(ImGui::Button("Reload")) {
-                update_object();
-            }
             if(ImGui::TreeNode("File")) {
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("View")) {
                 ImGui::Checkbox("Show bounding box",
                     &settings.show_bounding_box);
+                
+                ImGui::TreePop();
+            }
+            if(ImGui::TreeNode("Bezier patches")) {
+                if(ImGui::Button("Randomize colors")) {
+                    auto d01 = std::uniform_real_distribution<float>(0.f, 1.f);
+                    using agl::constant::tau;
+                    for(auto& p : object.patches) {
+                        auto t = d01(random_generator);
+                        auto a = agl::vec3(0.5f);
+                        auto b = agl::vec3(0.5f);
+                        auto c = agl::vec3(1.f);
+                        auto d = agl::vec3(0.f, 1.f / 3.f, 2.f / 3.f);
+                        auto rgb = a + b * agl::cos(tau * (c * t + d));
+                        p.color = agl::vec4(rgb, 1.f);
+                        p.gpu_tesselation->uniforms["color_factor"]
+                        = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
+                    }
+                }
+                if(ImGui::Button("Reset colors")) {
+                    for(auto& p : object.patches) {
+                        p.color = agl::vec4(agl::vec3(1.f), 1.f);
+                        p.gpu_tesselation->uniforms["color_factor"]
+                        = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
+                    }
+                }
+                ImGui::NewLine();
+                ImGui::Checkbox("Show tessellation",
+                    &settings.show_triangulation);
                 ImGui::Checkbox("Show control points",
                     &settings.show_control_points);
-                
-                ImGui::Checkbox("Show triangulation",
-                    &settings.show_triangulation);
-                ImGui::TreePop();
-            }
-            if(ImGui::TreeNode("Scene")) {
-                if(ImGui::TreeNode("Patches")) {
-                    if(ImGui::Button("Randomize colors")) {
-                        auto d01 = std::uniform_real_distribution<float>(0.f, 1.f);
-                        using agl::constant::tau;
-                        for(auto& p : object.patches) {
-                            auto t = d01(random_generator);
-                            auto a = agl::vec3(0.5f);
-                            auto b = agl::vec3(0.5f);
-                            auto c = agl::vec3(1.f);
-                            auto d = agl::vec3(0.f, 1.f / 3.f, 2.f / 3.f);
-                            auto rgb = a + b * agl::cos(tau * (c * t + d));
-                            p.color = agl::vec4(rgb, 1.f);
-                            p.gpu_tesselation->uniforms["color_factor"]
-                            = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
-                        }
-                    }
-                    if(ImGui::Button("Reset colors")) {
-                        for(auto& p : object.patches) {
-                            p.color = agl::vec4(agl::vec3(1.f), 1.f);
-                            p.gpu_tesselation->uniforms["color_factor"]
-                            = std::make_shared<eng::Uniform<agl::Vec4>>(p.color);
-                        }
-                    }
-                    for(std::size_t i = 0; i < size(object.patches); ++i) {
-                        auto& patch = object.patches[i];
-                        if(ImGui::TreeNode(("#" + std::to_string(i)).c_str())) {
-                            if(ImGui::SliderFloat3(("Color##" + std::to_string(i)).c_str(), data(patch.color), 0.f, 1.f)) {
-                                patch.gpu_tesselation->uniforms["color_factor"]
-                                = std::make_shared<eng::Uniform<agl::Vec4>>(patch.color);
-                            }
-                            ImGui::TreePop();
-                        }
-                    }
-                    ImGui::TreePop();
-                }
-                
-                ImGui::TreePop();
-            }
-            if(ImGui::TreeNode("Tessellation")) {
+                ImGui::NewLine();
                 ImGui::SliderInt("Resolution",
                     &settings.tesselation_resolution, 2, 30);
+                ImGui::NewLine();
+                for(std::size_t i = 0; i < size(object.patches); ++i) {
+                    auto& patch = object.patches[i];
+                    if(ImGui::TreeNode(("#" + std::to_string(i)).c_str())) {
+                        if(ImGui::SliderFloat3(("Color##" + std::to_string(i)).c_str(), data(patch.color), 0.f, 1.f)) {
+                            patch.gpu_tesselation->uniforms["color_factor"]
+                            = std::make_shared<eng::Uniform<agl::Vec4>>(patch.color);
+                        }
+                        ImGui::TreePop();
+                    }
+                }
+                ImGui::NewLine();
+                if(ImGui::Button("Update")) {
+                    update_object();
+                }
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Revolution surface")) {
