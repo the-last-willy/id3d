@@ -3,6 +3,22 @@
 #include <agl/engine/all.hpp>
 
 inline
+agl::engine::TriangleMesh control_mesh1(const agl::common::Grid<agl::Vec3>& g) {
+    auto m = agl::engine::TriangleMesh();
+    auto vertices = agl::common::Grid<agl::engine::MutableVertexProxy>(indexing(g));
+    for(uint32_t i = 0; i < size(g, 0); ++i) {
+        auto&& v = at(vertices, i) = create_vertex(m);
+        position(v) = at(g, i);
+    }
+    for(uint32_t i = 1; i < size(g, 0); ++i) {
+        auto&& ft = topology(create_face(m, 2));
+        ft.incident_vertices[0] = index(at(vertices, i - 1));
+        ft.incident_vertices[1] = index(at(vertices, i));
+    }
+    return m;
+}
+
+inline
 agl::engine::TriangleMesh control_mesh(const agl::common::Grid<agl::Vec3>& g) {
     auto m = agl::engine::TriangleMesh();
     auto vertices = agl::common::Grid<agl::engine::MutableVertexProxy>(indexing(g));

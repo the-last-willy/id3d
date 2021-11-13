@@ -70,4 +70,9 @@ struct Settings {
     bool ffd_enabled = false;
     bool ffd_show_control_grid = true;
     FFDSettings ffd;
+
+    // Revolution.
+
+    bool show_revolution = false;
+    bool show_rev_control_curve = false;
 };

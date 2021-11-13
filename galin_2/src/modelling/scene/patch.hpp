@@ -34,7 +34,7 @@ auto patch(agl::common::Grid<agl::Vec3> control_points) {
 }
 
 inline
-void tesselate(Patch& p, std::size_t n) {
+void tessellate(Patch& p, std::size_t n) {
     p.cpu_tesselation = agl::standard::unique(
         sampled_mesh(
             p.control_points, uint32_t(n), uint32_t(n)));

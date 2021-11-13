@@ -1,13 +1,18 @@
 #pragma once
 
 #include "patch.hpp"
+#include "revolution_surface.hpp"
 
 #include <id3d/common/all.hpp>
 
 struct Object {
-    // Definition.
+    // Bezier.
 
     std::vector<Patch> patches;
+
+    // Revolution.
+
+    RevolutionSurface revolution_surface;
 
     //
 
@@ -19,10 +24,11 @@ struct Object {
 };
 
 inline
-void tesselate(Object& o, std::size_t n) {
+void tessellate(Object& o, std::size_t n) {
     for(auto& p : o.patches) {
-        tesselate(p, n);
+        tessellate(p, n);
     }
+    tessellate(o.revolution_surface);
 }
 
 inline
@@ -54,4 +60,5 @@ void update_gpu(Object& o) {
     for(auto& p : o.patches) {
         update_gpu(p);
     }
+    update_gpu(o.revolution_surface);
 }

@@ -175,7 +175,7 @@ struct App : Program {
             }
         }
         { // Tesselation.
-            tesselate(object, std::size_t(settings.tesselation_resolution));
+            tessellate(object, std::size_t(settings.tesselation_resolution));
         }
         { // Transform.
             if(settings.transform_enabled) {
@@ -231,6 +231,16 @@ struct App : Program {
                 = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
                 subscribe(wireframe_pass, p.gpu_control_mesh);
             }
+        }
+        if(settings.show_revolution) {
+            object.revolution_surface.gpu_tesselation->uniforms["model_to_clip"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
+            subscribe(mesh_pass, object.revolution_surface.gpu_tesselation);
+        }
+        if(settings.show_rev_control_curve) {
+            object.revolution_surface.gpu_control_curve->uniforms["model_to_clip"]
+            = std::make_shared<eng::Uniform<agl::Mat4>>(wtc);
+            subscribe(wireframe_pass, object.revolution_surface.gpu_control_curve);
         }
         if(settings.show_gizmo) {
             auto model_to_world = agl::translation(settings.transform_position)
@@ -300,7 +310,7 @@ struct App : Program {
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Scene")) {
-                if(ImGui::TreeNode("Patchs")) {
+                if(ImGui::TreeNode("Patches")) {
                     if(ImGui::Button("Randomize colors")) {
                         auto d01 = std::uniform_real_distribution<float>(0.f, 1.f);
                         using agl::constant::tau;
@@ -335,11 +345,52 @@ struct App : Program {
                     }
                     ImGui::TreePop();
                 }
+                
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Tessellation")) {
                 ImGui::SliderInt("Resolution",
                     &settings.tesselation_resolution, 2, 30);
+                ImGui::TreePop();
+            }
+            if(ImGui::TreeNode("Revolution surface")) {
+                auto& rs = object.revolution_surface;
+                ImGui::Checkbox("Show tessellation", &settings.show_revolution);
+                ImGui::Checkbox("Show control points", &settings.show_rev_control_curve);
+                ImGui::NewLine();
+                auto cp_count = int(size(rs.revolution_curve, 0));
+                if(ImGui::SliderInt("# of control points", &cp_count, 2, 10)) {
+                    rs.revolution_curve = agl::common::Grid<agl::Vec3>(
+                        agl::common::grid_indexing(std::size_t(cp_count)));
+                    update_control_mesh(rs);
+                }
+                if(ImGui::TreeNode("Control points")) {
+                    for(std::size_t i = 0; i < size(rs.revolution_curve, 0); ++i) {
+                        if(ImGui::DragFloat3(
+                            ("#" + std::to_string(i)).c_str(),
+                            data(at(rs.revolution_curve, i)),
+                            0.1f))
+                        {
+                            update_control_mesh(rs);
+                        }
+                    }
+                    ImGui::TreePop();
+                }
+                ImGui::NewLine();
+                auto axial_resolution = int(rs.axial_resolution);
+                ImGui::SliderInt(
+                    "Axial resolution",
+                    &axial_resolution, 2, 30);
+                rs.axial_resolution = std::size_t(axial_resolution);
+                auto radial_resolution = int(rs.radial_resolution);
+                ImGui::SliderInt(
+                    "Radial resolution",
+                    &radial_resolution, 2, 30);
+                rs.radial_resolution = std::size_t(radial_resolution);
+                ImGui::NewLine();
+                if(ImGui::Button("Update")) {
+                    update_object();
+                }
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Transform")) {
