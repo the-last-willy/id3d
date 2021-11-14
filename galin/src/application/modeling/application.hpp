@@ -1,7 +1,3 @@
-// Disable warnings.
-
-#pragma warning(disable : 4005 4996)
-
 // Local headers.
 
 #include "modelling/all.hpp"
@@ -30,7 +26,7 @@ struct CubicBezierMesh {
 };
 
 CubicBezierMesh load_teapot() {
-    auto file = std::ifstream("galin_2/data/teaset/teapot");
+    auto file = std::ifstream("galin/data/teaset/teapot");
     if(not file.is_open()) {
         throw std::runtime_error("Failed to open teapot.");
     }
@@ -105,6 +101,14 @@ struct App : Program {
             shader_compiler.log_folder = "logs/";
         }
         { // Render passes.
+            assign_program(blend_pass,
+                shader::flat_shading(shader_compiler));
+            // blend_pass.program->capabilities.emplace_back(
+            //     agl::Capability::blend,
+            //     []() {
+            //         glBlendEquation(GL_FUNC_ADD);
+            //         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            //     });
             assign_program(mesh_pass,
                 shader::flat_shading(shader_compiler));
             assign_program(wireframe_pass,
@@ -247,7 +251,7 @@ struct App : Program {
             * agl::scaling3(settings.transform_radius);
             transform_aoe->uniforms["model_to_clip"]
             = std::make_shared<eng::Uniform<agl::Mat4>>(wtc * model_to_world);
-            subscribe(mesh_pass, transform_aoe);
+            subscribe(blend_pass, transform_aoe);
         }
         if(settings.show_bounding_box) {
             object.gpu_bounding_box->uniforms["model_to_clip"]
@@ -266,6 +270,7 @@ struct App : Program {
         }
         agl::engine::render(mesh_pass);
         agl::engine::render(wireframe_pass);
+        agl::engine::render(blend_pass);
 
         ui();
     }
@@ -458,20 +463,3 @@ struct App : Program {
         ImGui::End();
     }
 };
-
-void throwing_main() {
-    auto a = App();
-    run(a);
-}
-
-int main() {
-    try {
-        throwing_main();
-        return 0;
-    } catch(const std::exception& e) {
-        std::cerr << "std::exception: " << e.what() << std::endl;
-    } catch(...) {
-        std::cerr << "Unhandled exception." << std::endl;
-    }
-    return -1;
-}
