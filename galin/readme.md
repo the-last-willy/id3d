@@ -1,6 +1,6 @@
-# Geometric Modelling: Implicit Modeling
+# Geometric Modelling
 
-# Assignment #1
+# Shadertoy
 
 We were tasked on modeling any object of our choice using signed distance fields (SDF) (or blobs).
 
@@ -38,4 +38,8 @@ I wanted to add Master Roshi to the scene but I ended up making him much more de
 ## Screenshots
 
 ![image](https://user-images.githubusercontent.com/84744335/137018896-cd5e25ff-9a39-4a29-a8e3-41e6fcb8013b.png)
+
+# Modeling
+
+TODO
 

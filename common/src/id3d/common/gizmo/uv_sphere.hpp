@@ -7,10 +7,6 @@
 
 namespace gizmo {
 
-struct SphereInfo {
-
-};
-
 inline
 agl::engine::TriangleMesh uv_sphere() {
     auto r = std::size_t(30);
@@ -37,12 +33,12 @@ agl::engine::TriangleMesh uv_sphere() {
         auto j1 = j0 + 1;
         auto&& lf = create_face(m, 3); // Lower.
         topology(lf).incident_vertices[0] = index(at(vertices, i0, j0));
-        topology(lf).incident_vertices[1] = index(at(vertices, i1, j0));
-        topology(lf).incident_vertices[2] = index(at(vertices, i0, j1));
+        topology(lf).incident_vertices[1] = index(at(vertices, i0, j1));
+        topology(lf).incident_vertices[2] = index(at(vertices, i1, j0));
         auto&& uf = create_face(m, 3); // Upper.
         topology(uf).incident_vertices[0] = index(at(vertices, i1, j1));
-        topology(uf).incident_vertices[1] = index(at(vertices, i0, j1));
-        topology(uf).incident_vertices[2] = index(at(vertices, i1, j0));
+        topology(uf).incident_vertices[1] = index(at(vertices, i1, j0));
+        topology(uf).incident_vertices[2] = index(at(vertices, i0, j1));
     }
     return m;
 }

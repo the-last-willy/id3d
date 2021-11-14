@@ -1,7 +1,5 @@
 #pragma once
 
-#include "nurbs.hpp"
-
 #include <agl/engine/all.hpp>
 
 #include <vector>
@@ -9,7 +7,7 @@
 struct Patch {
     // Definition.
 
-    // [x, y, z, weight].
+    // [x, y, z].
     agl::common::Grid<agl::Vec3> control_points;
 
     // Style.

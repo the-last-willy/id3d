@@ -67,10 +67,14 @@ void transform(RevolutionSurface& rs, const auto& transformation) {
 
 inline
 void update_control_mesh(RevolutionSurface& rs) {
+    auto g2 = rs.revolution_curve;
+    for(auto& e : g2) {
+        e[2] = 0.f;
+    }
     rs.gpu_control_curve = agl::standard::shared(
         agl::engine::instance(
             agl::engine::wireframe(
-                control_mesh1(rs.revolution_curve))));
+                control_mesh1(g2))));
 }
 
 inline

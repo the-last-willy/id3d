@@ -25,7 +25,8 @@ auto attenuation_function(TransformAttenuation ta) {
 
 enum class TransformType {
     none,
-    scaling,
+    attract,
+    extrude,
     twist,
 };
 
@@ -60,7 +61,7 @@ struct Settings {
     agl::Vec3 transform_position;
     float transform_radius = 1.f;
     int transform_attenuation = int(TransformAttenuation::cubic);
-    int transform_type = int(TransformType::scaling);
+    int transform_type = int(TransformType::attract);
 
     bool show_bounding_box = false;
     bool show_control_points = false;

@@ -5,6 +5,9 @@
 // Local headers.
 
 #include "application.hpp"
+#include "init.hpp"
+#include "render.hpp"
+#include "update.hpp"
 
 //
 
