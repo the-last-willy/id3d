@@ -18,6 +18,9 @@ struct Terrain {
     // Data.
 
     agl::common::Grid<float> heights;
+    agl::common::Grid<agl::Vec2> gradients;
+    agl::common::Grid<agl::Vec3> normals;
+    agl::common::Grid<float> slopes;
 
     // CPU.
 
@@ -78,6 +81,61 @@ auto create(TerrainSettings ts) {
         t.heights = agl::common::grid<float>(nx, ny);
         for(auto& h : t.heights) {
             h = 0.f;
+        }
+
+        t.gradients = agl::common::grid<agl::Vec2>(nx, ny);
+        auto dx = 1;
+        auto dy = 1;
+        for(std::size_t i = 1; i < nx - 2; ++i) {
+            for(std::size_t j = 1; j < ny; ++j) {
+                auto dfdx = (at(t.heights, i + 1, j) - at(t.heights, i - 1, j)) / (2 * dx);
+                auto dfdy = (at(t.heights, i, j + 1) - at(t.heights, i, j - 1)) / (2 * dy);
+                at(t.gradients, i, j) = agl::vec2(dfdx, dfdy);
+            }
+        }
+        for(size_t j = 1; j < ny - 2; ++j) {
+            //replace 0 by domain's lower bound
+            auto left_dfdx = (at(t.heights, 1, j) - at(t.heights, 0, j)) / dx;
+            auto right_dfdx = (at(t.heights, nx, j) - at(t.heights, nx - 1, j)) / dx;
+            auto left_dfdy = (at(t.heights, 0, j + 1) - at(t.heights, 0, j - 1)) / (2 * dy);
+            auto right_dfdy = (at(t.heights, nx, j + 1) - at(t.heights, nx, j - 1)) / (2 * dy);
+            at(t.gradients, 0, j) = agl::vec2(left_dfdx, left_dfdy);
+            at(t.gradients, nx - 1, j) = agl::vec2(right_dfdx, left_dfdy);
+        }
+        for(size_t i = 1; i < nx - 2; ++i) {
+            //replace 0 by domain's lower bound
+            auto up_dfdx = (at(t.heights, i + 1, ny) - at(t.heights, i - 1, ny)) / (2 * dx);
+            auto down_dfdx = (at(t.heights, i + 1, 0) - at(t.heights, i - 1, 0)) / (2 * dx);
+            auto up_dfdy = (at(t.heights, 1, ny) - at(t.heights, 0, ny - 1)) / dy;
+            auto down_dfdy = (at(t.heights, i, 1) - at(t.heights, i, 0)) / dy;
+            at(t.gradients, i, ny) = agl::vec2(up_dfdx, up_dfdy);
+            at(t.gradients, i, 0) = agl::vec2(down_dfdx, down_dfdy);
+        }
+        // corner
+        at(t.gradients, 0, 0) = agl::vec2(
+                                            (at(t.heights, 1, 0) - at(t.heights, 0, 0)) / dx,
+                                            (at(t.heights, 0, 1) - at(t.heights, 0, 0)) / dy
+                                        );
+        at(t.gradients, nx, 0) = agl::vec2(
+                                            (at(t.heights, nx, 0) - at(t.heights, nx - 1, 0)) / dx,
+                                            (at(t.heights, nx, 1) - at(t.heights, nx, 0)) / dy
+                                        );
+        at(t.gradients, 0, ny) = agl::vec2(
+                                            (at(t.heights, 1, ny) - at(t.heights, 0, ny)) / dx,
+                                            (at(t.heights, 0, ny) - at(t.heights, 0, ny - 1)) / dy
+                                        );
+        at(t.gradients, nx - 1, ny - 1) = agl::vec2(
+                                            (at(t.heights, nx, ny) - at(t.heights, nx - 1, ny)) / dx,
+                                            (at(t.heights, nx, ny) - at(t.heights, nx, ny - 1)) / dy
+                                        );
+
+        t.normals = agl::common::grid<agl::Vec3>(nx, ny);
+        t.slopes = agl::common::grid<float>(nx, ny);
+        for(std::size_t i = 0; i < nx; ++i) {
+            for(std::size_t j = 0; j < ny; ++j) {
+                at(t.normals, i, j) = agl::vec3(-at(t.gradients, i, j), 1);
+                at(t.slopes, i, j) = agl::length(at(t.gradients, i, j));
+            }
         }
     }
     { // CPU mesh.
