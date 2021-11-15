@@ -5,3 +5,5 @@ target_link_libraries(id3d_galin_common INTERFACE id3d_common)
 add_executable(id3d_galin_modeling src/application/modeling/main.cpp)
 target_link_libraries(id3d_galin_modeling PRIVATE id3d_galin_common)
 
+add_executable(id3d_galin_terrain src/application/terrain/main.cpp)
+target_link_libraries(id3d_galin_terrain PRIVATE id3d_galin_common)
