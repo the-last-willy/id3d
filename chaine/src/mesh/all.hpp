@@ -5,4 +5,5 @@
 #include "topology/all.hpp"
 #include "triangle/all.hpp"
 #include "triangle_edge/all.hpp"
+#include "triangle_vertex_edge/all.hpp"
 #include "vertex/all.hpp"
