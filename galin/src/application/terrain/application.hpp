@@ -30,12 +30,12 @@ struct App : Program {
     eng::Camera camera;
 
     agl::engine::RenderPass mesh_pass;
-    agl::engine::RenderPass wireframe_pass;
+    
+    Terrain terrain;
 
     void init() override;
 
     void update(float) override;
-    void update_object();
 
     void render() override;
     void ui();

@@ -36,7 +36,3 @@ void App::update(float) {
         }
     }
 }
-
-void App::update_object() {
-    
-}
