@@ -18,10 +18,13 @@ void App::init() {
         }
     }
     { // Terrain.
-        create(terrain, 500, 500);
-        for(std::size_t i = 0; i < terrain.resolution[0]; ++i)
-        for(std::size_t j = 0; j < terrain.resolution[1]; ++j) {
-            at(terrain.heights, i, j) = std::cos(float(i) / 10.f);
+        auto ts = TerrainSettings();
+        ts.domain = agl::common::interval(agl::vec2(0.f), agl::vec2(1.f));
+        ts.resolution = {500, 500};
+        terrain = create(ts);
+        for(std::size_t i = 0; i < resolution(terrain)[0]; ++i)
+        for(std::size_t j = 0; j < resolution(terrain)[1]; ++j) {
+            at(terrain.heights, i, j) = std::cos(float(i) / 10.f) / 100.f;
         }
         update_cpu(terrain);
         update_gpu(terrain);

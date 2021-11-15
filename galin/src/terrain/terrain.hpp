@@ -5,11 +5,15 @@
 #include <array>
 #include <memory>
 
+struct TerrainSettings {
+    agl::common::Interval<2> domain;
+    std::array<std::size_t, 2> resolution;
+};
+
 struct Terrain {
     //
 
-    agl::common::Interval<2> domain;
-    std::array<std::size_t, 2> resolution;
+    TerrainSettings settings;
 
     // Data.
 
@@ -27,6 +31,34 @@ struct Terrain {
 };
 
 inline
+auto& resolution(const Terrain& t) {
+    return t.settings.resolution;
+}
+
+inline
+auto& domain(const Terrain& t) {
+    return t.settings.domain;
+}
+
+inline
+agl::Vec2 delta(const Terrain& t) {
+    auto n = agl::vec2(float(resolution(t)[0] - 1), float(resolution(t)[1] - 1));
+    return length(domain(t)) / n;
+}
+
+inline
+auto index_to_world_mapping(const Terrain& t) {
+    auto n = agl::vec2(
+        float(resolution(t)[0] - 1),
+        float(resolution(t)[1] - 1));
+    auto a = (length(domain(t))) / n;
+    auto b = lower_bound(domain(t));
+    return [a, b](agl::Vec2 v) {
+        return a * v + b;
+    };
+}
+
+inline
 void update_gpu(Terrain& t) {
     t.gpu_mesh = agl::standard::shared(
         agl::engine::instance(
@@ -35,12 +67,13 @@ void update_gpu(Terrain& t) {
 }
 
 inline
-void create(Terrain& t, std::size_t nx, std::size_t ny) {
+auto create(TerrainSettings ts) {
+    auto t = Terrain();
     {
-        t.domain = agl::common::interval(
-            agl::vec2(0.f), agl::vec2(float(nx), float(ny)));
-        t.resolution = {nx, ny};
+        t.settings = ts;
     }
+    auto nx = resolution(t)[0];
+    auto ny = resolution(t)[1];
     { // Data.
         t.heights = agl::common::grid<float>(nx, ny);
         for(auto& h : t.heights) {
@@ -48,12 +81,14 @@ void create(Terrain& t, std::size_t nx, std::size_t ny) {
         }
     }
     { // CPU mesh.
+        auto mapping = index_to_world_mapping(t);
         t.cpu_mesh = std::make_unique<agl::engine::TriangleMesh>();
         t.vertices = agl::common::grid<agl::engine::MutableVertexProxy>(nx, ny);
         for(std::size_t i = 0; i < nx; ++i)
         for(std::size_t j = 0; j < ny; ++j) {
             auto&& v = at(t.vertices, i, j) = create_vertex(*t.cpu_mesh);
-            position(v) = agl::vec3(float(i) / 10.f, 0.f, float(j) / 10.f);
+            auto xy = mapping(agl::vec2(float(i), float(j)));
+            position(v) = agl::vec3(xy[0], 0.f, xy[1]);
         }
         for(std::size_t i = 1; i < nx; ++i)
         for(std::size_t j = 1; j < ny; ++j) {
@@ -78,12 +113,23 @@ void create(Terrain& t, std::size_t nx, std::size_t ny) {
     { // GPU.
         update_gpu(t);
     }
+    return t;
+}
+
+inline
+void create(Terrain& t, std::size_t nx, std::size_t ny) {
+    auto ts = TerrainSettings();
+    ts.domain = agl::common::interval(
+        agl::vec2(0.f),
+        agl::vec2(float(nx - 1), float(ny - 1)));
+    ts.resolution = {nx, ny};
+    t = create(ts);
 }
 
 inline
 void update_cpu(Terrain& t) {
-    for(std::size_t i = 0; i < t.resolution[0]; ++i)
-    for(std::size_t j = 0; j < t.resolution[1]; ++j) {
+    for(std::size_t i = 0; i < resolution(t)[0]; ++i)
+    for(std::size_t j = 0; j < resolution(t)[1]; ++j) {
         position(at(t.vertices, i, j))[1] = at(t.heights, i, j);
     }
 
