@@ -79,7 +79,7 @@ void App::update_object() {
                 transform(object, [&](agl::Vec3 p) {
                     auto o = settings.transform_position;
                     auto v = p - o;
-                    auto a = attenuation(v / ssd);
+                    auto a = attenuation(v / settings.transform_radius);
                     auto angle = length(v) * a * settings.transform_intensity;
                     return (agl::rotation_y(angle) * agl::vec4(v, 0.f)).xyz() + o;
                 });

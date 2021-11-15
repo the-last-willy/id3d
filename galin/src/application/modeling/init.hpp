@@ -9,17 +9,17 @@ void App::init() {
     { // Render passes.
         assign_program(mesh_pass,
             shader::flat_shading(shader_compiler));
-        mesh_pass.program->capabilities.emplace_back(
-            agl::Capability::blend,
-            []() {
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            });
-        mesh_pass.program->capabilities.emplace_back(
-            agl::Capability::cull_face,
-            []() {
-                glCullFace(GL_BACK);
-            });
+        // mesh_pass.program->capabilities.emplace_back(
+        //     agl::Capability::blend,
+        //     []() {
+        //         glBlendEquation(GL_FUNC_ADD);
+        //         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //     });
+        // mesh_pass.program->capabilities.emplace_back(
+        //     agl::Capability::cull_face,
+        //     []() {
+        //         glCullFace(GL_BACK);
+        //     });
         assign_program(wireframe_pass,
             shader::wireframe(shader_compiler));
     }
