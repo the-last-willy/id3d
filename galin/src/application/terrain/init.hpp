@@ -39,41 +39,41 @@ void App::init() {
                 at(terrain.gradients, i, j) = agl::vec2(dfdx, dfdy);
             }
         }
-        for(size_t j = 1; j < ny - 2; ++j) {
-            //replace 0 by domain's lower bound
-            auto left_dfdx = (at(terrain.heights, 1, j) - at(terrain.heights, 0, j)) / dx;
-            auto right_dfdx = (at(terrain.heights, nx, j) - at(terrain.heights, nx - 1, j)) / dx;
-            auto left_dfdy = (at(terrain.heights, 0, j + 1) - at(terrain.heights, 0, j - 1)) / (2 * dy);
-            auto right_dfdy = (at(terrain.heights, nx, j + 1) - at(terrain.heights, nx, j - 1)) / (2 * dy);
-            at(terrain.gradients, 0, j) = agl::vec2(left_dfdx, left_dfdy);
-            at(terrain.gradients, nx - 1, j) = agl::vec2(right_dfdx, left_dfdy);
-        }
-        for(size_t i = 1; i < nx - 2; ++i) {
-            //replace 0 by domain's lower bound
-            auto up_dfdx = (at(terrain.heights, i + 1, ny) - at(terrain.heights, i - 1, ny)) / (2 * dx);
-            auto down_dfdx = (at(terrain.heights, i + 1, 0) - at(terrain.heights, i - 1, 0)) / (2 * dx);
-            auto up_dfdy = (at(terrain.heights, 1, ny) - at(terrain.heights, 0, ny - 1)) / dy;
-            auto down_dfdy = (at(terrain.heights, i, 1) - at(terrain.heights, i, 0)) / dy;
-            at(terrain.gradients, i, ny) = agl::vec2(up_dfdx, up_dfdy);
-            at(terrain.gradients, i, 0) = agl::vec2(down_dfdx, down_dfdy);
-        }
-        // corner
-        at(terrain.gradients, 0, 0) = agl::vec2(
-                                            (at(terrain.heights, 1, 0) - at(terrain.heights, 0, 0)) / dx,
-                                            (at(terrain.heights, 0, 1) - at(terrain.heights, 0, 0)) / dy
-                                        );
-        at(terrain.gradients, nx, 0) = agl::vec2(
-                                            (at(terrain.heights, nx, 0) - at(terrain.heights, nx - 1, 0)) / dx,
-                                            (at(terrain.heights, nx, 1) - at(terrain.heights, nx, 0)) / dy
-                                        );
-        at(terrain.gradients, 0, ny) = agl::vec2(
-                                            (at(terrain.heights, 1, ny) - at(terrain.heights, 0, ny)) / dx,
-                                            (at(terrain.heights, 0, ny) - at(terrain.heights, 0, ny - 1)) / dy
-                                        );
-        at(terrain.gradients, nx - 1, ny - 1) = agl::vec2(
-                                            (at(terrain.heights, nx, ny) - at(terrain.heights, nx - 1, ny)) / dx,
-                                            (at(terrain.heights, nx, ny) - at(terrain.heights, nx, ny - 1)) / dy
-                                        );
+        // for(size_t j = 1; j < ny - 2; ++j) {
+        //     //replace 0 by domain's lower bound
+        //     auto left_dfdx = (at(terrain.heights, 1, j) - at(terrain.heights, 0, j)) / dx;
+        //     auto right_dfdx = (at(terrain.heights, nx, j) - at(terrain.heights, nx - 1, j)) / dx;
+        //     auto left_dfdy = (at(terrain.heights, 0, j + 1) - at(terrain.heights, 0, j - 1)) / (2 * dy);
+        //     auto right_dfdy = (at(terrain.heights, nx, j + 1) - at(terrain.heights, nx, j - 1)) / (2 * dy);
+        //     at(terrain.gradients, 0, j) = agl::vec2(left_dfdx, left_dfdy);
+        //     at(terrain.gradients, nx - 1, j) = agl::vec2(right_dfdx, left_dfdy);
+        // }
+        // for(size_t i = 1; i < nx - 2; ++i) {
+        //     //replace 0 by domain's lower bound
+        //     auto up_dfdx = (at(terrain.heights, i + 1, ny) - at(terrain.heights, i - 1, ny)) / (2 * dx);
+        //     auto down_dfdx = (at(terrain.heights, i + 1, 0) - at(terrain.heights, i - 1, 0)) / (2 * dx);
+        //     auto up_dfdy = (at(terrain.heights, 1, ny) - at(terrain.heights, 0, ny - 1)) / dy;
+        //     auto down_dfdy = (at(terrain.heights, i, 1) - at(terrain.heights, i, 0)) / dy;
+        //     at(terrain.gradients, i, ny) = agl::vec2(up_dfdx, up_dfdy);
+        //     at(terrain.gradients, i, 0) = agl::vec2(down_dfdx, down_dfdy);
+        // }
+        // // corner
+        // at(terrain.gradients, 0, 0) = agl::vec2(
+        //                                     (at(terrain.heights, 1, 0) - at(terrain.heights, 0, 0)) / dx,
+        //                                     (at(terrain.heights, 0, 1) - at(terrain.heights, 0, 0)) / dy
+        //                                 );
+        // at(terrain.gradients, nx, 0) = agl::vec2(
+        //                                     (at(terrain.heights, nx, 0) - at(terrain.heights, nx - 1, 0)) / dx,
+        //                                     (at(terrain.heights, nx, 1) - at(terrain.heights, nx, 0)) / dy
+        //                                 );
+        // at(terrain.gradients, 0, ny) = agl::vec2(
+        //                                     (at(terrain.heights, 1, ny) - at(terrain.heights, 0, ny)) / dx,
+        //                                     (at(terrain.heights, 0, ny) - at(terrain.heights, 0, ny - 1)) / dy
+        //                                 );
+        // at(terrain.gradients, nx - 1, ny - 1) = agl::vec2(
+        //                                     (at(terrain.heights, nx, ny) - at(terrain.heights, nx - 1, ny)) / dx,
+        //                                     (at(terrain.heights, nx, ny) - at(terrain.heights, nx, ny - 1)) / dy
+        //                                 );
 
         terrain.normals = agl::common::grid<agl::Vec3>(nx, ny);
         terrain.slopes = agl::common::grid<float>(nx, ny);
