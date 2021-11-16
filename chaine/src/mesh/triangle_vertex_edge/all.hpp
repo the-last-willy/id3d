@@ -1,5 +1,6 @@
 #pragma once
 
+#include "diameter.hpp"
 #include "incident_triangle.hpp"
 #include "index.hpp"
 #include "mesh.hpp"
