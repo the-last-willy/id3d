@@ -4,6 +4,8 @@
 
 // Local headers.
 
+#include "shader/all.hpp"
+
 #include <agl/standard/all.hpp>
 #include <id3d/common/all.hpp>
 
@@ -23,51 +25,96 @@
 
 //
 
+struct BB {
+    agl::Vec3 lower_bound;
+    float pad0;
+    agl::Vec3 upper_bound;
+    float pad1;
+};
+
+auto bb(agl::Vec3 lb, agl::Vec3 ub) {
+    auto b = BB();
+    b.lower_bound = lb;
+    b.upper_bound = ub;
+    return b;
+}
+
 struct App : Program {
     eng::ShaderCompiler compiler;
 
     void init() override {
-        auto v = std::vector<int>(10);
-        std::iota(begin(v), end(v), 0);
-        for(auto e : v) {
-            std::cout << e << " ";
+        if constexpr(false) {
+            auto v = std::vector<int>(10);
+            std::iota(begin(v), end(v), 0);
+            for(auto e : v) {
+                std::cout << e << " ";
+            }
+            std::cout << std::endl;
+
+            auto p = eng::Program();
+            load(p, compiler, {{
+                agl::compute_shader_tag,
+                "iehl/src/application/compute/filter.comp"
+            }});
+            bind(p);
+
+            auto input_b = create(agl::buffer_tag);
+            storage(input_b, std::span(v));
+
+            auto output_b = create(agl::buffer_tag);
+            storage<int>(output_b, size(v));
+
+            auto counter_b = create(agl::buffer_tag);
+            storage<int>(counter_b, 1);
+
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, input_b);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, output_b);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, counter_b);
+            // glUniform1i(0, 12);
+
+            glDispatchCompute(GLuint(size(v) + 7) / 8, 1, 1);
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+            glGetNamedBufferSubData(output_b, 0, agl::standard::byte_size(v), data(v));
+
+            auto count = 0;
+            glGetNamedBufferSubData(counter_b, 0, 4, &count);
+            
+            std::cout << "Count: " << count << std::endl;
+            for(auto e : v) {
+                std::cout << e << " ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
+        if constexpr(true) {
+            auto bb = ::bb(agl::vec3(-1.f), agl::vec3(1.f));
 
-        auto p = eng::Program();
-        load(p, compiler, {{
-            agl::compute_shader_tag,
-            "iehl/src/application/compute/filter.comp"
-        }});
-        bind(p);
+            auto model_to_clip = agl::mat4(agl::identity);
+            auto clip_to_model = agl::mat4(agl::identity);
 
-        auto input_b = create(agl::buffer_tag);
-        storage(input_b, std::span(v));
+            auto program = frustrum_culling_tester(compiler);
+            bind(program);
 
-        auto output_b = create(agl::buffer_tag);
-        storage<int>(output_b, size(v));
+            auto bb_data = create(agl::buffer_tag);
+            storage<BB>(bb_data, 1);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bb_data);
 
-        auto counter_b = create(agl::buffer_tag);
-        storage<int>(counter_b, 1);
+            auto test_data = create(agl::buffer_tag);
+            storage<bool>(test_data, 1);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, test_data);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, input_b);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, output_b);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, counter_b);
-        // glUniform1i(0, 12);
+            uniform(program.program, agl::UniformIndex(0), clip_to_model);
+            uniform(program.program, agl::UniformIndex(4), model_to_clip);
+            uniform(program.program, agl::UniformIndex(8), 1);
 
-        glDispatchCompute((size(v) + 7) / 8, 1, 1);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            glDispatchCompute(1, 1, 1);
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        glGetNamedBufferSubData(output_b, 0, agl::standard::byte_size(v), data(v));
+            auto tests = std::array<bool, 1>();
+            glGetNamedBufferSubData(test_data, 1, agl::standard::byte_size(tests), data(tests));
 
-        auto count = 0;
-        glGetNamedBufferSubData(counter_b, 0, 4, &count);
-        
-        std::cout << "Count: " << count << std::endl;
-        for(auto e : v) {
-            std::cout << e << " ";
+            std::cout << tests[0] << std::endl;
         }
-        std::cout << std::endl;
     }
 
     void update(float) override {

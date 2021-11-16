@@ -137,10 +137,10 @@ struct GltfProgram : Program {
                 // "D:/data/cornell-box");
                 // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
                 // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-                "D:/data/bistro-small/exterior.obj",
-                "D:/data/bistro-small/");
-                // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
-                // "C:/Users/Willy/Desktop/data/bistro-small/");
+                // "D:/data/bistro-small/exterior.obj",
+                // "D:/data/bistro-small/");
+                "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
+                "C:/Users/Willy/Desktop/data/bistro-small/");
                 // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
                 // "C:/Users/yoanp/Documents/bistro-small/");
             for(std::size_t i = 0; i < size(content.meshes); ++i) {
