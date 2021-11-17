@@ -19,6 +19,7 @@
 #include "opposite_vertex.hpp"
 #include "proxy.hpp"
 #include "relative_index.hpp"
+#include "smallest_angle.hpp"
 #include "substitute_adjacent_triangle.hpp"
 #include "substitute_vertex.hpp"
 #include "topology.hpp"
