@@ -7,6 +7,7 @@
 #include "data/all.hpp"
 #include "geometry/all.hpp"
 #include "mesh_conversion/all.hpp"
+#include "rupert/all.hpp"
 #include "topology/all.hpp"
 #include "all.hpp"
 #include "insert.hpp"
@@ -160,6 +161,7 @@ struct App : Program {
                     auto y = -2.f * ImGui::GetIO().MousePos.y / window.height() + 1.f;
                     auto pos = (transform(camera) * agl::vec4(x, y, 0.f, 1.f)).xyz();
                     insert(mesh, pos.xy());
+                    rupert(RupertSettings(), mesh);
                     if(settings.delaunay_insertion) {
                         lawson(mesh);
                     }
