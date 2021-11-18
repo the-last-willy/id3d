@@ -23,31 +23,31 @@ void steepest_compute(Terrain &t) {
         //         }
         //     }
         // }
-            auto up = at(t.heights, x, y + 1);
-            auto down = at(t.heights, x, y - 1);
-            auto left = at(t.heights, x - 1, y);
-            auto right = at(t.heights, x + 1, y);
-            auto current_height = positions[i].height;
-            auto max = current_height - up;
-            auto x_max = x;
-            auto y_max = y + 1;
+        auto up = at(t.heights, x, y + 1);
+        auto down = at(t.heights, x, y - 1);
+        auto left = at(t.heights, x - 1, y);
+        auto right = at(t.heights, x + 1, y);
+        auto current_height = positions[i].height;
+        auto max = current_height - up;
+        auto x_max = x;
+        auto y_max = y + 1;
 
-            if(max < current_height - down) {
-                max = current_height - down;
-                x_max = x;
-                y_max = y - 1;
-            }
-            if (max < current_height - left) {
-                max = current_height - left;
-                x_max = x - 1;
-                y_max = y;
-            }
-            if (max < current_height - right) {
-                max = current_height - right;
-                x_max = x + 1;
-                y_max = y;
-            }
-            at(t.drainage_areas, x_max, y_max) += at(t.drainage_areas, x, y);
+        if(max < current_height - down) {
+            max = current_height - down;
+            x_max = x;
+            y_max = y - 1;
+        }
+        if (max < current_height - left) {
+            max = current_height - left;
+            x_max = x - 1;
+            y_max = y;
+        }
+        if (max < current_height - right) {
+            max = current_height - right;
+            x_max = x + 1;
+            y_max = y;
+        }
+        at(t.drainage_areas, x_max, y_max) += at(t.drainage_areas, x, y);
     }
 }
 
@@ -57,6 +57,16 @@ void stream_power_erosion(Terrain &t) {
     for(size_t i = 0; i < nx; ++i) {
         for(size_t j = 0; j < ny; ++j) {
             at(t.heights, i, j) += -0.01f * at(t.slopes, i, j) * std::sqrt(at(t.drainage_areas, i, j));
+        }
+    }
+}
+
+void hillslope_erosion(Terrain &t) {
+    auto nx = resolution(t)[0];
+    auto ny = resolution(t)[1];
+    for(size_t i = 0; i < nx; ++i) {
+        for(size_t j = 0; j < ny; ++j) {
+            at(t.heights, i, j) += -0.01f * at(t.laplaciens, i, j) * at(t.heights, i, j);
         }
     }
 }

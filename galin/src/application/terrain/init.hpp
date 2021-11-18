@@ -29,12 +29,13 @@ void App::init() {
         /////////////////////////////////////////////////////////////////////
         compute_data(terrain);
         for(int i = 0; i < 2; ++i) {
-            steepest_compute(terrain);
-            stream_power_erosion(terrain);
+            // steepest_compute(terrain);
+            // stream_power_erosion(terrain);
+            //hillslope_erosion(terrain);
         }
         for(std::size_t i = 0; i < resolution(terrain)[0]; ++i)
         for(std::size_t j = 0; j < resolution(terrain)[1]; ++j) {
-            at(terrain.colors, i, j) = agl::vec3(1 / (at(terrain.drainage_areas, i, j) / 100 + 1));
+            at(terrain.colors, i, j) = agl::vec3(1 / (at(terrain.laplaciens, i, j) / 100 + 1));
         }
         /////////////////////////////////////////////////////////////////////
         update_cpu(terrain);
