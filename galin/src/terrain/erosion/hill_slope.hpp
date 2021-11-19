@@ -2,6 +2,10 @@
 
 #include "terrain/all.hpp"
 
+struct HillSlopeErosionSettings {
+    float factor = 1.f;
+};
+
 inline 
 void hill_slope_erosion(Terrain &t) {
     auto nx = resolution(t)[0];
