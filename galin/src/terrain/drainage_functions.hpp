@@ -1,6 +1,6 @@
 #pragma once
 
-#include "terrain.hpp"
+#include "terrain/all.hpp"
 
 void steepest_compute(Terrain &t) {
     auto nx = resolution(t)[0];
@@ -51,12 +51,3 @@ void steepest_compute(Terrain &t) {
     }
 }
 
-void stream_power_erosion(Terrain &t) {
-    auto nx = resolution(t)[0];
-    auto ny = resolution(t)[1];
-    for(size_t i = 0; i < nx; ++i) {
-        for(size_t j = 0; j < ny; ++j) {
-            at(t.heights, i, j) += -0.01f * at(t.slopes, i, j) * std::sqrt(at(t.drainage_areas, i, j));
-        }
-    }
-}
