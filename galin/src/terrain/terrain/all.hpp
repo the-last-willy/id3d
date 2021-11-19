@@ -20,6 +20,7 @@ struct Terrain {
     // Data.
 
     agl::common::Grid<agl::Vec2> gradients;
+    agl::common::Grid<float> laplaciens;
     agl::common::Grid<float> heights;
     agl::common::Grid<agl::Vec3> normals;
     agl::common::Grid<float> slopes;
@@ -78,6 +79,7 @@ void compute_data(Terrain& t) {
     auto nx = resolution(t)[0];
     auto ny = resolution(t)[1];
     t.gradients = agl::common::grid<agl::Vec2>(nx, ny);
+    t.laplaciens = agl::common::grid<float>(nx, ny);
     auto dx = delta(t)[0];
     auto dy = delta(t)[1];
     for(std::size_t i = 1; i < nx - 2; ++i) {
@@ -85,6 +87,10 @@ void compute_data(Terrain& t) {
             auto dfdx = (at(t.heights, i + 1, j) - at(t.heights, i - 1, j)) / (2 * dx);
             auto dfdy = (at(t.heights, i, j + 1) - at(t.heights, i, j - 1)) / (2 * dy);
             at(t.gradients, i, j) = agl::vec2(dfdx, dfdy);
+
+            auto dfdx_second = (at(t.heights, i - 1, j) - 2 * at(t.heights, i, j) + at(t.heights, i + 1, j)) / (dx * dx);
+            auto dfdy_second = (at(t.heights, i, j - 1) - 2 * at(t.heights, i, j) + at(t.heights, i, j + 1)) / (dy * dy);
+            at(t.laplaciens, i, j) = agl::length(agl::vec2(dfdx_second, dfdy_second));
         }
     }
     for(size_t j = 1; j < ny - 2; ++j) {
@@ -95,6 +101,14 @@ void compute_data(Terrain& t) {
         auto right_dfdy = (at(t.heights, nx - 1, j + 1) - at(t.heights, nx - 1, j - 1)) / (2 * dy);
         at(t.gradients, 0, j) = agl::vec2(left_dfdx, left_dfdy);
         at(t.gradients, nx - 1, j) = agl::vec2(right_dfdx, right_dfdy);
+
+        //not working
+        auto left_dfdx_second = (at(t.heights, 1, j) - at(t.heights, 0, j)) / dx;
+        auto left_dfdy_second = (at(t.heights, 0, j - 1) - at(t.heights, 0, j) + at(t.heights, 0, j + 1)) / (dy * dy);
+        auto right_dfdx_second = (at(t.heights, nx - 1, j) - at(t.heights, nx - 2, j)) / dx;
+        auto right_dfdy_second = (at(t.heights, nx - 1, j - 1) - at(t.heights, nx - 1, j) + at(t.heights, nx - 1, j + 1)) / (dy * dy);
+        at(t.laplaciens, 0, j) = agl::length(agl::vec2(left_dfdx_second, left_dfdy_second));
+        at(t.laplaciens, nx - 1, j) = agl::length(agl::vec2(right_dfdx_second, right_dfdy_second));
     }
     for(size_t i = 1; i < nx - 2; ++i) {
         //replace 0 by domain's lower bound
@@ -104,6 +118,14 @@ void compute_data(Terrain& t) {
         auto down_dfdy = (at(t.heights, i, 1) - at(t.heights, i, 0)) / dy;
         at(t.gradients, i, ny - 1) = agl::vec2(up_dfdx, up_dfdy);
         at(t.gradients, i, 0) = agl::vec2(down_dfdx, down_dfdy);
+
+        //Not working
+        auto up_dfdx_second = (at(t.heights, i - 1, ny - 1) - 2 * at(t.heights, i, ny - 1) + at(t.heights, i + 1, ny - 1)) / (dx * dx);
+        auto up_dfdy_second = (at(t.heights, i, ny - 1) - at(t.heights, i, ny - 2)) / dy;
+        auto down_dfdx_second = (at(t.heights, i - 1, ny - 1) - 2 * at(t.heights, i, ny - 1) + at(t.heights, i + 1, ny - 1)) / (dx * dx);
+        auto down_dfdy_second = (at(t.heights, i, 1) - at(t.heights, i, 0)) / dy;
+        at(t.laplaciens, i, ny - 1) = agl::length(agl::vec2(up_dfdx_second, up_dfdy_second));
+        at(t.laplaciens, i, 0) = agl::length(agl::vec2(down_dfdx_second, down_dfdy_second));
     }
     // corner
     at(t.gradients, 0, 0) = agl::vec2(

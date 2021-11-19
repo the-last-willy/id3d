@@ -1,4 +1,4 @@
 #pragma once
 
-#include "rupert.hpp"
+#include "ruppert.hpp"
 #include "settings.hpp"
