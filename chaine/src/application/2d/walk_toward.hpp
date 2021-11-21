@@ -26,16 +26,14 @@ face_vertex::TriangleProxy walk_toward(face_vertex::Mesh& m, agl::Vec2 v) {
                 } else {
                     t = ot; 
                 }
-            }
-            if(orientation(v, p2, p1)) {
+            } else if(orientation(v, p2, p1)) {
                 auto ot = opposite_triangle(t, v0);
                 if(index(ot) == index(t)) {
                     return t;
                 } else {
                     t = ot; 
                 }
-            }
-            if(orientation(v, p0, p2)) {
+            } else if(orientation(v, p0, p2)) {
                 auto ot = opposite_triangle(t, v1);
                 if(index(ot) == index(t)) {
                     return t;

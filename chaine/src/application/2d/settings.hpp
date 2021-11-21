@@ -19,8 +19,6 @@ struct Settings {
     bool ruppert_insertion = false;
 
     bool show_edges = true;
-    bool show_vertices = false;
-    bool show_triangles = false;
     bool show_triangle_circumcircles = false;
     bool show_triangle_connectivity = false;
     bool show_voronoi = false;

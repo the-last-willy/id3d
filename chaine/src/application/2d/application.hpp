@@ -30,33 +30,18 @@
 
 using namespace chaine;
 
-struct RenderSettings {
-    bool show_edges = true;
-    bool show_triangles = false;
-    bool show_vertices = false;
-
-    int selected_render_mode = 0;
-
-    float line_width = 1.f;
-    float point_size = 1.f;
-};
-
 struct App : Program {
-    RenderSettings render_settings;
-
     eng::ShaderCompiler shader_compiler = {};
 
     eng::Camera camera;
 
     agl::engine::RenderPass line_pass;
-    agl::engine::RenderPass point_pass;
-    agl::engine::RenderPass triangle_pass;
 
     face_vertex::Mesh mesh;
 
     std::shared_ptr<agl::engine::MeshInstance> edges_mesh_i;
+    std::shared_ptr<agl::engine::MeshInstance> previous_edges_mesh_i;
     std::shared_ptr<agl::engine::MeshInstance> triangle_connectivity_mesh_i;
-    std::shared_ptr<agl::engine::MeshInstance> triangle_mesh_i;
     std::shared_ptr<agl::engine::MeshInstance> voronoi_mesh_i;
 
     Settings settings;
@@ -64,8 +49,10 @@ struct App : Program {
     void refresh_mesh() {
         edges_mesh_i = agl::standard::shared(agl::engine::instance(
             edges_mesh(mesh)));
-        // triangle_connectivity_mesh_i = agl::standard::shared(agl::engine::instance(
-        //     edges_mesh(mesh)));
+        triangle_connectivity_mesh_i = agl::standard::shared(agl::engine::instance(
+            triangle_adjacency_mesh(mesh)));
+        voronoi_mesh_i = agl::standard::shared(agl::engine::instance(
+            voronoi(mesh)));
     }
 
     void init() override {
@@ -75,10 +62,6 @@ struct App : Program {
         { // Render passes.
             line_pass.program = std::make_shared<eng::Program>(
                 data::edge_program(shader_compiler));
-            point_pass.program = std::make_shared<eng::Program>(
-                data::vertex_program(shader_compiler));
-            triangle_pass.program = std::make_shared<eng::Program>(
-                data::triangle_program(shader_compiler));
         }
 
         mesh = face_vertex::Mesh();
@@ -88,25 +71,15 @@ struct App : Program {
             auto v1 = create_vertex(mesh);
             position(v1) = paraboloid(0.2f, -0.2f);
             auto v2 = create_vertex(mesh);
-            position(v2) = paraboloid(-0.2f, 0.2f);
+            position(v2) = paraboloid(0.f, std::sqrt(3.f) / 5.f);
             auto t = create_triangle(mesh);
             topology(t)->vertices[0] = v0;
             topology(t)->vertices[1] = v1;
             topology(t)->vertices[2] = v2;
-            topology(v0)->triangle = t;
-            topology(v1)->triangle = t;
-            topology(v2)->triangle = t;
         }
 
         refresh_mesh();
 
-        transit_to_2d();
-    }
-
-    bool mouse_state = false;
-
-    void transit_to_2d() {
-        settings.view_mode = ViewMode::_2D;
         { // Camera.
             auto op = agl::engine::OrthographicProjection();
             op.z_far = 10.f;
@@ -119,7 +92,7 @@ struct App : Program {
         }
     }
 
-    void update_2d() {
+    void update(float) override {
         if(not ImGui::GetIO().WantCaptureMouse) {
             { // Dragging.
                 if(ImGui::IsMouseDown(0)) {
@@ -141,71 +114,6 @@ struct App : Program {
                 }
             }
         }
-
-    }
-
-    void transit_to_3d() {
-        settings.view_mode = ViewMode::_3D;
-    }
-
-    void update_3d() {
-        if(not ImGui::GetIO().WantCaptureKeyboard) {
-            { // Orientation.
-                if(ImGui::IsMouseDown(0)) {
-                    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    float dx = ImGui::GetIO().MouseDelta.x;
-                    float dy = ImGui::GetIO().MouseDelta.y;
-                    camera.view.yaw -= dx / 500.f;
-                    camera.view.pitch -= dy / 500.f;
-                } else {
-                    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                }
-            }
-            { // Camera controls.
-
-            }
-        }
-    }
-
-    void update(float) override {
-        update_2d();
-        // {
-        //     if(not mouse_state and glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2)) {
-        //         double xpos, ypos;
-        //         glfwGetCursorPos(window.window, &xpos, &ypos);
-        //         xpos = 2.f * xpos / window.width() - 1.f;
-        //         ypos = -2.f * ypos / window.height() + 1.f;
-                
-        //         auto pos = (transform(camera) * agl::vec4(float(xpos), float(ypos), 0.f, 1.f)).xyz();
-
-        //         insert(mesh, pos.xy());
-        //         if(settings.delaunay_insertion) {
-        //             lawson(mesh);
-        //         }
-        //         refresh_mesh();
-        //     }
-        // }
-        // {
-        //     if(glfwGetKey(window.window, GLFW_KEY_A)) {
-        //         auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-        //         camera.view.position = camera.view.position - direction / 50.f;
-        //     }
-        //     if(glfwGetKey(window.window, GLFW_KEY_D)) {
-        //         auto direction = (rotation(camera.view) * agl::rotation_y(agl::constant::pi / 2.f))[2].xyz();
-        //         camera.view.position = camera.view.position + direction / 50.f;
-        //     }
-        //     if(glfwGetKey(window.window, GLFW_KEY_S)) {
-        //         auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
-        //         camera.view.position = camera.view.position + direction / 50.f;
-        //     }
-        //     if(glfwGetKey(window.window, GLFW_KEY_W)) {
-        //         auto direction = (rotation(camera.view) * agl::rotation_x(agl::constant::pi / 2.f))[2].xyz();
-        //         camera.view.position = camera.view.position - direction / 50.f;
-        //     }
-        // }
-        // {
-        //     mouse_state = glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_2);
-        // }
     }
 
     void render() override {
@@ -217,40 +125,27 @@ struct App : Program {
             = std::make_shared<eng::Uniform<agl::Mat4>>(
                 agl::engine::world_to_clip(camera));
 
-            glLineWidth(render_settings.line_width);
+            glLineWidth(1.f);
         }
-        { // Point pass.
-            clear(point_pass);
-            point_pass.uniforms["mvp"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(
-                agl::engine::world_to_clip(camera));
-            point_pass.uniforms["point_size"]
-            = std::make_shared<eng::Uniform<float>>(
-                render_settings.point_size);
-        }
-        { // Triangle pass.
-            clear(triangle_pass);
-            triangle_pass.uniforms["mvp"]
-            = std::make_shared<eng::Uniform<agl::Mat4>>(
-                agl::engine::world_to_clip(camera));
-        }
-        
         if(settings.show_edges) {
             subscribe(line_pass, edges_mesh_i);
             edges_mesh_i->uniforms["color"]
             = std::make_shared<eng::Uniform<agl::Vec3>>(
                 agl::vec3(1.f, 0.f, 0.f));
         }
-        if(settings.show_triangles) {
-            // subscribe(triangle_pass, vertices_mesh_i);
+        if(settings.show_triangle_connectivity) {
+            subscribe(line_pass, triangle_connectivity_mesh_i);
+            triangle_connectivity_mesh_i->uniforms["color"]
+            = std::make_shared<eng::Uniform<agl::Vec3>>(
+                agl::vec3(0.f, 0.f, 1.f));
         }
-        if(settings.show_vertices) {
-            // subscribe(point_pass, vertices_mesh_i);
+        if(settings.show_voronoi) {
+            subscribe(line_pass, voronoi_mesh_i);
+            voronoi_mesh_i->uniforms["color"]
+            = std::make_shared<eng::Uniform<agl::Vec3>>(
+                agl::vec3(0.f, 1.f, 0.f));
         }
-
-        agl::engine::render(triangle_pass);
         agl::engine::render(line_pass);
-        agl::engine::render(point_pass);
 
         render_ui();
     }

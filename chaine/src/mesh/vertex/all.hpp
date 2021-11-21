@@ -3,6 +3,7 @@
 #include "adjacent_triangles.hpp"
 #include "any_adjacent_triangle.hpp"
 #include "color.hpp"
+#include "distance.hpp"
 #include "index.hpp"
 #include "invalidate.hpp"
 #include "is_valid.hpp"

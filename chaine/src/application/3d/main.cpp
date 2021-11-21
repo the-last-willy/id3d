@@ -4,12 +4,12 @@
 
 // Local headers.
 
+#include "data/all.hpp"
 #include "geometry/all.hpp"
 #include "topology/all.hpp"
-
-#include "data/all.hpp"
-#include "mesh_conversion/all.hpp"
 #include "all.hpp"
+#include "laplacian.hpp"
+#include "simplify.hpp"
 
 #include <agl/opengl/all.hpp>
 #include <agl/format/off/all.hpp>
@@ -69,6 +69,7 @@ struct App : Program {
     face_vertex::Mesh face_vertex_mesh;
 
     void refresh_mesh() {
+        laplacian(face_vertex_mesh);
         { // Edge pass.
             auto m = std::make_shared<eng::Mesh>(edges_mesh(face_vertex_mesh));
             edge_pass.subscriptions.clear();
@@ -91,7 +92,7 @@ struct App : Program {
             vertex_pass.subscriptions.clear();
             subscribe(vertex_pass, m);
         }
-
+        
         { // Camera.
             if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
                 pp->aspect_ratio = 16.f / 9.f;
@@ -139,84 +140,23 @@ struct App : Program {
         }
 
         face_vertex_mesh = to_face_vertex_mesh(mesh);
-        
-        // IDK WHAT I WAS TRYING TO DO HERE.
-        // for(uint32_t i = 0; i < 100; ++i) {
-        //     auto tp = proxy(
-        //         face_vertex_mesh,
-        //         face_vertex::TriangleIndex(i));
-        //     auto vep = proxy(
-        //         face_vertex_mesh,
-        //         face_vertex::TriangleEdgeIndex(std::array{
-        //             index(tp), 
-        //             index(adjacent_triangle(tp, 0))}));
-        // }
-
-        // { // Collapse some random edges.
-        //     auto rte = random_triangle_edge(face_vertex_mesh, random_generator);
-        //     collapse(rte);
-        // }
-
-        // { // Compute Laplacian.
-        //     for(auto v : vertices(face_vertex_mesh)) {
-        //         auto vertex_area = 0.f;
-        //         auto sum = agl::vec3(0.f);
-        //         for(auto t : adjacent_triangles(v)) {
-        //             for(uint32_t i = 0; i < 3; ++i) {
-        //                 if(index(vertex(t, i)) == index(v)) {
-        //                     auto ui = position(vertex(t, i));
-        //                     auto uj = position(vertex(t, (i + 1) % vertex_count(t)));
-        //                     auto uk = position(vertex(t, (i + 2) % vertex_count(t)));
-        //                     auto triangle_area = length(cross(ui - uk, uj - uk));
-        //                     auto aij = dot(ui - uk, uj - uk) / triangle_area;
-        //                     auto aik = dot(ui - uj, uk - uj) / triangle_area;
-        //                     sum += aij * (uj - ui);
-        //                     sum += aik * (uk - ui);
-        //                 }
-        //             }
-        //             vertex_area += face_vertex::area(t);
-        //         }
-        //         vertex_area /= 3.f;
-        //         auto laplacian = sum / (2.f * vertex_area);
-        //         float mean_curvature = length(laplacian) / 2.f;
-        //         color(v) = agl::vec3(1.f - 1.f / (1.f + mean_curvature / 20.f));
-        //         normal(v) = -normalize(laplacian);
-        //     }
-        // }
-        // { // Flip incorrect normals.
-        //     for(auto&& t : triangles(face_vertex_mesh)) {
-        //         auto v0 = vertex(t, 0);
-        //         auto v1 = vertex(t, 1);
-        //         auto v2 = vertex(t, 2);
-        //         auto tn = normalize(cross(
-        //             position(v1) - position(v0),
-        //             position(v2) - position(v0)));
-        //         if(dot(normal(v0), tn) < 0.f) {
-        //             normal(v0) = -normal(v0);
-        //         }
-        //         if(dot(normal(v1), tn) < 0.f) {
-        //             normal(v1) = -normal(v1);
-        //         }
-        //         if(dot(normal(v2), tn) < 0.f) {
-        //             normal(v2) = -normal(v2);
-        //         }
-        //     }
-        // }
 
         refresh_mesh();
     }
 
     void update(float) override {
-        if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
-            glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
-            camera.view.yaw -= d[0] / 500.f;
-            camera.view.pitch -= d[1] / 500.f;
+        if(not ImGui::GetIO().WantCaptureMouse) {
+            if(glfwGetMouseButton(window.window, GLFW_MOUSE_BUTTON_1)) {
+                glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                agl::Vec2 d = current_cursor_pos - previous_cursor_pos;
+                camera.view.yaw -= d[0] / 500.f;
+                camera.view.pitch -= d[1] / 500.f;
 
-            previous_cursor_pos = current_cursor_pos;
-        } else {
-            glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            previous_cursor_pos = current_cursor_pos;
+                previous_cursor_pos = current_cursor_pos;
+            } else {
+                glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                previous_cursor_pos = current_cursor_pos;
+            }
         }
         {
             if(glfwGetKey(window.window, GLFW_KEY_A)) {
@@ -288,9 +228,9 @@ struct App : Program {
                 std::data(render_modes), static_cast<int>(size(render_modes)));
 
             if(ImGui::Button("Collapse random edge")) {
-                std::cout << vertex_count(face_vertex_mesh) << std::endl;
-                for(int i = 0; i < 1000; ++i) {
-                // while(vertex_count(face_vertex_mesh) > 1000) {
+                for (int i = 0; i < 5000; ++i)
+                {
+                    // while(vertex_count(face_vertex_mesh) > 1000) {
                     // std::cout << vertex_count(face_vertex_mesh) << std::endl;
                     int j;
                     for(j = 0; j < 100; ++j) {
@@ -309,9 +249,8 @@ struct App : Program {
                         std::cout << "STOP" << std::endl;
                         break;
                     }
-                    refresh_mesh();
                 }
-                
+                refresh_mesh();
             }
 
             ImGui::End();
