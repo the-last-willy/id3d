@@ -100,6 +100,8 @@ void GltfProgram::render() {
                         ImGui::Text("Debugging:");
                         ImGui::Checkbox("Anchor frustrum",
                             &settings.debugging.is_frustrum_anchored);
+                        ImGui::Checkbox("Draw accepted bounding boxes",
+                            &settings.frustrum_culling.draw_accepted_bounding_boxes);
                         ImGui::Checkbox("Draw rejected bounding boxes",
                             &settings.frustrum_culling.draw_rejected_bounding_boxes);
                         ImGui::Checkbox("Draw rejected objects",

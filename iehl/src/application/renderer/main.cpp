@@ -215,62 +215,71 @@ struct GltfProgram : Program {
             // }
             { // Frustrum gizmo.
                 auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
-                // instance->uniforms["rgb"]
-                //     = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 1.f, 1.f));
-                // assign_uniform(
-                //     *instance,
-                //     "world_to_clip",
-                //     wtc * gizmo::box_wireframe_model_to_world(
-                //         agl::engine::bounding_box(*frustrum_camera)));
+                instance->uniforms["rgb"]
+                    = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 1.f, 1.f));
+                assign_uniform(
+                    *instance,
+                    "world_to_clip",
+                    wtc * gizmo::box_wireframe_model_to_world(
+                        agl::engine::bounding_box(*frustrum_camera)));
             }
         }
-        // if(settings.frustrum_culling.enabled) { // Frustrum culling.
-        //     statistics.frustrum_culling.accepted_count = 0;
-        //     statistics.frustrum_culling.rejected_count = 0;
-        //     auto fbb = agl::engine::bounding_box(*frustrum_camera);
-        //     for(auto& o : rasterization_scene.objects) {
-        //         auto& obb = o.bounding_box;
-        //         if(are_intersecting(obb, fbb)) {
-        //             statistics.frustrum_culling.accepted_count += 1;
-        //             if(ambient_pass_loaded) {
-        //                 subscribe(ambient_pass, o.gpu_mesh);
-        //             }
-        //             if(blinn_phong_pass_loaded) {
-        //                 subscribe(blinn_phong_pass, o.gpu_mesh);
-        //             }
-        //         } else {
-        //             statistics.frustrum_culling.rejected_count += 1;
-        //             if(settings.frustrum_culling.draw_rejected_bounding_boxes) {
-        //                 auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
-        //                 assign_uniform(
-        //                     *instance,
-        //                     "world_to_clip",
-        //                     wtc * gizmo::box_wireframe_model_to_world(obb));
-        //                 instance->uniforms["rgb"]
-        //                 = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 0.f, 0.f));
-        //             }
-        //             if(settings.frustrum_culling.draw_rejected_objects) {
-        //                 if(ambient_pass_loaded) {
-        //                     subscribe(ambient_pass, o.gpu_mesh);
-        //                 }
-        //                 if(blinn_phong_pass_loaded) {
-        //                     subscribe(blinn_phong_pass, o.gpu_mesh);
-        //                 }
-        //             }
-        //         }
-        //     }
-        // } else {
-        //     statistics.frustrum_culling.accepted_count = 0;
-        //     statistics.frustrum_culling.rejected_count = 0;
-        //     for(auto& o : rasterization_scene.objects) {
-        //         if(ambient_pass_loaded) {
-        //             subscribe(ambient_pass, o.gpu_mesh);
-        //         }
-        //         if(blinn_phong_pass_loaded) {
-        //             subscribe(blinn_phong_pass, o.gpu_mesh);
-        //         }
-        //     }
-        // }
+        if(settings.frustrum_culling.enabled) { // Frustrum culling.
+            statistics.frustrum_culling.accepted_count = 0;
+            statistics.frustrum_culling.rejected_count = 0;
+            auto fbb = agl::engine::bounding_box(*frustrum_camera);
+            for(auto& o : rasterization_scene.objects) {
+                auto& obb = o.bounding_box;
+                if(are_intersecting(obb, fbb)) {
+                    statistics.frustrum_culling.accepted_count += 1;
+                    if(ambient_pass_loaded) {
+                        subscribe(ambient_pass, o.gpu_mesh);
+                    }
+                    if(blinn_phong_pass_loaded) {
+                        subscribe(blinn_phong_pass, o.gpu_mesh);
+                    }
+                    if(settings.frustrum_culling.draw_rejected_bounding_boxes) {
+                        auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+                        assign_uniform(
+                            *instance,
+                            "world_to_clip",
+                            wtc * gizmo::box_wireframe_model_to_world(obb));
+                        instance->uniforms["rgb"]
+                        = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(0.f, 1.f, 0.f));
+                    }
+                } else {
+                    statistics.frustrum_culling.rejected_count += 1;
+                    if(settings.frustrum_culling.draw_rejected_bounding_boxes) {
+                        auto&& instance = subscribe(wireframe_pass, bounding_box_gizmo);
+                        assign_uniform(
+                            *instance,
+                            "world_to_clip",
+                            wtc * gizmo::box_wireframe_model_to_world(obb));
+                        instance->uniforms["rgb"]
+                        = std::make_shared<eng::Uniform<agl::Vec3>>(agl::vec3(1.f, 0.f, 0.f));
+                    }
+                    if(settings.frustrum_culling.draw_rejected_objects) {
+                        if(ambient_pass_loaded) {
+                            subscribe(ambient_pass, o.gpu_mesh);
+                        }
+                        if(blinn_phong_pass_loaded) {
+                            subscribe(blinn_phong_pass, o.gpu_mesh);
+                        }
+                    }
+                }
+            }
+        } else {
+            statistics.frustrum_culling.accepted_count = 0;
+            statistics.frustrum_culling.rejected_count = 0;
+            for(auto& o : rasterization_scene.objects) {
+                if(ambient_pass_loaded) {
+                    subscribe(ambient_pass, o.gpu_mesh);
+                }
+                if(blinn_phong_pass_loaded) {
+                    subscribe(blinn_phong_pass, o.gpu_mesh);
+                }
+            }
+        }
     }
 
     void render() override;
