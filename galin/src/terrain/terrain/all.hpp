@@ -102,10 +102,10 @@ void compute_data(Terrain& t) {
         at(t.gradients, 0, j) = agl::vec2(left_dfdx, left_dfdy);
         at(t.gradients, nx - 1, j) = agl::vec2(right_dfdx, right_dfdy);
 
-        //not working
-        auto left_dfdx_second = (at(t.heights, 1, j) - at(t.heights, 0, j)) / dx;
-        auto left_dfdy_second = (at(t.heights, 0, j - 1) - at(t.heights, 0, j) + at(t.heights, 0, j + 1)) / (dy * dy);
-        auto right_dfdx_second = (at(t.heights, nx - 1, j) - at(t.heights, nx - 2, j)) / dx;
+        //Laplaciens
+        auto left_dfdx_second = (at(t.heights, 0, j) - 2 * at(t.heights, 0, j) + at(t.heights, 1, j)) / (dx * dx);
+        auto left_dfdy_second = (at(t.heights, nx - 2, j - 1) - at(t.heights, nx - 1, j) + at(t.heights, nx - 1, j + 1)) / (dy * dy);
+        auto right_dfdx_second = (at(t.heights, 0, j) - 2 * at(t.heights, 0, j) + at(t.heights, 1, j)) / dx;
         auto right_dfdy_second = (at(t.heights, nx - 1, j - 1) - at(t.heights, nx - 1, j) + at(t.heights, nx - 1, j + 1)) / (dy * dy);
         at(t.laplaciens, 0, j) = agl::length(agl::vec2(left_dfdx_second, left_dfdy_second));
         at(t.laplaciens, nx - 1, j) = agl::length(agl::vec2(right_dfdx_second, right_dfdy_second));
@@ -119,11 +119,11 @@ void compute_data(Terrain& t) {
         at(t.gradients, i, ny - 1) = agl::vec2(up_dfdx, up_dfdy);
         at(t.gradients, i, 0) = agl::vec2(down_dfdx, down_dfdy);
 
-        //Not working
+        //Laplaciens
         auto up_dfdx_second = (at(t.heights, i - 1, ny - 1) - 2 * at(t.heights, i, ny - 1) + at(t.heights, i + 1, ny - 1)) / (dx * dx);
-        auto up_dfdy_second = (at(t.heights, i, ny - 1) - at(t.heights, i, ny - 2)) / dy;
+        auto up_dfdy_second = (at(t.heights, i, ny - 2) - at(t.heights, i, ny - 1) + at(t.heights, i, ny - 1)) / dy;
         auto down_dfdx_second = (at(t.heights, i - 1, ny - 1) - 2 * at(t.heights, i, ny - 1) + at(t.heights, i + 1, ny - 1)) / (dx * dx);
-        auto down_dfdy_second = (at(t.heights, i, 1) - at(t.heights, i, 0)) / dy;
+        auto down_dfdy_second = (at(t.heights, i, 0) - at(t.heights, i, 0) + at(t.heights, i, 1)) / dy;
         at(t.laplaciens, i, ny - 1) = agl::length(agl::vec2(up_dfdx_second, up_dfdy_second));
         at(t.laplaciens, i, 0) = agl::length(agl::vec2(down_dfdx_second, down_dfdy_second));
     }
