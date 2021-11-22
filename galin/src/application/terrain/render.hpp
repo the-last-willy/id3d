@@ -18,4 +18,6 @@ void App::render() {
     subscribe(mesh_pass, terrain.gpu_mesh);
 
     agl::engine::render(mesh_pass);
+
+    ui();
 }

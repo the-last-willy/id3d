@@ -16,7 +16,8 @@ float gradient_noise(agl::Vec2 p) {
     auto i = floor(p);
     auto f = fract(p);
 	
-	auto u = f * f * (vec2(3.f) - 2.f * f);
+	// auto u = f * f * (vec2(3.f) - 2.f * f);
+	auto u = f * f * f * (vec2(10.f) + f * (-vec2(15.f) + f * 6.f));
 
     return mix( 
         mix(

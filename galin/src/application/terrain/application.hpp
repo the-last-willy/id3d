@@ -3,6 +3,7 @@
 // Local headers.
 
 #include "terrain/all.hpp"
+#include "settings.hpp"
 
 #include <agl/engine/all.hpp>
 #include <agl/standard/all.hpp>
@@ -32,6 +33,8 @@ struct App : Program {
     agl::engine::RenderPass mesh_pass;
     
     Terrain terrain;
+
+    Settings settings;
 
     void init() override;
 

@@ -1,59 +1,25 @@
 #pragma once
 
 // #include "create.hpp"
+#include "erosion/all.hpp"
+#include "field/all.hpp"
+#include "delta.hpp"
+#include "domain.hpp"
+#include "drainage_system.hpp"
+#include "terrain.hpp"
 #include "settings.hpp"
+#include "update_all.hpp"
 
 #include <agl/engine/all.hpp>
 
 #include <array>
 #include <memory>
 
-#include "drainage_system.hpp"
-#include "erosion/all.hpp"
 
 
 
-struct Terrain {
-    //
 
-    TerrainSettings settings;
 
-    // Data.
-
-    agl::common::Grid<agl::Vec2> gradients;
-    agl::common::Grid<float> laplacian;
-    agl::common::Grid<float> heights;
-    agl::common::Grid<agl::Vec3> normals;
-    agl::common::Grid<float> slopes;
-    agl::common::Grid<float> drainage_areas;
-    agl::common::Grid<agl::Vec3> colors;
-
-    // CPU.
-
-    agl::common::Grid<agl::engine::MutableVertexProxy> vertices;
-
-    std::unique_ptr<agl::engine::TriangleMesh> cpu_mesh;
-
-    // GPU.
-
-    std::shared_ptr<agl::engine::MeshInstance> gpu_mesh;  
-};
-
-inline
-auto& resolution(const Terrain& t) {
-    return t.settings.resolution;
-}
-
-inline
-auto& domain(const Terrain& t) {
-    return t.settings.domain;
-}
-
-inline
-agl::Vec2 delta(const Terrain& t) {
-    auto n = agl::vec2(float(resolution(t)[0] - 1), float(resolution(t)[1] - 1));
-    return length(domain(t)) / n;
-}
 
 inline
 auto index_to_world_mapping(const Terrain& t) {
@@ -65,14 +31,6 @@ auto index_to_world_mapping(const Terrain& t) {
     return [a, b](agl::Vec2 v) {
         return a * v + b;
     };
-}
-
-inline
-void update_gpu(Terrain& t) {
-    t.gpu_mesh = agl::standard::shared(
-        agl::engine::instance(
-            agl::engine::triangle_mesh(
-                *t.cpu_mesh, {})));
 }
 
 inline
@@ -226,14 +184,6 @@ void create(Terrain& t, std::size_t nx, std::size_t ny) {
     t = create(ts);
 }
 
-inline
-void update_cpu(Terrain& t) {
-    for(std::size_t i = 0; i < resolution(t)[0]; ++i)
-    for(std::size_t j = 0; j < resolution(t)[1]; ++j) {
-        position(at(t.vertices, i, j))[1] = at(t.heights, i, j);
-        color(at(t.vertices, i, j)) = at(t.colors, i, j);
-    }
 
-}
 
 
