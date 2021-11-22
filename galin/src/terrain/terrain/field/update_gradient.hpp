@@ -13,7 +13,7 @@ void update_gradient(Terrain& t) {
     auto g = [&](auto i, auto j) -> auto& { return at(t.gradients, i, j); };
     auto h = [&](auto i, auto j) -> auto& { return at(t.heights, i, j); };
     for(std::size_t i = 1; i < nx - 2; ++i) {
-        for(std::size_t j = 1; j < ny; ++j) {
+        for(std::size_t j = 1; j < ny - 2; ++j) {
             auto dfdx = (h(i + 1, j) - h(i - 1, j)) / (2 * dx);
             auto dfdy = (h(i, j + 1) - h(i, j - 1)) / (2 * dy);
             g(i, j) = agl::vec2(dfdx, dfdy);
