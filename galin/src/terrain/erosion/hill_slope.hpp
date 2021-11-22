@@ -12,7 +12,7 @@ void hill_slope_erosion(Terrain &t) {
     auto ny = resolution(t)[1];
     for(size_t i = 0; i < nx; ++i)
     for(size_t j = 0; j < ny; ++j) {
-        auto laplacien = at(t.laplaciens, i, j);
-        at(t.heights, i, j) += -0.01f * laplacien;
+        auto laplacian = at(t.laplacian, i, j);
+        at(t.heights, i, j) += -0.01f * laplacian;
     }
 }

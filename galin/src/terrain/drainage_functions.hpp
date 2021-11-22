@@ -5,6 +5,9 @@
 void steepest_compute(Terrain &t) {
     auto nx = resolution(t)[0];
     auto ny = resolution(t)[1];
+    std::vector<agl::Vec2> neighbours = {
+        agl::vec2(-1, 1), agl::vec2(0, 1), agl::vec2(1, 1), agl::vec2(-1, 0), 
+        agl::vec2(1, 0), agl::vec2(-1, -1), agl::vec2(0, -1), agl::vec2(1, -1)};
 
     auto positions = std::vector<Drainage_data>((nx - 2) * (ny - 2));
     for(size_t i = 1; i < nx - 1; ++i)
@@ -16,13 +19,14 @@ void steepest_compute(Terrain &t) {
     for(std::size_t i = 0; i < positions.size(); ++i) {
         auto x = positions[i].position[0];
         auto y = positions[i].position[1];
-        // for(std::size_t c = x - 1; c < x + 1; ++c) {
-        //     for(std::size_t r = y + 1; r > y - 1; --r) {
+        // for(std::size_t c = x; c < x + 1; c+= 2) {
+        //     for(std::size_t r = y + 1; r > y - 1; r -=2) {
         //         if(r != x && c != y) {
                     
         //         }
         //     }
         // }
+
         auto up = at(t.heights, x, y + 1);
         auto down = at(t.heights, x, y - 1);
         auto left = at(t.heights, x - 1, y);
@@ -48,15 +52,5 @@ void steepest_compute(Terrain &t) {
             y_max = y;
         }
         at(t.drainage_areas, x_max, y_max) += at(t.drainage_areas, x, y);
-    }
-}
-
-void hillslope_erosion(Terrain &t) {
-    auto nx = resolution(t)[0];
-    auto ny = resolution(t)[1];
-    for(size_t i = 0; i < nx; ++i) {
-        for(size_t j = 0; j < ny; ++j) {
-            at(t.heights, i, j) += -0.01f * at(t.laplaciens, i, j) * at(t.heights, i, j);
-        }
     }
 }
