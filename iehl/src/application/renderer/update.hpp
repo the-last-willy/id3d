@@ -1,5 +1,4 @@
-
-void GltfProgram::update(float dt) {
+void Application::update(float dt) {
     { // Increment time.
         time += dt;
     }

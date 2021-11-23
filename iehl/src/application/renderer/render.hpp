@@ -1,4 +1,4 @@
-void GltfProgram::render() {
+void Application::render() {
     clear(agl::default_framebuffer, agl::depth_tag, 1.f);
 
     auto vp_tr = agl::engine::world_to_clip(*camera);
@@ -39,7 +39,7 @@ void GltfProgram::render() {
                 agl::engine::render(ambient_pass);
             }
         }
-        if constexpr(false) {
+        if constexpr(true) {
             if(blinn_phong_pass_loaded) { // Blinn Phong pass.
                 blinn_phong_pass.uniforms["light_position"]
                 = std::make_shared<eng::Uniform<agl::Vec3>>(light_position);

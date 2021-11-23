@@ -1,16 +1,16 @@
-void GltfProgram::init() {
+void Application::init() {
     { // Shader compiler.
         shader_compiler.log_folder = "logs/";
         shader_compiler.root = "iehl/src/shader";
     }
     { // Read objects from file.
         auto content = agl::format::wavefront::load(
-            "D:/data/cornell-box/cornell-box.obj",
-            "D:/data/cornell-box");
+            // "D:/data/cornell-box/cornell-box.obj",
+            // "D:/data/cornell-box");
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj",
             // "C:/Users/Willy/Desktop/data/wavefront/CornellBox");
-            // "D:/data/bistro-small/exterior.obj",
-            // "D:/data/bistro-small/");
+            "D:/data/bistro-small/exterior.obj",
+            "D:/data/bistro-small/");
             // "C:/Users/Willy/Desktop/data/bistro-small/exterior.obj",
             // "C:/Users/Willy/Desktop/data/bistro-small/");
             // "C:/Users/yoanp/Documents/bistro-small/exterior.obj",
