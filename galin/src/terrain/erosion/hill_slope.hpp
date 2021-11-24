@@ -13,6 +13,6 @@ void hill_slope_erosion(Terrain &t) {
     for(size_t i = 0; i < nx; ++i)
     for(size_t j = 0; j < ny; ++j) {
         auto laplacian = at(t.laplacian, i, j);
-        at(t.heights, i, j) += -0.02f * laplacian;
+        at(t.heights, i, j) += 0.2f * laplacian;
     }
 }
