@@ -52,23 +52,23 @@ Scene wavefront_scene(std::filesystem::path file_path) {
                 auto normal_i = vertex.normal_index;
                 if(normal_i != -1) {
                     scene.vertex_normals.push_back(
-                        std::array{
+                        agl::vec3(
                             attrib.normals[3 * normal_i + 0],
                             attrib.normals[3 * normal_i + 1],
-                            attrib.normals[3 * normal_i + 2]});
+                            attrib.normals[3 * normal_i + 2]));
                 }
                 auto position_i = vertex.vertex_index;
                 scene.vertex_positions.push_back(
-                    std::array{
+                    agl::vec3(
                         attrib.vertices[3 * position_i + 0],
                         attrib.vertices[3 * position_i + 1],
-                        attrib.vertices[3 * position_i + 2]});
+                        attrib.vertices[3 * position_i + 2]));
                 auto texcoord_i = vertex.texcoord_index;
                 if(texcoord_i != -1) {
                     scene.vertex_texcoords.push_back(
-                        std::array{
+                        agl::vec2(
                             attrib.texcoords[2 * texcoord_i + 0],
-                            attrib.texcoords[2 * texcoord_i + 1]});
+                            attrib.texcoords[2 * texcoord_i + 1]));
                 }
             }
         }

@@ -9,9 +9,9 @@ struct Scene {
     // Geometry.
 
     std::vector<unsigned> triangle_material_ids;
-    std::vector<std::array<float, 3>> vertex_normals;
-    std::vector<std::array<float, 3>> vertex_positions;
-    std::vector<std::array<float, 2>> vertex_texcoords;
+    std::vector<agl::Vec3> vertex_normals;
+    std::vector<agl::Vec3> vertex_positions;
+    std::vector<agl::Vec2> vertex_texcoords;
 
     // Topology.
 
