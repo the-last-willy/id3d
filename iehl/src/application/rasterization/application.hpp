@@ -17,6 +17,9 @@ struct Application : Program {
 
     Scene scene;
 
+    agl::engine::RenderPass wireframe_pass;
+    std::shared_ptr<agl::engine::MeshInstance> bb_mesh;
+
     void init() override;
 
     void update(float) override;
