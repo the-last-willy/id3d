@@ -19,8 +19,8 @@ void App::init() {
     }
     { // Terrain.
         auto ts = TerrainSettings();
-        ts.domain = agl::common::interval(agl::vec2(0.f), agl::vec2(100.f));
-        ts.resolution = {500, 500};
+        ts.domain = agl::common::interval(agl::vec2(0.f), agl::vec2(500.f));
+        ts.resolution = {501, 501};
         terrain = create(ts);
         std::cout << delta(terrain) << std::endl;
         auto mapping = index_to_world_mapping(terrain);
