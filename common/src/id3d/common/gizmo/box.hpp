@@ -79,7 +79,7 @@ agl::engine::TriangleMesh box() {
 }
 
 inline
-agl::Mat4 box_model_to_world(const agl::common::Interval<3>& i) {
+agl::Mat4 box_model_to_world(const agl::common::Interval<agl::Vec3>& i) {
     return agl::translation(midpoint(i))
     * agl::scaling3(length(i));
 }

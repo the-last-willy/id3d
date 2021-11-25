@@ -9,7 +9,7 @@ struct FFD {
 inline
 FFD ffd(
     std::array<std::size_t, 3> resolution,
-    agl::common::Interval<3> domain)
+    agl::common::Interval<agl::Vec3> domain)
 {
     auto f = FFD();
     f.control_points = agl::common::Grid<agl::Vec3>(

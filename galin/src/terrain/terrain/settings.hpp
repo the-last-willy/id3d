@@ -5,6 +5,6 @@
 #include <array>
 
 struct TerrainSettings {
-    agl::common::Interval<2> domain;
+    agl::common::Interval<agl::Vec2> domain;
     std::array<std::size_t, 2> resolution;
 };

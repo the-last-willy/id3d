@@ -16,7 +16,7 @@ struct Object {
 
     //
 
-    agl::common::Interval<3> bounding_box;
+    agl::common::Interval<agl::Vec3> bounding_box;
 
     // GPU.
 
