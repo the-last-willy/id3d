@@ -18,7 +18,8 @@ void Application::init() {
     }
     {
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
-        scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
         scene.program = render_program(shader_compiler);
         scene.program.capabilities.emplace_back(
             agl::Capability::depth_test, 
@@ -30,5 +31,8 @@ void Application::init() {
             pp->aspect_ratio = 16.f / 9.f;
             pp->z_far = 100.f;
         }
+    }
+    { // Ray tracing.
+        bvh(scene);
     }
 }
