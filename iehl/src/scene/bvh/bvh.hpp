@@ -40,39 +40,42 @@ auto& scene(const Bvh& b) {
 
 inline
 void construct_leaf(
-    Bvh& b, BvhNode& n, std::size_t first, std::size_t last)
+    Bvh& b, BvhNode& n, auto first, auto last)
 {
-    std::cout << "leaf " << first << " " << last << std::endl;
+    std::cout << "leaf " << std::distance(begin(b.leaves), first) << " " << std::distance(begin(b.leaves), last) << std::endl;
 
-    for(auto i = first; i < last; ++i) {
-        b.leaves[i].node_index = n.index;
+    for(auto it = first; it != last; ++it) {
+        it->node_index = n.index;
     }
 }
 
+// inline
+// void construct_leaf(
+//     Bvh& b, BvhNode& n, std::size_t first, std::size_t last)
+// {
+//     std::cout << "leaf " << first << " " << last << std::endl;
+
+//     for(auto i = first; i < last; ++i) {
+//         b.leaves[i].node_index = n.index;
+//     }
+// }
+
 inline
 void construct_node(
-    Bvh& b, BvhNode& n, std::size_t first, std::size_t last)
+    Bvh& b, BvhNode& n, auto first, auto last)
 {
-    std::cout << "node " << first << " " << last << std::endl;
+    std::cout << "node " << std::distance(begin(b.leaves), first) << " " << std::distance(begin(b.leaves), last) << std::endl;
 
     n.index = b.node_count++;
 
     auto& s = scene(b);
 
-    auto centroid_bounds = agl::common::interval(centroid(s, first));
-    std::cout << "c" << 0 << " " << centroid(s, first) << std::endl;
-    std::cout << "inf " << lower_bound(centroid_bounds) << std::endl;
-    std::cout << "sup " << upper_bound(centroid_bounds) << std::endl;
+    auto centroid_bounds = agl::common::interval(centroid(s, first->primitive_index));
     {
-        for(std::size_t i = first + 1; i < last; ++i) {
-            std::cout << "c" << i << " " << centroid(s, i) << std::endl;
-            extend(centroid_bounds, centroid(s, i));
+        for(auto it = first + 1; it != last; ++it) {
+            extend(centroid_bounds, centroid(s, it->primitive_index));
         }
     }
-    std::cout << "inf " << lower_bound(centroid_bounds) << std::endl;
-    std::cout << "sup " << upper_bound(centroid_bounds) << std::endl;
-    // // construire aussi l'englobant des triangles
-    // BBox bounds= triangle_bounds(begin, end);
     
     auto axis = std::size_t();
     auto midpoint = float();
@@ -82,34 +85,81 @@ void construct_node(
             agl::standard::max_element_distance(begin(l), end(l)));
         midpoint = agl::common::midpoint(centroid_bounds)[axis];
     }
-    std::cout << "axis " << axis << std::endl;
-    std::cout << "midpoint " << midpoint << std::endl;
-    
+
     auto centroid_less = [&](const BvhLeaf& l) {
         return centroid(s, l.primitive_index)[axis] < midpoint;
     };
-    auto pivot = first + std::size_t(std::distance(
-        begin(b.leaves) + first, 
-        std::partition(
-            begin(b.leaves) + first,
-            begin(b.leaves) + last,
-            centroid_less)));
-    std::cout << "pivot " << pivot << std::endl;
+    auto pivot = std::partition(
+            first,
+            last,
+            centroid_less);
 
     n.inf_node = std::make_unique<BvhNode>();
-    if(pivot <= first + 1) {
+    if(std::distance(first, pivot) <= 1) {
         construct_leaf(b, *n.inf_node, first, pivot);
     } else {
         construct_node(b, *n.inf_node, first, pivot);
     }
 
     n.sup_node = std::make_unique<BvhNode>();
-    if(pivot >= last - 1) {
+    if(std::distance(pivot, last) <= 1) {
         construct_leaf(b, *n.sup_node, pivot, last);
     } else {
         construct_node(b, *n.sup_node, pivot, last);
     }
 }
+
+// inline
+// void construct_node(
+//     Bvh& b, BvhNode& n, std::size_t first, std::size_t last)
+// {
+//     std::cout << "node " << first << " " << last << std::endl;
+
+//     n.index = b.node_count++;
+
+//     auto& s = scene(b);
+
+//     auto centroid_bounds = agl::common::interval(centroid(s, b.leaves[first].primitive_index));
+//     {
+//         for(std::size_t i = first + 1; i < last; ++i) {
+//             extend(centroid_bounds, centroid(s, b.leaves[i].primitive_index));
+//         }
+//     }
+    
+//     auto axis = std::size_t();
+//     auto midpoint = float();
+//     {
+//         auto l = length(centroid_bounds);
+//         axis = std::size_t(
+//             agl::standard::max_element_distance(begin(l), end(l)));
+//         midpoint = agl::common::midpoint(centroid_bounds)[axis];
+//     }
+
+//     auto centroid_less = [&](const BvhLeaf& l) {
+//         auto c = centroid(s, l.primitive_index)[axis];
+//         return c < midpoint;
+//     };
+//     auto pivot = std::size_t(std::distance(
+//         begin(b.leaves), 
+//         std::partition(
+//             begin(b.leaves) + first,
+//             begin(b.leaves) + last,
+//             centroid_less)));
+
+//     n.inf_node = std::make_unique<BvhNode>();
+//     if(pivot <= first + 1) {
+//         construct_leaf(b, *n.inf_node, first, pivot);
+//     } else {
+//         construct_node(b, *n.inf_node, first, pivot);
+//     }
+
+//     n.sup_node = std::make_unique<BvhNode>();
+//     if(pivot >= last - 1) {
+//         construct_leaf(b, *n.sup_node, pivot, last);
+//     } else {
+//         construct_node(b, *n.sup_node, pivot, last);
+//     }
+// }
 
 inline
 Bvh bvh(const Scene& s) {
@@ -118,13 +168,12 @@ Bvh bvh(const Scene& s) {
     { // Leaves.
         b.leaves.resize(size(s.triangle_indices));
         for(std::size_t i = 0; i < size(b.leaves); ++i) {
-            auto& l = b.leaves[i];
-            l.primitive_index = i;
+            b.leaves[i].primitive_index = i;
         }
     }
     { // Nodes.
         b.root_node = std::make_unique<BvhNode>();
-        construct_node(b, *b.root_node, 0, size(b.leaves));
+        construct_node(b, *b.root_node, begin(b.leaves), end(b.leaves));
     }
     return b;
 }
