@@ -1,5 +1,8 @@
 #pragma once
 
+#include "bvh/all.hpp"
+#include "grid/all.hpp"
+#include "settings/all.hpp"
 #include "scene/all.hpp"
 
 #include <agl/standard/all.hpp>
@@ -16,9 +19,15 @@ struct Application : Program {
     eng::Camera camera;
 
     Scene scene;
+    Bvh scene_bvh;
+    Grid scene_grid;
 
     agl::engine::RenderPass wireframe_pass;
     std::shared_ptr<agl::engine::MeshInstance> bb_mesh;
+
+    std::shared_ptr<eng::Mesh> box_wireframe;
+
+    Settings settings;
 
     void init() override;
 
