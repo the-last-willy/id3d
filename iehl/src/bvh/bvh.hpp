@@ -1,7 +1,7 @@
 #pragma once
 
-#include "centroid.hpp"
-#include "scene.hpp"
+#include "scene/centroid.hpp"
+#include "scene/scene.hpp"
 
 #include <agl/common/all.hpp>
 #include <agl/standard/all.hpp>
