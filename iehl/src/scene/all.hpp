@@ -5,5 +5,5 @@
 #include "initialize_gpu.hpp"
 #include "render.hpp"
 #include "scene.hpp"
-#include "bounding_box.hpp"
+#include "update_bounds.hpp"
 #include "wavefront.hpp"
