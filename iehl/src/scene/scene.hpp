@@ -17,6 +17,10 @@ struct Scene {
 
     std::vector<std::array<unsigned, 3>> triangle_indices;
 
+    // Cached.
+
+    agl::common::Interval<agl::Vec3> bounding_box;
+
     // GPU.
 
     eng::Program program;
