@@ -1,5 +1,7 @@
 #pragma once
 
+#include "bvh/all.hpp"
+#include "grid/all.hpp"
 #include "scene/all.hpp"
 #include "shader/all.hpp"
 
@@ -19,11 +21,19 @@ void Application::init() {
     {
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         scene.program = render_program(shader_compiler);
         scene.program.capabilities.emplace_back(
             agl::Capability::depth_test, 
             []() { glDepthFunc(GL_LEQUAL); });
+        
+        update_bounds(scene);
+        // scene_bvh = bvh(scene);
+
+        scene_grid = grid(scene, 32);
+
+        scene.index_buffer = index_buffer(scene_grid);
         initialize_gpu(scene);
     }
     { // Camera.
@@ -32,7 +42,9 @@ void Application::init() {
             pp->z_far = 100.f;
         }
     }
-    { // Ray tracing.
-        bvh(scene);
+    { // Meshes.
+        box_wireframe = agl::standard::shared(
+            agl::engine::wireframe(
+                gizmo::box_wireframe()));
     }
 }
