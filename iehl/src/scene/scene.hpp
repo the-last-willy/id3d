@@ -19,7 +19,7 @@ struct Scene {
 
     // Cached.
 
-    agl::common::Interval<agl::Vec3> bounding_box;
+    agl::common::Interval<agl::Vec3> bounds;
 
     // GPU.
 
