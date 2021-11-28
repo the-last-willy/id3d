@@ -2,6 +2,8 @@
 
 #include "scene.hpp"
 
+#include <stb_image_resize.h>
+#include <stb_image.h>
 #include <tiny_obj_loader.h>
 
 #include <filesystem>
@@ -10,9 +12,97 @@
 #include <stdexcept>
 
 inline
+void load_albedo_textures(
+    Scene& scene,
+    const tinyobj::ObjReader& wavefront,
+    const std::filesystem::path& folder_path)
+{
+    std::cout << "Loading albedo textures." << std::endl;
+
+    auto& materials = wavefront.GetMaterials();
+
+    constexpr auto height = agl::Height(1024);
+    constexpr auto width = agl::Width(1024);
+    auto depth = agl::Depth(GLsizei(size(materials)));
+
+    {
+        auto s = agl::create(agl::sampler_tag);
+        mag_filter(s, GL_LINEAR);
+        min_filter(s, GL_LINEAR);
+        auto t = agl::create(agl::TextureTarget::_2d_array);
+        storage(t, 1, GL_RGB8, width, height, depth);
+        scene.albedo_array_texture = {s, t};
+    }
+
+    stbi_set_flip_vertically_on_load(true);
+    for(std::size_t m = 0; m < size(materials); ++m) {
+        auto& material = materials[m];
+        if(not empty(material.diffuse_texname)) {
+            auto texture_path = (folder_path / material.diffuse_texname).string();
+            int x, y, n;
+            auto data = stbi_load(
+                texture_path.c_str(),
+                &x, &y, &n, 3);
+            if(data == NULL) { 
+                throw std::runtime_error(
+                    "Failed to open texture \"" + texture_path + "\"");
+            }
+            if(x != width.value or y != width.value) {
+                auto resized = std::make_unique_for_overwrite<unsigned char[]>(3 * width.value * height.value);
+                stbir_resize_uint8(
+                    data, x, y, 0,
+                    resized.get(), width.value, height.value, 0,
+                    3);
+                glTextureSubImage3D(
+                    scene.albedo_array_texture.texture,
+                    0,
+                    0, 0, GLsizei(m),
+                    width, height, 1,
+                    GL_RGB, GL_UNSIGNED_BYTE,
+                    resized.get());
+            } else {
+                glTextureSubImage3D(
+                    scene.albedo_array_texture.texture,
+                    0,
+                    0, 0, GLsizei(m),
+                    x, y, 1,
+                    GL_RGB, GL_UNSIGNED_BYTE,
+                    data);
+            }
+            stbi_image_free(data);
+        } else {
+            auto white = std::array<GLubyte, 3>{255, 255, 255};
+            glClearTexSubImage(
+                scene.albedo_array_texture.texture,
+                0,
+                0, 0, 0,
+                width, height, depth,
+                GL_RGB,
+                GL_UNSIGNED_BYTE,
+                data(white));
+        }
+    }
+}
+
+inline
+void load_materials(Scene& s, const tinyobj::ObjReader& wavefront) {
+    auto& materials = wavefront.GetMaterials();
+    { // Material factors.
+        s.materials.resize(size(materials));
+        for(std::size_t i = 0; i < size(materials); ++i) {
+            auto& m = materials[i];
+            auto& sm = s.materials[i];
+            sm.color_factor = {m.diffuse[0], m.diffuse[1], m.diffuse[2], 0.f};
+        }
+    }
+}
+
+inline
 Scene wavefront_scene(std::filesystem::path file_path) {
+    auto folder_path = file_path.parent_path();
+
     auto config = tinyobj::ObjReaderConfig();
-    config.mtl_search_path = file_path.parent_path().string();
+    config.mtl_search_path = folder_path.string();
     auto reader = tinyobj::ObjReader();
     if(not reader.ParseFromFile(file_path.string(), config)) {
         if(not reader.Error().empty()) {
@@ -23,8 +113,6 @@ Scene wavefront_scene(std::filesystem::path file_path) {
 
     auto& attrib = reader.GetAttrib();
     auto& shapes = reader.GetShapes();
-    auto& materials = reader.GetMaterials();
-    std::ignore = materials;
 
     auto scene = Scene();
 
@@ -74,19 +162,25 @@ Scene wavefront_scene(std::filesystem::path file_path) {
         }
     }
     // Copy objects.
+    std::cout << "Loading objects.\n";
     for(std::size_t s = 0; s < size(shapes); ++s) {
         auto& shape = shapes[s];
+        std::cout << "Loading \"" << shape.name << "\".\n";
         auto& mesh = shape.mesh;
-        scene.triangle_indices.reserve(
-            size(scene.triangle_indices) + size(mesh.indices) / 3);
+        auto tcount = size(mesh.indices) / 3;
+        agl::standard::reserve_more(scene.triangle_material_ids, tcount);
+        agl::standard::reserve_more(scene.triangle_indices, tcount);
         for(std::size_t i = 0; i < size(mesh.indices); i += 3) {
             scene.triangle_indices.push_back(
                 std::array<unsigned, 3>{
                     vertex_to_index[mesh.indices[i + 0]],
                     vertex_to_index[mesh.indices[i + 1]],
                     vertex_to_index[mesh.indices[i + 2]]});
+            scene.triangle_material_ids.push_back(
+                mesh.material_ids[i / 3]);
         }
     }
-
+    load_albedo_textures(scene, reader, folder_path);
+    load_materials(scene, reader);
     return scene;
 }
