@@ -5,10 +5,15 @@
 #include <array>
 #include <vector>
 
+struct Material {
+    std::array<float, 4> color_factor;
+};
+
 struct Scene {
     // Geometry.
 
-    std::vector<unsigned> triangle_material_ids;
+    std::vector<int> triangle_material_ids;
+
     std::vector<agl::Vec3> vertex_normals;
     std::vector<agl::Vec3> vertex_positions;
     std::vector<agl::Vec2> vertex_texcoords;
@@ -16,6 +21,10 @@ struct Scene {
     // Topology.
 
     std::vector<std::array<unsigned, 3>> triangle_indices;
+
+    // Materials.
+
+    std::vector<Material> materials;
 
     // Cached.
 
@@ -31,4 +40,8 @@ struct Scene {
     agl::Buffer texcoord_buffer;
 
     agl::VertexArray vertex_array;
+
+    eng::Texture albedo_array_texture;
+
+    agl::Buffer material_ssbo;
 };
