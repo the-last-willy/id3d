@@ -40,7 +40,8 @@ void Application::render() {
             }
         }
 
-        ::render(scene, counts, offsets);
+        // ::render(scene, counts, offsets);
+        ::render(scene);
     }
     if(settings.bvh_debugging_enabled) {
         traverse(scene_bvh, [&, this](const BvhNode& bn, std::size_t depth) {
