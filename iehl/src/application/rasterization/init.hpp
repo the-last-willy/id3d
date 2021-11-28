@@ -23,11 +23,29 @@ void Application::init() {
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
         // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
         scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+
+        scene_triangle_material_id_buffer = agl::create(agl::buffer_tag);
+        storage(
+            scene_triangle_material_id_buffer,
+            std::span(scene.triangle_material_ids));
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, scene_triangle_material_id_buffer);
+
+        glBindTextureUnit(0, scene.albedo_array_texture.texture);
+
         scene.program = render_program(shader_compiler);
         scene.program.capabilities.emplace_back(
             agl::Capability::depth_test, 
             []() { glDepthFunc(GL_LEQUAL); });
-        
+        // { // SSBO introspection.
+        //     int count = 0;
+        //     glGetProgramInterfaceiv(
+        //         scene.program.program,
+        //         GL_SHADER_STORAGE_BLOCK,
+        //         GL_ACTIVE_RESOURCES,
+        //         &count);
+        // }
+
+
         update_bounds(scene);
         // scene_bvh = bvh(scene);
 

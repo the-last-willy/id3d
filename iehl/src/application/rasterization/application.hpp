@@ -19,6 +19,9 @@ struct Application : Program {
     eng::Camera camera;
 
     Scene scene;
+
+    agl::Buffer scene_triangle_material_id_buffer;
+
     Bvh scene_bvh;
     Grid scene_grid;
 
