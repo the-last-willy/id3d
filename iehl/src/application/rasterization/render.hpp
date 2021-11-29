@@ -48,17 +48,19 @@ void Application::render() {
             }
         }
 
-        auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
-        {
-            storage(primitive_offsets_ssbo, std::span(offsets4));
-            glBindBufferBase(
-                GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
+        if(not empty(counts)) {
+            auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
+            {
+                storage(primitive_offsets_ssbo, std::span(offsets4));
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
+            }
+
+            ::render(scene, counts, offsets);
+            // ::render(scene);
+
+            delete_(primitive_offsets_ssbo);
         }
-
-        ::render(scene, counts, offsets);
-        // ::render(scene);
-
-        delete_(primitive_offsets_ssbo);
     }
     if(settings.bvh_debugging_enabled) {
         traverse(scene_bvh, [&, this](const BvhNode& bn, std::size_t depth) {
