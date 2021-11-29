@@ -63,20 +63,20 @@ bool aabb_intersecting(
         }
     }
 
-    return false
-    or lower_bound(i0_in_1)[0] > upper_bound(i0)[0]
-    or lower_bound(i0_in_1)[1] > upper_bound(i0)[1]
-    or lower_bound(i0_in_1)[2] > upper_bound(i0)[2]
+    return not(false
+    or lower_bound(i0_in_1)[0] > upper_bound(i1)[0]
+    or lower_bound(i0_in_1)[1] > upper_bound(i1)[1]
+    or lower_bound(i0_in_1)[2] > upper_bound(i1)[2]
 
-    or upper_bound(i0_in_1)[0] < lower_bound(i0)[0]
-    or upper_bound(i0_in_1)[1] < lower_bound(i0)[1]
-    or upper_bound(i0_in_1)[2] < lower_bound(i0)[2]
+    or upper_bound(i0_in_1)[0] < lower_bound(i1)[0]
+    or upper_bound(i0_in_1)[1] < lower_bound(i1)[1]
+    or upper_bound(i0_in_1)[2] < lower_bound(i1)[2]
 
-    or lower_bound(i1_in_0)[0] > upper_bound(i1)[0]
-    or lower_bound(i1_in_0)[1] > upper_bound(i1)[1]
-    or lower_bound(i1_in_0)[2] > upper_bound(i1)[2]
+    or lower_bound(i1_in_0)[0] > upper_bound(i0)[0]
+    or lower_bound(i1_in_0)[1] > upper_bound(i0)[1]
+    or lower_bound(i1_in_0)[2] > upper_bound(i0)[2]
 
-    or upper_bound(i1_in_0)[0] < lower_bound(i1)[0]
-    or upper_bound(i1_in_0)[1] < lower_bound(i1)[1]
-    or upper_bound(i1_in_0)[2] < lower_bound(i1)[2];
+    or upper_bound(i1_in_0)[0] < lower_bound(i0)[0]
+    or upper_bound(i1_in_0)[1] < lower_bound(i0)[1]
+    or upper_bound(i1_in_0)[2] < lower_bound(i0)[2]);
 }
