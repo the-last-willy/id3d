@@ -22,6 +22,7 @@ struct Grid {
     agl::common::Grid<GridCell> cells;
 
     std::vector<std::array<unsigned, 3>> triangle_indices;
+    std::vector<unsigned> triangle_arrangement;
 };
 
 inline
@@ -51,17 +52,21 @@ auto grid(const Scene& s, std::size_t resolution) {
             auto i1 = unsigned(m1(c[1]) - (c[1] >= upper_bound(sb)[1]));
             auto i2 = unsigned(m2(c[2]) - (c[2] >= upper_bound(sb)[2]));
             triangles[i] = std::make_pair(at(indexing(g.cells), i0, i1, i2), unsigned(i));
-            // std::cout << c << " = [" << i0 << " " << i1 << " " << i2 << "] = " << at(indexing(g.cells), i0, i1, i2) << std::endl;
-
         }
         std::sort(begin(triangles), end(triangles),
             [](auto a0, auto a1) {
                 return a0.first < a1.first; });
+        { // Triangle arrangement.
+            g.triangle_arrangement.resize(size(triangles));
+            for(std::size_t i = 0; i < size(triangles); ++i) {
+                g.triangle_arrangement[i] = triangles[i].second;
+            }
+        }
         { // Re-order triangles.
             auto sorted = std::vector<std::array<unsigned, 3>>();
             sorted.resize(size(s.triangle_indices));
             for(std::size_t i = 0; i < size(sorted); ++i) {
-                sorted[i] = s.triangle_indices[triangles[i].second];
+                sorted[i] = s.triangle_indices[g.triangle_arrangement[i]];
             }
             g.triangle_indices = std::move(sorted);
         }
@@ -70,16 +75,13 @@ auto grid(const Scene& s, std::size_t resolution) {
             auto first = std::size_t(0);
             for(std::size_t i = 0; i < size(triangles); ++i) {
                 auto& tr = triangles[i];
-                // std::cout << cell_i << " ";
                 if(cell_i != tr.first) {
-                    // std::cout << first << " " << i;
                     auto& c = at(g.cells, cell_i);
                     c.first = first;
                     c.last = i;
                     first = i;
                     cell_i = tr.first;
                 }
-                // std::cout << std::endl;
             }
             {
                 auto& c = at(g.cells, cell_i);
@@ -102,3 +104,28 @@ auto grid(const Scene& s, std::size_t resolution) {
     }
     return g;
 }
+
+inline
+auto index_buffer(const Grid& g, const Scene& s) {
+    auto data = std::vector<std::array<GLuint, 3>>();
+    data.resize(size(g.triangle_arrangement));
+    for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
+        data[i] = s.triangle_indices[g.triangle_arrangement[i]];
+    }
+    auto b = agl::create(agl::buffer_tag);
+    storage(b, std::span(data));
+    return b;
+}
+
+inline
+auto triangle_material_id_buffer(const Grid& g, const Scene& s) {
+    auto data = std::vector<int>();
+    data.resize(size(g.triangle_arrangement));
+    for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
+        data[i] = s.triangle_material_ids[g.triangle_arrangement[i]];
+    }
+    auto b = agl::create(agl::buffer_tag);
+    storage(b, std::span(data));
+    return b;
+}
+
