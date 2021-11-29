@@ -1,5 +1,6 @@
 #pragma once
 
+#include "frustum_culling/all.hpp"
 #include "render_ui.hpp"
 
 #include <agl/engine/all.hpp>
@@ -9,6 +10,7 @@ void Application::render() {
 
     clear(wireframe_pass);
 
+    auto ctw = agl::engine::clip_to_world(camera);
     auto nt = agl::engine::normal_transform(camera);
     auto wtc = agl::engine::world_to_clip(camera);
 
@@ -30,18 +32,33 @@ void Application::render() {
         uniform(scene.program, "world_to_clip", wtc);
         uniform(scene.program, "world_to_normal", nt);
 
+        auto frustum_aabb = agl::common::interval(
+            agl::vec3(-1.f), agl::vec3(1.f));
+
         auto counts = std::vector<GLsizei>();
+        auto offsets4 = std::vector<GLuint>();
         auto offsets = std::vector<GLintptr>();
         for(auto& c : scene_grid.cells) {
             if(not is_empty(c)) {
-                counts.push_back(GLsizei(3 * (c.last - c.first)));
-                offsets.push_back(GLintptr(12 * c.first));
-                // std::cout << c.first << " " << c.last - c.first << std::endl;
+                if(aabb_intersecting(c.bounds, wtc, frustum_aabb, ctw)) {
+                    counts.push_back(GLsizei(3 * (c.last - c.first)));
+                    offsets4.push_back(GLuint(c.first));
+                    offsets.push_back(GLintptr(12 * c.first));
+                }
             }
         }
 
-        // ::render(scene, counts, offsets);
-        ::render(scene);
+        auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
+        {
+            storage(primitive_offsets_ssbo, std::span(offsets4));
+            glBindBufferBase(
+                GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
+        }
+
+        ::render(scene, counts, offsets);
+        // ::render(scene);
+
+        delete_(primitive_offsets_ssbo);
     }
     if(settings.bvh_debugging_enabled) {
         traverse(scene_bvh, [&, this](const BvhNode& bn, std::size_t depth) {
