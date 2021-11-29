@@ -44,4 +44,5 @@ struct Scene {
     eng::Texture albedo_array_texture;
 
     agl::Buffer material_ssbo;
+    agl::Buffer triangle_material_id_ssbo;
 };

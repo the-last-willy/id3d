@@ -21,16 +21,10 @@ void Application::init() {
     {
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
-        scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
 
-        scene_triangle_material_id_buffer = agl::create(agl::buffer_tag);
-        storage(
-            scene_triangle_material_id_buffer,
-            std::span(scene.triangle_material_ids));
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, scene_triangle_material_id_buffer);
-
-        glBindTextureUnit(0, scene.albedo_array_texture.texture);
+        
 
         scene.program = render_program(shader_compiler);
         scene.program.capabilities.emplace_back(
@@ -51,13 +45,29 @@ void Application::init() {
 
         scene_grid = grid(scene, 32);
 
-        scene.index_buffer = index_buffer(scene_grid);
+        {
+            // scene_triangle_material_id_buffer = agl::create(agl::buffer_tag);
+            // storage(
+            //     scene_triangle_material_id_buffer,
+            //     std::span(scene.triangle_material_ids));
+            scene.triangle_material_id_ssbo
+            = triangle_material_id_buffer(scene_grid, scene); 
+            glBindBufferBase(
+                GL_SHADER_STORAGE_BUFFER,
+                0,
+                scene.triangle_material_id_ssbo);
+
+            glBindTextureUnit(0, scene.albedo_array_texture.texture);
+        }
+
+        scene.index_buffer = index_buffer(scene_grid, scene);
+
         initialize_gpu(scene);
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
             pp->aspect_ratio = 16.f / 9.f;
-            pp->z_far = 100.f;
+            pp->z_far = 1000.f;
         }
     }
     { // Meshes.
