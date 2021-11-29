@@ -6,8 +6,8 @@ inline
 void initialize_gpu(Scene& s) {
     s.vertex_array = agl::create(agl::vertex_array_tag);
     { // Bind element buffer.
-        s.index_buffer = agl::create(agl::buffer_tag);
-        agl::storage(s.index_buffer, std::span(s.triangle_indices));
+        // s.index_buffer = agl::create(agl::buffer_tag);
+        // agl::storage(s.index_buffer, std::span(s.triangle_indices));
         element_buffer(s.vertex_array, s.index_buffer);
     }
     if(not empty(s.vertex_normals)) { // Bind vertex normals.
