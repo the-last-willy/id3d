@@ -38,12 +38,23 @@ void Application::render() {
         auto counts = std::vector<GLsizei>();
         auto offsets4 = std::vector<GLuint>();
         auto offsets = std::vector<GLintptr>();
+
+        // auto draw_parameters = agl::Buffer();
+        // storage<DrawElementsParameters>(
+        //     draw_parameters,
+        //     scene_grid.non_empty_cell_count,
+        //     GL_MAP_WRITE_BIT !);
+        // auto draw_parameters_count = GLsizei(0);
+
         for(auto& c : scene_grid.cells) {
             if(not is_empty(c)) {
                 if(aabb_intersecting(c.bounds, wtc, frustum_aabb, ctw)) {
                     counts.push_back(GLsizei(3 * (c.last - c.first)));
                     offsets4.push_back(GLuint(c.first));
                     offsets.push_back(GLintptr(12 * c.first));
+                    // auto& dps = draw_parameters.emplace_back();
+                    // dps.count = GLuint(3 * (c.last - c.first));
+                    // dps.offset = GLuint(12 * c.first);
                 }
             }
         }
@@ -56,6 +67,7 @@ void Application::render() {
                     GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
             }
 
+            // ::render(scene, draw_parameters);
             ::render(scene, counts, offsets);
             // ::render(scene);
 

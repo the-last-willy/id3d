@@ -20,8 +20,8 @@ void Application::init() {
     }
     {
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
-        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
         // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
 
         
@@ -63,6 +63,9 @@ void Application::init() {
         scene.index_buffer = index_buffer(scene_grid, scene);
 
         initialize_gpu(scene);
+    }
+    { // 
+
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {

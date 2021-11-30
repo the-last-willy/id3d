@@ -1,8 +1,21 @@
 #pragma once
 
-#include <agl/common/all.hpp>
+#include "shader/all.hpp"
+
+#include <agl/engine/all.hpp>
 
 #include <array>
+
+struct FrustumCuller {
+    eng::Program shader;
+};
+
+inline
+auto frustum_culler() {
+    auto fc = FrustumCuller();
+
+    return fc;
+}
 
 inline
 bool aabb_intersecting(

@@ -32,6 +32,8 @@ struct Application : Program {
 
     Settings settings;
 
+    eng::Program frustum_culling_shader;
+
     void init() override;
 
     void update(float) override;
