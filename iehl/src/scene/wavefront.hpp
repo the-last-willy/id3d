@@ -12,6 +12,33 @@
 #include <stdexcept>
 
 inline
+void load_lights(Scene& scene) {
+    std::cout << "Loading lights." << std::endl;
+    auto t = std::size_t();
+    for(t = 0; t < size(scene.triangle_material_ids); ++t) {
+        auto mid = scene.triangle_material_ids[t];
+        auto& material = scene.materials[mid];
+        if(is_emissive(material)) {
+            auto bounds = agl::common::interval(
+                scene.vertex_positions[scene.triangle_indices[t][0]]);
+            for(; t < size(scene.triangle_material_ids); ++t) {
+                if(scene.triangle_material_ids[t] != mid) {
+                    break;
+                }
+            }
+            auto& l = scene.lights.emplace_back();
+            l.color = agl::vec4(
+                material.emission_factor[0],
+                material.emission_factor[1],
+                material.emission_factor[2],
+                1.f);
+            l.position = agl::vec4(midpoint(bounds), 1.f);
+        }
+    }
+    std::cout << "  light count = " << size(scene.lights) << std::endl;
+}
+
+inline
 void load_albedo_textures(
     Scene& scene,
     const tinyobj::ObjReader& wavefront,
@@ -92,7 +119,8 @@ void load_materials(Scene& s, const tinyobj::ObjReader& wavefront) {
         for(std::size_t i = 0; i < size(materials); ++i) {
             auto& m = materials[i];
             auto& sm = s.materials[i];
-            sm.color_factor = {m.diffuse[0], m.diffuse[1], m.diffuse[2], 0.f};
+            sm.color_factor = {m.diffuse[0], m.diffuse[1], m.diffuse[2], 1.f};
+            sm.emission_factor = {m.emission[0], m.emission[1], m.emission[2], 1.f};
         }
     }
 }
@@ -165,7 +193,7 @@ Scene wavefront_scene(std::filesystem::path file_path) {
     std::cout << "Loading objects.\n";
     for(std::size_t s = 0; s < size(shapes); ++s) {
         auto& shape = shapes[s];
-        std::cout << "Loading \"" << shape.name << "\".\n";
+        // std::cout << "Loading \"" << shape.name << "\".\n";
         auto& mesh = shape.mesh;
         auto tcount = size(mesh.indices) / 3;
         agl::standard::reserve_more(scene.triangle_material_ids, tcount);
@@ -182,5 +210,8 @@ Scene wavefront_scene(std::filesystem::path file_path) {
     }
     load_albedo_textures(scene, reader, folder_path);
     load_materials(scene, reader);
+
+    load_lights(scene);
+
     return scene;
 }
