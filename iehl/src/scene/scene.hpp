@@ -5,9 +5,22 @@
 #include <array>
 #include <vector>
 
+struct Light {
+    agl::Vec4 color;
+    agl::Vec4 position;
+};
+
 struct Material {
     std::array<float, 4> color_factor;
+    std::array<float, 4> emission_factor;
 };
+
+inline
+bool is_emissive(const Material& m) {
+    return m.emission_factor[0] > 0.f
+    or m.emission_factor[1] > 0.f
+    or m.emission_factor[2] > 0.f;
+}
 
 struct Scene {
     // Geometry.
@@ -26,6 +39,10 @@ struct Scene {
 
     std::vector<Material> materials;
 
+    // Lights.
+
+    std::vector<Light> lights;
+
     // Cached.
 
     agl::common::Interval<agl::Vec3> bounds;
@@ -43,6 +60,7 @@ struct Scene {
 
     eng::Texture albedo_array_texture;
 
+    agl::Buffer light_ssbo;
     agl::Buffer material_ssbo;
     agl::Buffer triangle_material_id_ssbo;
 };
