@@ -13,6 +13,7 @@ void Application::render() {
     auto ctw = agl::engine::clip_to_world(camera);
     auto nt = agl::engine::normal_transform(camera);
     auto wtc = agl::engine::world_to_clip(camera);
+    auto wtv = agl::engine::world_to_eye(camera);
 
     if constexpr(false) {   
         bb_mesh = agl::standard::shared(
@@ -31,6 +32,7 @@ void Application::render() {
     if(settings.rasterization_enabled) {
         uniform(scene.program, "world_to_clip", wtc);
         uniform(scene.program, "world_to_normal", nt);
+        uniform(scene.program, "world_to_view", wtv);
 
         auto frustum_aabb = agl::common::interval(
             agl::vec3(-1.f), agl::vec3(1.f));
@@ -48,14 +50,14 @@ void Application::render() {
 
         for(auto& c : scene_grid.cells) {
             if(not is_empty(c)) {
-                if(aabb_intersecting(c.bounds, wtc, frustum_aabb, ctw)) {
+                // if(aabb_intersecting(c.bounds, wtc, frustum_aabb, ctw)) {
                     counts.push_back(GLsizei(3 * (c.last - c.first)));
                     offsets4.push_back(GLuint(c.first));
                     offsets.push_back(GLintptr(12 * c.first));
                     // auto& dps = draw_parameters.emplace_back();
                     // dps.count = GLuint(3 * (c.last - c.first));
                     // dps.offset = GLuint(12 * c.first);
-                }
+                // }
             }
         }
 
