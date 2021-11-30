@@ -20,6 +20,7 @@ bool is_empty(const GridCell& gc) {
 
 struct Grid {
     agl::common::Grid<GridCell> cells;
+    std::size_t non_empty_cell_count = 0;
 
     std::vector<std::array<unsigned, 3>> triangle_indices;
     std::vector<unsigned> triangle_arrangement;
@@ -93,6 +94,7 @@ auto grid(const Scene& s, std::size_t resolution) {
     { // Compute cell bounds.
         for(auto& c : g.cells) {
             if(not is_empty(c)) {
+                g.non_empty_cell_count += 1;
                 c.bounds = agl::common::interval(
                     s.vertex_positions[g.triangle_indices[c.first][0]]);
                 for(auto i = c.first; i != c.last; ++i) 
