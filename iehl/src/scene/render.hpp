@@ -6,6 +6,14 @@
 
 #include <span>
 
+struct DrawElementsParameters {
+    GLuint count = 0;
+    GLuint primitive_count = 1;
+    GLuint offset = 0;
+    GLuint base_vertex = 0;
+    GLuint base_instance = 0;
+};
+
 inline
 void render(Scene& s) {
     bind(s.program);
@@ -40,6 +48,21 @@ void render(Scene& s, std::span<GLsizei> counts, std::span<GLintptr> offsets) {
         GLenum(agl::DrawType::unsigned_int),
         reinterpret_cast<const void * const *>(data(offsets)),
         GLsizei(size(counts)));
+    
+    unbind(s.program);
+}
+
+inline
+void render(Scene& s, std::span<DrawElementsParameters> deps) {
+    bind(s.program);
+    bind(s.vertex_array);
+
+    glMultiDrawElementsIndirect(
+        GL_TRIANGLES,
+        GL_UNSIGNED_INT,
+        data(deps),
+        GLsizei(size(deps)),
+        0);
     
     unbind(s.program);
 }
