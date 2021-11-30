@@ -83,9 +83,12 @@ void initialize_gpu(Scene& s) {
             s.vertex_array,
             agl::AttributeIndex<GLint>(2));
     }
+    { // Light ssbo.
+        s.light_ssbo = agl::create(agl::buffer_tag);
+        storage(s.light_ssbo, std::span(s.lights));
+    }
     { // Material ssbo.
         s.material_ssbo = agl::create(agl::buffer_tag);
         storage(s.material_ssbo, std::span(s.materials));
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, s.material_ssbo);
     }
 }
