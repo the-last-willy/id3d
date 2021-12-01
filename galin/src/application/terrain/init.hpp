@@ -18,7 +18,10 @@ void App::init() {
         }
     }
     { // Terrain.
-        terrain = load_srtm1("./galin/data/srtm1/N45E005.hgt");
+        terrain = load_srtm1(
+            "./galin/data/srtm1/N45E005.hgt",
+            {0, 0},
+            {500, 500});
         update_all(terrain);
     }
 }
