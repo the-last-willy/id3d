@@ -18,22 +18,7 @@ void App::init() {
         }
     }
     { // Terrain.
-        auto ts = TerrainSettings();
-        ts.domain = agl::common::interval(agl::vec2(0.f), agl::vec2(500.f));
-        ts.resolution = {501, 501};
-        terrain = create(ts);
-        std::cout << delta(terrain) << std::endl;
-        auto mapping = index_to_world_mapping(terrain);
-        for(std::size_t i = 0; i < resolution(terrain)[0]; ++i)
-        for(std::size_t j = 0; j < resolution(terrain)[1]; ++j) {
-            auto pos = mapping(agl::vec2(i, j));
-            at(terrain.heights, i, j) 
-            = 5.f * std::cos(float(j));
-            // = gradient_noise(agl::vec2(i / 20.f, j / 20.f)) * 5.f;
-        //     + abs(gradient_noise(agl::vec2(i / 10.f, j / 10.f)) * 10.f)
-        //     + abs(gradient_noise(agl::vec2(i / 2.f * 4.f, j / 20.f * 4.f)) / 10.f / 16.f)
-        //     + gradient_noise(agl::vec2(i / 20.f * 8.f, j / 20.f * 8.f)) / 10.f / 64.f;
-        }
+        terrain = load_srtm1("./galin/data/srtm1/N45E005.hgt");
         update_all(terrain);
     }
 }

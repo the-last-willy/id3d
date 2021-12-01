@@ -8,12 +8,14 @@
 #include <fstream>
 
 inline
-auto load_srtm30(const std::filesystem::path& file_path) {
+auto load_srtm1(const std::filesystem::path& file_path) {
     std::cout << "Loading srtm." << std::endl;
 
+    float scaling = 1'000.f;
+
     auto ts = TerrainSettings();
-    ts.domain = agl::common::interval(agl::vec2(0.f), agl::vec2(3600.f * 30.f));
-    ts.resolution = {361, 361};
+    ts.domain = agl::common::interval(agl::vec2(0.f), agl::vec2(3600.f * 30.f / scaling));
+    ts.resolution = {3601, 3601};
     auto t = create(ts);
 
     auto f = std::ifstream(
@@ -31,9 +33,10 @@ auto load_srtm30(const std::filesystem::path& file_path) {
 
     for(std::size_t i = 0; i < 3601; ++i)
     for(std::size_t j = 0; j < 3601; ++j) {
-        auto h = std::uint16_t();
-        f >> h;
-        at(heights, i, j) = float(h);
+        auto most = f.get();
+        auto least = f.get();
+        auto h = std::uint16_t(256 * most + least);
+        at(heights, i, j) = float(h) / scaling;
     }
 
 
