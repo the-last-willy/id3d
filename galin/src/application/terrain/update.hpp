@@ -2,6 +2,48 @@
 
 #include "application.hpp"
 
+void update_terrain(App& a) {
+    if(a.settings.is_slope_outdated) {
+        a.settings.is_slope_outdated = false;
+
+        a.settings.is_normal_outdated = true;
+    }
+
+    if(a.settings.is_drainage_area_outdated) {
+        a.settings.is_drainage_area_outdated = false;
+
+        // if(a.settings.drainage_area_formula == DrainageAreaFormula::steepest) {
+            
+        // }
+    }
+
+    if(a.settings.is_normal_outdated) {
+        a.settings.is_normal_outdated = false;
+        update_normals(a.terrain);
+
+        a.settings.is_color_outdated = true;
+    }
+
+    if(a.settings.is_color_outdated) {
+        a.settings.is_color_outdated = false;
+        if(a.settings.coloration_scheme == ColorationScheme::laplacian) {
+            update_laplacian_color_field(a.terrain);
+        } else if(a.settings.coloration_scheme == ColorationScheme::normals) {
+            update_normal_color_field(a.terrain);
+        } else if(a.settings.coloration_scheme == ColorationScheme::slope) {
+            update_slope_color_field(a.terrain);
+        }
+        a.settings.is_mesh_outdated = true;
+
+    }
+
+    if(a.settings.is_mesh_outdated) {
+        a.settings.is_mesh_outdated = false;
+
+        update_cpu(a.terrain);
+        update_gpu(a.terrain);
+    }
+}
 
 void App::update(float) {
     if(not ImGui::GetIO().WantCaptureMouse) {
@@ -35,4 +77,5 @@ void App::update(float) {
             camera.view.position = camera.view.position - direction / 10.f;
         }
     }
+    update_terrain(*this);
 }
