@@ -4,8 +4,19 @@
 
 void App::ui() {
     if(ImGui::Begin("Settings")) {
-        if(ImGui::TreeNode("View")) {
-
+        if(ImGui::TreeNode("Coloration")) {
+            { // Field.
+                auto items = std::array{"Laplacian", "Normals", "Slope"};
+                auto current = int(settings.coloration_scheme);
+                auto used = ImGui::Combo(
+                    "Field",
+                    &current,
+                    data(items), int(size(items)));
+                if(used) {
+                    settings.is_color_outdated = true;
+                }
+                settings.coloration_scheme = ColorationScheme(current);
+            }
             ImGui::TreePop();
         }
         if(ImGui::TreeNode("Erosion")) {
@@ -35,6 +46,36 @@ void App::ui() {
                     update_all(terrain);
                 }
                 ImGui::TreePop();
+            }
+            ImGui::TreePop();
+        }
+        if(ImGui::TreeNode("Field")) {
+            {
+
+            }
+            // { // Drainage area.
+            //     auto items = std::array{"Derivative"};
+            //     auto current = int(settings.slope_formula);
+            //     auto used = ImGui::Combo(
+            //         "Slope formula",
+            //         &current,
+            //         data(items), int(size(items)));
+            //     if(used) {
+                    
+            //     }
+            //     settings.slope_formula = SlopeFormula(current);
+            // }
+            { // Slope formula.
+                auto items = std::array{"Derivative"};
+                auto current = int(settings.slope_formula);
+                auto used = ImGui::Combo(
+                    "Slope formula",
+                    &current,
+                    data(items), int(size(items)));
+                if(used) {
+                    settings.is_slope_outdated = true;
+                }
+                settings.slope_formula = SlopeFormula(current);
             }
             ImGui::TreePop();
         }
