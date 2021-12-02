@@ -37,10 +37,10 @@ void App::ui() {
         if(ImGui::TreeNode("Field")) {
             if(ImGui::TreeNode("Color")) {
                 auto items = std::array{
-                    "Drainage area", "Laplacian", "Normals", "Slope"};
+                    "Drainage area", "Laplacian", "Normals", "Shading", "Slope"};
                 auto current = int(settings.color_formula);
                 auto used = ImGui::Combo(
-                    "Field",
+                    "Formula",
                     &current,
                     data(items), int(size(items)));
                 if(used) {

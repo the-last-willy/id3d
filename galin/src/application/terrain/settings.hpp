@@ -4,6 +4,7 @@ enum class ColorFormula {
     drainage_area,
     laplacian,
     normals,
+    shading,
     slope,
 };
 
@@ -27,7 +28,7 @@ struct Settings {
     bool is_mesh_outdated = true;
 
     bool is_color_outdated = true;
-    ColorFormula color_formula = ColorFormula::normals;
+    ColorFormula color_formula = ColorFormula::shading;
 
     // Camera.
     float camera_height_scaling = 1.f;

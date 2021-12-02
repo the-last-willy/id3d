@@ -68,6 +68,8 @@ void update_terrain(App& a) {
             update_colors_using_laplacian(a.terrain);
         } else if(a.settings.color_formula == ColorFormula::normals) {
             update_colors_using_normals(a.terrain);
+        } else if(a.settings.color_formula == ColorFormula::shading) {
+            update_colors_for_shading(a.terrain);
         } else if(a.settings.color_formula == ColorFormula::slope) {
             update_colors_using_slope(a.terrain);
         }
