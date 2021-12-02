@@ -76,7 +76,7 @@ void mean_compute(Terrain &t) {
     auto nx = resolution(t)[0];
     auto ny = resolution(t)[1];
 
-    for(auto& d : t.drainage_areas) {
+    for(auto& d : t.drainage_area.values) {
         d = 1.f;
     }
     std::vector<Drainage_data> positions;
