@@ -1,6 +1,7 @@
 #pragma once
 
 enum class ColorFormula {
+    drainage_area,
     laplacian,
     normals,
     slope,

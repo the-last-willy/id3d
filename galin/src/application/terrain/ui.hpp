@@ -36,7 +36,8 @@ void App::ui() {
         }
         if(ImGui::TreeNode("Field")) {
             if(ImGui::TreeNode("Color")) {
-                auto items = std::array{"Laplacian", "Normals", "Slope"};
+                auto items = std::array{
+                    "Drainage area", "Laplacian", "Normals", "Slope"};
                 auto current = int(settings.color_formula);
                 auto used = ImGui::Combo(
                     "Field",
@@ -49,10 +50,11 @@ void App::ui() {
                 ImGui::TreePop();
             }
             if(ImGui::TreeNode("Drainage area")) {
-                auto items = std::array{"Derivative"};
+                auto items = std::array{
+                    "Steepest", "Two steepest", "Weighted"};
                 auto current = int(settings.drainage_area_formula);
                 auto used = ImGui::Combo(
-                    "Slope formula",
+                    "Formula",
                     &current,
                     data(items), int(size(items)));
                 if(used) {
