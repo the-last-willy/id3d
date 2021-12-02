@@ -22,6 +22,5 @@ void App::init() {
             "./galin/data/srtm1/N45E005.hgt",
             {0, 0},
             {500, 500});
-        update_all(terrain);
     }
 }
