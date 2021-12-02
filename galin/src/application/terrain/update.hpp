@@ -34,6 +34,23 @@ void update_terrain(App& a) {
         a.settings.is_color_outdated = true;
     }
 
+    if(a.settings.is_gradient_outdated) {
+        a.settings.is_gradient_outdated = false;
+
+        update_gradient(a.terrain);
+
+        a.settings.is_normal_outdated = true;
+        a.settings.is_slope_outdated = true;
+    }
+
+    if(a.settings.is_slope_outdated) {
+        a.settings.is_slope_outdated = false;
+
+        update_slope_using_gradient(a.terrain);
+
+        a.settings.is_color_outdated = true;
+    }
+
     if(a.settings.is_normal_outdated) {
         a.settings.is_normal_outdated = false;
 

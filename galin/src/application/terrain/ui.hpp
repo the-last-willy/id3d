@@ -67,7 +67,7 @@ void App::ui() {
                 auto items = std::array{"Gradient"};
                 auto current = int(settings.slope_formula);
                 auto used = ImGui::Combo(
-                    "Slope formula",
+                    "Formula",
                     &current,
                     data(items), int(size(items)));
                 if(used) {

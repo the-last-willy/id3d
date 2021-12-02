@@ -38,6 +38,8 @@ struct Settings {
     bool is_drainage_area_outdated = true;
     DrainageAreaFormula drainage_area_formula = DrainageAreaFormula::steepest;
 
+    bool is_gradient_outdated = true;
+
     bool is_height_outdated = true;
 
     bool is_laplacian_outdated = true;
