@@ -20,7 +20,7 @@ void App::init() {
     { // Terrain.
         terrain = load_srtm1(
             "./galin/data/srtm1/N45E005.hgt",
-            {0, 0},
+            {1000, 500},
             {500, 500});
     }
 }
