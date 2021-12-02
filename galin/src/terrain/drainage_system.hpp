@@ -11,5 +11,3 @@ struct Drainage_data {
 bool compare_height(const Drainage_data &a, const Drainage_data &b) {
     return a.height > b.height;
 }
-
-//std::sort(t.drains.begin(), t.drains.end(), compare_height);

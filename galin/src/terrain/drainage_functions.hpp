@@ -62,37 +62,43 @@ void steepest_compute(Terrain &t) {
     }
 }
 
-// void steepest_compute(Terrain &t) {
-//     auto nx = resolution(t)[0];
-//     auto ny = resolution(t)[1];
+void mean_compute(Terrain &t) {
+    auto nx = resolution(t)[0];
+    auto ny = resolution(t)[1];
 
-//     auto positions = std::vector<Drainage_data>((nx - 2) * (ny - 2));
-//     for(size_t i = 1; i < nx - 1; ++i)
-//     for(size_t j = 1; j < ny - 1; ++j) {
-//         positions[(ny - 2) * (i - 1) + (j - 1)] = {std::array<size_t, 2>{i, j}, at(t.heights, i, j)};
-//     }
-//     std::sort(positions.begin(), positions.end(), compare_height);
+    auto positions = std::vector<Drainage_data>((nx - 2) * (ny - 2));
+    for(size_t i = 1; i < nx - 1; ++i)
+    for(size_t j = 1; j < ny - 1; ++j) {
+        positions[(ny - 2) * (i - 1) + (j - 1)] = {std::array<size_t, 2>{i, j}, at(t.heights, i, j)};
+    }
+    std::sort(positions.begin(), positions.end(), compare_height);
 
-//     for(std::size_t i = 0; i < positions.size(); ++i) {
-//         auto x = positions[i].position[0];
-//         auto y = positions[i].position[1];
-//         auto current_height = positions[i].height;
-//         auto max = current_height - at(t.heights, x - 1, y + 1);
-//         auto x_max = x - 1;
-//         auto y_max = y + 1;
-//         auto total = 0;
-//         for(std::size_t c = x - 1; c <= x + 1; ++c) {
-//             for(std::size_t r = y - 1; r <= y + 1; ++r) {
-//                 if(r != x && c != y) {
-//                     auto distance = current_height - at(t.heights, c, r);
-//                     if(max < distance) {
-//                         max = distance;
-//                         x_max = c;
-//                         y_max = r;
-//                     }
-//                 }
-//             }
-//             at(t.drainage_areas, x_max, y_max) += at(t.drainage_areas, x, y);
-//         }
-//     }
-// }
+    for(std::size_t i = 0; i < positions.size(); ++i) {
+        auto x = positions[i].position[0];
+        auto y = positions[i].position[1];
+        auto current_height = positions[i].height;
+        auto total = 0;
+        auto neighbours = std::vector<agl::Vec2>(8);
+        auto distances = std::vector<float>(8);
+        for(std::size_t c = x - 1; c <= x + 1; ++c) {
+            for(std::size_t r = y - 1; r <= y + 1; ++r) {
+                if(r != x && c != y) {
+                    auto distance = current_height - at(t.heights, c, r);
+                    if(distance > 0) {
+                        total += distance;
+                    }
+                    distances.push_back(distance);
+                    neighbours.push_back(agl::vec2(c, r));
+                }
+            }
+        }
+
+        for(int i = 0; i < neighbours.size(); ++i) {
+            if(distances[i] > 0 && total > 0) {
+                auto w = distances[i] / total;
+                auto p = neighbours[i];
+                at(t.drainage_areas, p[0], p[1]) += w * at(t.drainage_areas, x, y);
+            }
+        }
+    }
+}
