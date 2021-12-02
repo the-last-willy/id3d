@@ -2,6 +2,7 @@
 
 #include "terrain/all.hpp"
 
+// VALUE RANGE IS UTTERLY BROKEN FOR UNKNOWN REASON.
 void steepest_compute(Terrain &t) {
     auto da = value_accessor(t.drainage_area);
     auto h = value_accessor(t.height);
