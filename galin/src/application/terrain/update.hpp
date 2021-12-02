@@ -6,35 +6,43 @@ void update_terrain(App& a) {
     if(a.settings.is_slope_outdated) {
         a.settings.is_slope_outdated = false;
 
+        a.settings.is_drainage_area_outdated = true;
+        a.settings.is_laplacian_outdated = true;
+        a.settings.is_mesh_outdated = true;
         a.settings.is_normal_outdated = true;
     }
 
     if(a.settings.is_drainage_area_outdated) {
         a.settings.is_drainage_area_outdated = false;
+    }
 
-        // if(a.settings.drainage_area_formula == DrainageAreaFormula::steepest) {
-            
-        // }
+    if(a.settings.is_laplacian_outdated) {
+        a.settings.is_laplacian_outdated = false;
+
+        update_laplacian(a.terrain);
+        
+        a.settings.is_color_outdated = true;
     }
 
     if(a.settings.is_normal_outdated) {
         a.settings.is_normal_outdated = false;
-        update_normals(a.terrain);
+
+        update_normals_using_gradient(a.terrain);
 
         a.settings.is_color_outdated = true;
     }
 
     if(a.settings.is_color_outdated) {
         a.settings.is_color_outdated = false;
-        if(a.settings.coloration_scheme == ColorationScheme::laplacian) {
-            update_laplacian_color_field(a.terrain);
-        } else if(a.settings.coloration_scheme == ColorationScheme::normals) {
-            update_normal_color_field(a.terrain);
-        } else if(a.settings.coloration_scheme == ColorationScheme::slope) {
-            update_slope_color_field(a.terrain);
+
+        if(a.settings.color_formula == ColorFormula::laplacian) {
+            update_colors_using_laplacian(a.terrain);
+        } else if(a.settings.color_formula == ColorFormula::normals) {
+            update_colors_using_normals(a.terrain);
+        } else if(a.settings.color_formula == ColorFormula::slope) {
+            update_colors_using_slope(a.terrain);
         }
         a.settings.is_mesh_outdated = true;
-
     }
 
     if(a.settings.is_mesh_outdated) {
