@@ -47,9 +47,11 @@ auto load_srtm1(
         at(heights, i, j) = float(h) / scaling;
     }
 
+    auto h = value_accessor(t.height);
+
     for(std::size_t i = 0; i < size[0]; ++i)
     for(std::size_t j = 0; j < size[1]; ++j) {
-        at(t.heights, i, j) = at(heights, position[0] + i, position[1] + j);
+        h(i, j) = at(heights, position[0] + i, position[1] + j);
     }
 
     return t;

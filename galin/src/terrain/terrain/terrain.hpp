@@ -1,21 +1,20 @@
 #pragma once
 
+#include "field/field.hpp"
 #include "settings.hpp"
 
 struct Terrain {
-    //
-
     TerrainSettings settings;
 
     // Data.
 
-    agl::common::Grid<agl::Vec2> gradients;
-    agl::common::Grid<float> laplacian;
-    agl::common::Grid<float> heights;
-    agl::common::Grid<agl::Vec3> normals;
-    agl::common::Grid<float> slopes;
-    agl::common::Grid<float> drainage_areas;
-    agl::common::Grid<agl::Vec3> colors;
+    Field<agl::Vec3> color;
+    Field<float> drainage_area;
+    Field<agl::Vec2> gradient;
+    Field<float> height;
+    Field<float> laplacian;
+    Field<agl::Vec3> normal;
+    Field<float> slope;
 
     // CPU.
 
