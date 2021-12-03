@@ -13,12 +13,14 @@ void steepest_compute(Terrain &t) {
     for(auto& d : t.drainage_area.values) {
         d = 1.f;
     }
-    std::vector<Drainage_data> positions;
-    positions.reserve((nx - 2) * (ny - 2));
+
+    auto positions = agl::standard::reserved_vector<Drainage_data>((nx - 2) * (ny - 2));
+
     for(size_t i = 1; i < nx - 1; ++i)
     for(size_t j = 1; j < ny - 1; ++j) {
         positions.push_back({std::array<size_t, 2>{i, j}, h(i, j)});
     }
+    
     std::sort(positions.begin(), positions.end(), compare_height);
 
     for(std::size_t i = 0; i < positions.size(); ++i) {
@@ -65,8 +67,8 @@ void steepest_compute(Terrain &t) {
                     }
                 }
             }
-            da(x_max, y_max) += da(x, y);
         }
+        da(x_max, y_max) += da(x, y);
     }
 }
 
