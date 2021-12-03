@@ -3,8 +3,8 @@
 #include "application.hpp"
 
 void update_terrain(App& a) {
-    if(a.settings.is_slope_outdated) {
-        a.settings.is_slope_outdated = false;
+    if(a.settings.is_height_outdated) {
+        a.settings.is_height_outdated = false;
 
         update_range(a.terrain.height);
 
