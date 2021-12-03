@@ -3,6 +3,7 @@
 #include "terrain/resolution.hpp"
 #include "terrain/terrain.hpp"
 
+#include <cmath>
 #include <limits>
 #include <queue>
 #include <utility>
@@ -34,11 +35,10 @@ struct comp {
 
 using ZPriorityQueue = std::priority_queue< Element, std::vector<Element>, comp >;
 
-enum LindsayMode {
-  COMPLETE_BREACHING,
-  SELECTIVE_BREACHING,
-  CONSTRAINED_BREACHING
-};
+inline
+float previous(float f) {
+	return std::nextafter(f, std::numeric_limits<float>::lowest());
+}
 
 /*!
 \brief Breach depressions.
@@ -101,7 +101,7 @@ void breach(Terrain& t) {
 		// case: raise the cell to be just lower than its lowest neighbour. This
 		// makes the breaching/tunneling procedures work better.
 		if(h(x, y) < lowest_neighbour) {
-			h(x, y) = lowest_neighbour - 2.f * std::numeric_limits<float>::min();
+			h(x, y) = previous(lowest_neighbour);
 		}
 		// Since depressions might have flat bottoms, we treat flats as pits. Mark 
 		// flat/pits as such now.
@@ -123,7 +123,6 @@ void breach(Terrain& t) {
 		if(at(pits, p[0], p[1])) {
 			//Locate a cell that is lower than the pit cell, or an edge cell
 			auto cc = at(indexing(pits), p[0], p[1]);                                  //Current cell on the path
-			// float pathdepth = -2.f * std::numeric_limits<float>::lowest(); //Maximum depth found along the path
 			float target_height = h(p[0], p[1]);                 //Depth to which the cell currently being considered should be carved
 
 			//Trace path back to a cell low enough for the path to drain into it, or
@@ -131,7 +130,7 @@ void breach(Terrain& t) {
 			while(cc != -1 && at(t.height.values, cc) >= target_height) {
 				at(t.height.values, cc) = target_height;
 				cc = at(backlinks, cc); //Follow path back
-				target_height -= 2.f * std::numeric_limits<float>::min(); //Decrease target depth slightly for each cell on path to ensure drainage
+				target_height = previous(target_height); //Decrease target depth slightly for each cell on path to ensure drainage
 			}
 		}
 
@@ -140,6 +139,9 @@ void breach(Terrain& t) {
 			auto px = p[0] + dx[n];
 			auto py = p[1] + dy[n];
 
+			if(px >= nx or py >= ny) {
+				continue;
+			}
 			if(at(visited, px, py)) {
 				continue;
 			}
