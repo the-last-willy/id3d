@@ -12,7 +12,7 @@ void update_gradient(Terrain& t) {
     auto nx = resolution(t)[0];
     auto ny = resolution(t)[1];
     for(std::size_t i = 1; i < nx - 1; ++i) {
-        for(std::size_t j = 1; j < ny - 2; ++j) {
+        for(std::size_t j = 1; j < ny - 1; ++j) {
             auto dfdx = (h(i + 1, j) - h(i - 1, j)) / (2 * dx);
             auto dfdy = (h(i, j + 1) - h(i, j - 1)) / (2 * dy);
             g(i, j) = agl::vec2(dfdx, dfdy);
