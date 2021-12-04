@@ -30,6 +30,6 @@ void update_colors_using_laplacian(Terrain& t) {
             b = cl / extent;
         }
 
-        c(i, j) = agl::vec3(r, 0.f, b);
+        c(i, j) = agl::vec3(r, b, b);
     }
 }
