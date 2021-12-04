@@ -1,6 +1,7 @@
 #pragma once
 
 #include "application.hpp"
+#include "reset_terrain.hpp"
 #include "update_terrain.hpp"
 
 #include <cmath>
@@ -14,11 +15,7 @@ void App::init() {
             shader::flat_shading(shader_compiler));
     }
     { // Terrain.
-        terrain = load_srtm1(
-            "./galin/data/srtm1/N45E005.hgt",
-            {1000, 500},
-            {500, 500});
-        update_terrain(*this);
+        reset_terrain(*this);
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
