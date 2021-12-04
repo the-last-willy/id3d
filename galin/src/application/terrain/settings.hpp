@@ -52,7 +52,7 @@ struct Settings {
     SlopeFormula slope_formula = SlopeFormula::gradient;
 
     // Erosion.
-    float debris_slope_erosion_factor = 1.f;
-    float hill_slope_erosion_factor = 1.f;
-    float stream_power_erosion_factor = 1.f;
+    float debris_slope_erosion_extent = 1.f;
+    float hill_slope_erosion_extent = 1.f;
+    float stream_power_erosion_extent = 1.f;
 };

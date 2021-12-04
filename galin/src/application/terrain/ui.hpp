@@ -1,34 +1,47 @@
 #pragma once
 
 #include "application.hpp"
+#include "reset_terrain.hpp"
 
 void App::ui() {
     if(ImGui::Begin("Settings")) {
+        if(ImGui::Button("Reset")) {
+            reset_terrain(*this);
+        }
         if(ImGui::TreeNode("Algorithm")) {
             if(ImGui::TreeNode("Erosion")) {
                 if(ImGui::TreeNode("Debris slope")) {
-                    ImGui::SliderFloat("Factor",
-                        &settings.debris_slope_erosion_factor, 0.f, 5.f);
+                    ImGui::SliderFloat("Extent",
+                        &settings.debris_slope_erosion_extent,
+                        0.f, 5.f);
                     if(ImGui::Button("Erode")) {
-                        debris_slope_erosion(terrain);
+                        debris_slope_erosion(
+                            terrain,
+                            settings.debris_slope_erosion_extent);
                         settings.is_height_outdated = true;
                     }
                     ImGui::TreePop();
                 }
                 if(ImGui::TreeNode("Hill slope")) {
-                    ImGui::SliderFloat("Factor",
-                        &settings.hill_slope_erosion_factor, 0.f, 5.f);
+                    ImGui::SliderFloat("Extent",
+                        &settings.hill_slope_erosion_extent,
+                        0.f, 5.f);
                     if(ImGui::Button("Erode")) {
-                        hill_slope_erosion(terrain);
+                        hill_slope_erosion(
+                            terrain,
+                            settings.hill_slope_erosion_extent);
                         settings.is_height_outdated = true;
                     }
                     ImGui::TreePop();
                 }
                 if(ImGui::TreeNode("Stream power")) {
-                    ImGui::SliderFloat("Factor",
-                        &settings.stream_power_erosion_factor, 0.f, 5.f);
+                    ImGui::SliderFloat("Extent",
+                        &settings.stream_power_erosion_extent,
+                        0.f, 5.f);
                     if(ImGui::Button("Erode")) {
-                        stream_power_erosion(terrain);
+                        stream_power_erosion(
+                            terrain,
+                            settings.stream_power_erosion_extent);
                         settings.is_height_outdated = true;
                     }
                     ImGui::TreePop();
