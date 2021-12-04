@@ -17,6 +17,6 @@ void update_colors_using_drainage_area(Terrain& t) {
     for(std::size_t i = 0; i < resolution(t)[0]; ++i)
     for(std::size_t j = 0; j < resolution(t)[1]; ++j) {
         auto val = compression(da(i, j)) / extent;
-        c(i, j) = agl::vec3(0.f, val, 0.f);
+        c(i, j) = agl::vec3(val, val, val);
     }
 }
