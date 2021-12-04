@@ -9,11 +9,13 @@ void update_terrain(App& a) {
         update_range(a.terrain.height);
 
         a.settings.is_drainage_area_outdated = true;
+        a.settings.is_gradient_outdated = true;
         a.settings.is_laplacian_outdated = true;
         a.settings.is_mesh_outdated = true;
-        a.settings.is_normal_outdated = true;
     }
 
+    // Requires height.
+    // Required by color.
     if(a.settings.is_drainage_area_outdated) {
         a.settings.is_drainage_area_outdated = false;
 
@@ -29,6 +31,8 @@ void update_terrain(App& a) {
         a.settings.is_color_outdated = true;
     }
 
+    // Requires height.
+    // Required by color.
     if(a.settings.is_laplacian_outdated) {
         a.settings.is_laplacian_outdated = false;
 
@@ -38,6 +42,8 @@ void update_terrain(App& a) {
         a.settings.is_color_outdated = true;
     }
 
+    // Requires height.
+    // Required by normal, slope.
     if(a.settings.is_gradient_outdated) {
         a.settings.is_gradient_outdated = false;
 
@@ -47,6 +53,8 @@ void update_terrain(App& a) {
         a.settings.is_slope_outdated = true;
     }
 
+    // Requires gradient.
+    // Required by color.
     if(a.settings.is_slope_outdated) {
         a.settings.is_slope_outdated = false;
 
@@ -56,6 +64,8 @@ void update_terrain(App& a) {
         a.settings.is_color_outdated = true;
     }
 
+    // Requires gradient.
+    // Required by color.
     if(a.settings.is_normal_outdated) {
         a.settings.is_normal_outdated = false;
 
@@ -64,6 +74,7 @@ void update_terrain(App& a) {
         a.settings.is_color_outdated = true;
     }
 
+    // Requires drainage, laplacian, normal, shading, slope.
     if(a.settings.is_color_outdated) {
         a.settings.is_color_outdated = false;
 
