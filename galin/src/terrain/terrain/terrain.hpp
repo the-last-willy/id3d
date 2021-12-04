@@ -15,6 +15,7 @@ struct Terrain {
     Field<float> laplacian;
     Field<agl::Vec3> normal;
     Field<float> slope;
+    Field<float> wetnessIndex;
 
     // CPU.
 
