@@ -14,6 +14,9 @@ namespace breaching {
 const int DIRECTIONS = 8;
 const int dx[DIRECTIONS] = { -1, -1,  0,  1, 1, 1, 0, -1 };
 const int dy[DIRECTIONS] = {  0, -1, -1, -1, 0, 1, 1,  1 };
+// const int DIRECTIONS = 4;
+// const int dx[DIRECTIONS] = { -1,  0,  0,  1 };
+// const int dy[DIRECTIONS] = {  0, -1,  1,  0 };
 
 using Point = std::array<std::size_t, 2>;
 
@@ -103,6 +106,7 @@ void breach(Terrain& t) {
 		if(h(x, y) < lowest_neighbour) {
 			h(x, y) = previous(lowest_neighbour);
 		}
+		
 		// Since depressions might have flat bottoms, we treat flats as pits. Mark 
 		// flat/pits as such now.
 		if(h(x, y) <= lowest_neighbour) {
@@ -122,8 +126,8 @@ void breach(Terrain& t) {
 		//This cell is a pit: let's consider doing some breaching
 		if(at(pits, p[0], p[1])) {
 			//Locate a cell that is lower than the pit cell, or an edge cell
-			auto cc = at(indexing(pits), p[0], p[1]);                                  //Current cell on the path
-			float target_height = h(p[0], p[1]);                 //Depth to which the cell currently being considered should be carved
+			auto cc = at(backlinks, p[0], p[1]);                                  //Current cell on the path
+			float target_height = previous(h(p[0], p[1]));                 //Depth to which the cell currently being considered should be carved
 
 			//Trace path back to a cell low enough for the path to drain into it, or
 			//to an edge of the DEM
@@ -134,7 +138,7 @@ void breach(Terrain& t) {
 			}
 		}
 
-		//Looks for neighbours which are either unvisited or pits
+		//Looks for neighbours which are unvisited
 		for(int n = 0; n < DIRECTIONS; n++) {
 			auto px = p[0] + dx[n];
 			auto py = p[1] + dy[n];
@@ -145,11 +149,8 @@ void breach(Terrain& t) {
 			if(at(visited, px, py)) {
 				continue;
 			}
-
-			auto my_e = h(px, py);
-
 			//The neighbour is unvisited. Add it to the queue
-			pq.push(std::make_pair(my_e, std::array{px, py}));
+			pq.push(std::make_pair(h(px, py), std::array{px, py}));
 			at(visited, px, py) = true;
 			at(backlinks, px, py) = int(at(indexing(backlinks), p[0], p[1]));
 		}
