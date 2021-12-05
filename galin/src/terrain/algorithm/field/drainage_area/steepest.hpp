@@ -26,48 +26,22 @@ void update_drainage_area_using_steepest(Terrain& t) {
     for(std::size_t i = 0; i < positions.size(); ++i) {
         auto x = positions[i].position[0];
         auto y = positions[i].position[1];
-        // auto up = h(x, y + 1);
-        // auto down = h(x, y - 1);
-        // auto left = h(x - 1, y);
-        // auto right = h(x + 1, y);
-        // auto current_height = positions[i].height;
-        // auto max = current_height - up;
-        // auto x_max = x;
-        // auto y_max = y + 1;
-
-        // if(max < current_height - down) {
-        //     max = current_height - down;
-        //     x_max = x;
-        //     y_max = y - 1;
-        // }
-        // if (max < current_height - left) {
-        //     max = current_height - left;
-        //     x_max = x - 1;
-        //     y_max = y;
-        // }
-        // if (max < current_height - right) {
-        //     max = current_height - right;
-        //     x_max = x + 1;
-        //     y_max = y;
-        // }
-        // da(x_max, y_max) += da(x, y);
 
         auto current_height = positions[i].height;
-        auto max = current_height - h(x - 1, y + 1);
-        auto x_max = x - 1;
-        auto y_max = y + 1;
-        for(std::size_t c = x - 1; c <= x + 1; ++c) {
-            for(std::size_t r = y - 1; r <= y + 1; ++r) {
-                if(r != x && c != y) {
-                    auto distance = current_height - h(c, r);
-                    if(max < distance) {
-                        max = distance;
-                        x_max = c;
-                        y_max = r;
-                    }
-                }
+        auto max = 0.f;
+        auto x_max = x;
+        auto y_max = y;
+        for(std::size_t xi = x - 1; xi <= x + 1; ++xi)
+        for(std::size_t yi = y - 1; yi <= y + 1; ++yi) {
+            auto distance = current_height - h(xi, yi);
+            if(distance > max) {
+                max = distance;
+                x_max = xi;
+                y_max = yi;
             }
         }
-        da(x_max, y_max) += da(x, y);
+        if(x_max != x or y_max != y) {
+            da(x_max, y_max) += da(x, y);
+        }
     }
 }
