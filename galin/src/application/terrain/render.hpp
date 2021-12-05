@@ -8,7 +8,10 @@ void App::render() {
 
     clear(mesh_pass);
 
-    auto wtc = agl::engine::world_to_clip(camera);
+    auto wtc = 
+        agl::engine::eye_to_clip(camera)
+        * agl::engine::world_to_eye(camera)
+        * agl::scaling3(1.f, settings.view_height_scaling, 1.f);
     auto wte = agl::engine::world_to_eye(camera);
 
     terrain.gpu_mesh->uniforms["model_to_clip"]
