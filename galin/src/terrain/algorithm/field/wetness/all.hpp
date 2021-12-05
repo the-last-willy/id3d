@@ -13,6 +13,6 @@ void update_wetnessIndex(Terrain& t) {
     auto ny = resolution(t)[1];
     for(size_t i = 0; i < nx; ++i)
     for(size_t j = 0; j < ny; ++j) {
-        w(i, j) = std::log(a(i, j)) / (s(i, j) + epsilon);
+        w(i, j) = std::log(a(i, j) / (s(i, j) + epsilon));
     }
 }
