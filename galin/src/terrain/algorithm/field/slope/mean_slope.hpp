@@ -22,6 +22,7 @@ void update_slope_using_mean(Terrain& t) {
     for(size_t i = 1; i < nx - 1; ++i) {
         for(size_t j = 1; j < ny - 1; ++j) {
             auto current_height = h(i, j);
+
             for(auto& n: neighbours4) {
                 if(n[0] != 0)
                     sum += std::abs((current_height - h(i + n[0], j + n[1])) / dx);
@@ -29,17 +30,7 @@ void update_slope_using_mean(Terrain& t) {
                     sum += std::abs((current_height - h(i + n[0], j + n[1])) / dy);
             }
             for(auto& n: neighbours_diag) {
-                auto dist = 0.f;
-                auto dist2 = 0.f;
-                if(n[1] > 0) {
-                    dist = std::abs((h(i, j + 1) - h(i + n[0], j + n[1])) / dx);
-                    dist2 = std::abs((current_height - h(i, j + 1)) / dy);
-                }
-                else if(n[1] < 0) {
-                    dist = (h(i, j - 1) - h(i + n[0], j + n[1])) / dx;
-                    dist2 = std::abs((current_height - h(i, j - 1)) / dy);
-                }
-                sum += std::sqrt(dist * dist + dist2 * dist2);
+                sum += std::abs((current_height - h(i + n[0], j + n[1])) / sqrt(dx * dx + dy * dy));
             }
             s(i, j) = sum / 8.f;
             sum = 0.f;
