@@ -6,4 +6,5 @@
 #include "render.hpp"
 #include "scene.hpp"
 #include "update_bounds.hpp"
+#include "update_lights.hpp"
 #include "wavefront.hpp"

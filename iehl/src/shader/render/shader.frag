@@ -52,18 +52,21 @@ void main() {
         for(int l = 0; l < light_count; ++l) {
             Light light = lights[l]; 
             float distance = max(distance(vertex_position, light.position.xyz), 1.);
-            lighting += light.color.xyz / distance;
+            // lighting += light.color.xyz / (distance * distance);
+            lighting += vec3((1. - step(2., distance)) / 2.f, 0., 0.);
         }
     }
 
     fragment_color = vec4(lighting, 1.);
 
-    // int material_id = triangle_material_ids[primitive_id];
-    // if(material_id != -1) {
-    //     const Material material = materials[material_id];
-    //     vec4 texel = texture(albedo_array_texture, vec3(vertex_texcoords, material_id));
-    //     fragment_color = material.emission_factor * material.color_factor * texel;
-    // } else {
-    //     fragment_color = vec4(vec3(1., 1., 1.), 1.);
-    // }
+    int material_id = triangle_material_ids[primitive_id];
+    if(material_id != -1) {
+        const Material material = materials[material_id];
+        vec4 texel = texture(albedo_array_texture, vec3(vertex_texcoords, material_id));
+        // fragment_color = material.emission_factor * material.color_factor * texel + vec4(lighting, 0.);
+        fragment_color = 2. * material.emission_factor * material.color_factor * texel + vec4(lighting, 0.);
+        // fragment_color = vec4(vec3(material.emission_factor), 1.) + vec4(lighting, 0.);
+    } else {
+        fragment_color = vec4(vec3(1., 1., 1.), 1.);
+    }
 }

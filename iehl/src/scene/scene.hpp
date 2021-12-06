@@ -26,6 +26,7 @@ struct Scene {
     // Geometry.
 
     std::vector<int> triangle_material_ids;
+    std::vector<std::size_t> triangle_object_ids; 
 
     std::vector<agl::Vec3> vertex_normals;
     std::vector<agl::Vec3> vertex_positions;

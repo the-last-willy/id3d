@@ -69,6 +69,8 @@ void Application::render() {
                     GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
             }
 
+            update_lights(scene, wtv);
+
             // ::render(scene, draw_parameters);
             ::render(scene, counts, offsets);
             // ::render(scene);
