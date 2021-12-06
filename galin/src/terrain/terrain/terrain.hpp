@@ -3,6 +3,8 @@
 #include "field/field.hpp"
 #include "settings.hpp"
 
+#include <array>
+
 struct Terrain {
     TerrainSettings settings;
 
@@ -15,6 +17,7 @@ struct Terrain {
     Field<float> laplacian;
     Field<agl::Vec3> normal;
     Field<float> slope;
+    Field<std::array<float, 3>> vegetation_probabilities;
     Field<float> wetnessIndex;
 
     // CPU.
