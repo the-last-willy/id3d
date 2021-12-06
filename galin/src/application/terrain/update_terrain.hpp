@@ -21,8 +21,6 @@ void update_terrain(App& a) {
 
         if(a.settings.drainage_area_formula == DrainageAreaFormula::steepest) {
             update_drainage_area_using_steepest(a.terrain);
-        } else if(a.settings.drainage_area_formula == DrainageAreaFormula::two_steepest) {
-             
         } else if(a.settings.drainage_area_formula == DrainageAreaFormula::weighted) {
             update_drainage_area_using_weighted(a.terrain);
         }
@@ -58,7 +56,11 @@ void update_terrain(App& a) {
     if(a.settings.is_slope_outdated) {
         a.settings.is_slope_outdated = false;
 
-        update_slope_using_mean(a.terrain);
+        if(a.settings.slope_formula == SlopeFormula::gradient) {
+            update_slope_using_gradient(a.terrain);
+        } else if(a.settings.slope_formula == SlopeFormula::weighted) {
+            update_slope_using_mean(a.terrain);
+        }
         update_range(a.terrain.slope);
 
         a.settings.is_color_outdated = true;
