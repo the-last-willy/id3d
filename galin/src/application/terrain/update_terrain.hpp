@@ -27,6 +27,8 @@ void update_terrain(App& a) {
         update_range(a.terrain.drainage_area);
 
         a.settings.is_color_outdated = true;
+        a.settings.is_vegetation_probability_outdated = true;
+        a.settings.is_wetness_outdated = true;
     }
 
     // Requires height.
@@ -64,6 +66,8 @@ void update_terrain(App& a) {
         update_range(a.terrain.slope);
 
         a.settings.is_color_outdated = true;
+        a.settings.is_vegetation_probability_outdated = true;
+        a.settings.is_wetness_outdated = true;
     }
 
     // Requires gradient.
@@ -76,12 +80,36 @@ void update_terrain(App& a) {
         a.settings.is_color_outdated = true;
     }
 
-    // Requires drainage, laplacian, normal, shading, slope.
+    // Requires drainage area, slope.
+    // Required by color, vegetation.
+    if(a.settings.is_wetness_outdated) {
+        a.settings.is_wetness_outdated = false;
+
+        update_wetness(a.terrain);
+        update_range(a.terrain.wetness);
+
+        a.settings.is_color_outdated = true;
+        a.settings.is_vegetation_probability_outdated = true;
+    }
+
+    // Requires drainage area, laplacian, shading, slope, wetness.
+    // Required by color.
+    if(a.settings.is_vegetation_probability_outdated) {
+        a.settings.is_vegetation_probability_outdated = false;
+
+        update_vegetation_probability(a.terrain);
+
+        a.settings.is_color_outdated = true;
+    }
+
+    // Requires drainage, laplacian, normal, shading, slope, vegetation probability.
     if(a.settings.is_color_outdated) {
         a.settings.is_color_outdated = false;
 
         if(a.settings.color_formula == ColorFormula::drainage_area) {
             update_colors_using_drainage_area(a.terrain);
+        } else if(a.settings.color_formula == ColorFormula::height) {
+            update_color_using_height(a.terrain);
         } else if(a.settings.color_formula == ColorFormula::laplacian) {
             update_colors_using_laplacian(a.terrain);
         } else if(a.settings.color_formula == ColorFormula::normals) {
@@ -90,6 +118,10 @@ void update_terrain(App& a) {
             update_colors_for_shading(a.terrain);
         } else if(a.settings.color_formula == ColorFormula::slope) {
             update_colors_using_slope(a.terrain);
+        } else if(a.settings.color_formula == ColorFormula::vegetation_probability) {
+            update_color_using_vegetation_probability(a.terrain);
+        } else if(a.settings.color_formula == ColorFormula::wetness) {
+            update_color_using_wetness(a.terrain);
         }
 
         a.settings.is_mesh_outdated = true;

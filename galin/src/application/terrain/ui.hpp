@@ -94,7 +94,14 @@ void App::ui() {
                 upper_bound(terrain.settings.domain)[1]);
             if(ImGui::TreeNode("Color")) {
                 auto items = std::array{
-                    "Drainage area", "Laplacian", "Normals", "Shading", "Slope"};
+                    "Drainage area",
+                    "Height",
+                    "Laplacian",
+                    "Normals",
+                    "Shading",
+                    "Slope",
+                    "Vegetation probability",
+                    "Wetness"};
                 auto current = int(settings.color_formula);
                 auto used = ImGui::Combo(
                     "Formula",
@@ -146,7 +153,7 @@ void App::ui() {
                     lower_bound(terrain.slope.range),
                     upper_bound(terrain.slope.range));
                 { // Formula.
-                    auto items = std::array{"Gradient", "Weighted"};
+                    auto items = std::array{"Gradient", "Mean"};
                     auto current = int(settings.slope_formula);
                     auto used = ImGui::Combo(
                         "Formula",
@@ -157,6 +164,13 @@ void App::ui() {
                     }
                     settings.slope_formula = SlopeFormula(current);
                 }
+                ImGui::TreePop();
+            }
+            if(ImGui::TreeNode("Wetness")) {
+                ImGui::Text(
+                    "Range = [%.3f, %.3f]",
+                    lower_bound(terrain.wetness.range),
+                    upper_bound(terrain.wetness.range));
                 ImGui::TreePop();
             }
             ImGui::TreePop();

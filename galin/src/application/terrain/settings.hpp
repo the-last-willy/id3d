@@ -2,10 +2,13 @@
 
 enum class ColorFormula {
     drainage_area,
+    height,
     laplacian,
     normals,
     shading,
     slope,
+    vegetation_probability,
+    wetness,
 };
 
 enum class DrainageAreaFormula {
@@ -28,7 +31,7 @@ struct Settings {
     bool is_mesh_outdated = true;
 
     bool is_color_outdated = true;
-    ColorFormula color_formula = ColorFormula::shading;
+    ColorFormula color_formula = ColorFormula::vegetation_probability;
 
     // View.
     float view_height_scaling = 1.f;
@@ -50,6 +53,10 @@ struct Settings {
 
     bool is_slope_outdated = true;
     SlopeFormula slope_formula = SlopeFormula::gradient;
+
+    bool is_vegetation_probability_outdated = true;
+
+    bool is_wetness_outdated = true;
 
     // Erosion.
     float debris_slope_erosion_extent = 1.f;
