@@ -51,7 +51,7 @@ auto load_srtm1(
 
     for(std::size_t i = 0; i < size[0]; ++i)
     for(std::size_t j = 0; j < size[1]; ++j) {
-        h(i, j) = 10.f * at(heights, position[0] + i, position[1] + j);
+        h(i, j) = at(heights, position[0] + i, position[1] + j);
     }
 
     return t;
