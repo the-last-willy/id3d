@@ -1,3 +1,9 @@
+# Virtual world modelling
+
+Source code in `src/application/terrain` and `src/terrain`.
+
+CMake target is `id3d_galin_terrain`.
+
 # Geometric Modelling
 
 # Shadertoy
