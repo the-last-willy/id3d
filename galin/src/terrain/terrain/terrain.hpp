@@ -18,7 +18,7 @@ struct Terrain {
     Field<agl::Vec3> normal;
     Field<float> slope;
     Field<std::array<float, 3>> vegetation_probability;
-    Field<float> wetnessIndex;
+    Field<float> wetness;
 
     // CPU.
 

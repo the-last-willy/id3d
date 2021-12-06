@@ -32,6 +32,8 @@ auto create(TerrainSettings ts) {
         t.laplacian = field(nx, ny, 0.f);
         t.normal = field(nx, ny, agl::vec3(0.f));
         t.slope = field(nx, ny, 0.f);
+        t.vegetation_probability = field(nx, ny, std::array{0.f, 0.f, 0.f});
+        t.wetness = field(nx, ny, 0.f);
 
         auto da = value_accessor(t.drainage_area);
         for(std::size_t i = 0; i < nx; ++i) {
