@@ -7,8 +7,9 @@ void update_color_using_vegetation_probability(Terrain& t) {
     auto c = value_accessor(t.color);
     auto vp = value_accessor(t.vegetation_probability);
 
-    for(std::size_t i0 = 0; i0 < resolution(t)[0]; ++i0)
-    for(std::size_t i1 = 0; i1 < resolution(t)[1]; ++i1) {
-        c(i, j) = 
+    for(std::size_t i = 0; i < resolution(t)[0]; ++i)
+    for(std::size_t j = 0; j < resolution(t)[1]; ++j) {
+        auto vp_ij = vp(i, j);
+        c(i, j) = agl::vec3(vp_ij[0], vp_ij[1], vp_ij[2]);
     }
 }
