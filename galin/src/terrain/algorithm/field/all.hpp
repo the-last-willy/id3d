@@ -6,5 +6,5 @@
 #include "laplacian/all.hpp"
 #include "normal/all.hpp"
 #include "slope/all.hpp"
-#include "vegetation/probabilities/all.hpp"
+#include "vegetation_probability/all.hpp"
 #include "wetness/all.hpp"
