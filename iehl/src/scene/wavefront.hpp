@@ -17,13 +17,22 @@ void load_lights(Scene& scene) {
     auto t = std::size_t();
     for(t = 0; t < size(scene.triangle_material_ids); ++t) {
         auto mid = scene.triangle_material_ids[t];
+        auto oid = scene.triangle_object_ids[t];
         auto& material = scene.materials[mid];
         if(is_emissive(material)) {
             auto bounds = agl::common::interval(
                 scene.vertex_positions[scene.triangle_indices[t][0]]);
             for(; t < size(scene.triangle_material_ids); ++t) {
-                if(scene.triangle_material_ids[t] != mid) {
+                if(scene.triangle_object_ids[t] != oid
+                    or scene.triangle_material_ids[t] != mid)
+                {
                     break;
+                } else {
+                    for(std::size_t i = 0; i < 3; ++i) {
+                        extend(
+                            bounds, 
+                            scene.vertex_positions[scene.triangle_indices[t][i]]);
+                    }
                 }
             }
             auto& l = scene.lights.emplace_back();
@@ -206,6 +215,7 @@ Scene wavefront_scene(std::filesystem::path file_path) {
                     vertex_to_index[mesh.indices[i + 2]]});
             scene.triangle_material_ids.push_back(
                 mesh.material_ids[i / 3]);
+            scene.triangle_object_ids.push_back(s);
         }
     }
     load_albedo_textures(scene, reader, folder_path);
