@@ -10,7 +10,6 @@ enum class ColorFormula {
 
 enum class DrainageAreaFormula {
     steepest,
-    two_steepest,
     weighted,
 };
 
@@ -20,6 +19,7 @@ enum class NormalFormula {
 
 enum class SlopeFormula {
     gradient,
+    weighted,
 };
 
 struct Settings {
@@ -30,9 +30,9 @@ struct Settings {
     bool is_color_outdated = true;
     ColorFormula color_formula = ColorFormula::shading;
 
-    // Camera.
-    float camera_height_scaling = 1.f;
-    float camera_depth_scaling = 1.f;
+    // View.
+    float view_height_scaling = 1.f;
+    float view_scaling = 1.f;
 
     // Fields.
 

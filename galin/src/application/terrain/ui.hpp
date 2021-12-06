@@ -11,9 +11,12 @@ void App::ui() {
         if(ImGui::TreeNode("Algorithm")) {
             if(ImGui::TreeNode("Erosion")) {
                 if(ImGui::TreeNode("Debris slope")) {
-                    ImGui::SliderFloat("Extent",
+                    ImGui::DragFloat(
+                        "Extent",
                         &settings.debris_slope_erosion_extent,
-                        0.f, 5.f);
+                        1.f, 0.f, 1000.f,
+                        "%.4f",
+                        2.f);
                     if(ImGui::Button("Erode")) {
                         debris_slope_erosion(
                             terrain,
@@ -23,9 +26,12 @@ void App::ui() {
                     ImGui::TreePop();
                 }
                 if(ImGui::TreeNode("Hill slope")) {
-                    ImGui::SliderFloat("Extent",
+                    ImGui::DragFloat(
+                        "Extent",
                         &settings.hill_slope_erosion_extent,
-                        0.f, 5.f);
+                        1.f, 0.f, 1000.f,
+                        "%.4f",
+                        2.f);
                     if(ImGui::Button("Erode")) {
                         hill_slope_erosion(
                             terrain,
@@ -35,9 +41,12 @@ void App::ui() {
                     ImGui::TreePop();
                 }
                 if(ImGui::TreeNode("Stream power")) {
-                    ImGui::SliderFloat("Extent",
+                    ImGui::DragFloat(
+                        "Extent",
                         &settings.stream_power_erosion_extent,
-                        0.f, 5.f);
+                        1.f, 0.f, 1000.f,
+                        "%.4f",
+                        2.f);
                     if(ImGui::Button("Erode")) {
                         stream_power_erosion(
                             terrain,
@@ -55,6 +64,21 @@ void App::ui() {
                 }
                 ImGui::TreePop();
             }
+            ImGui::TreePop();
+        }
+        if(ImGui::TreeNode("View")) {
+            ImGui::DragFloat(
+                "Height scaling",
+                &settings.view_height_scaling,
+                1.f, 0.f, 1000.f,
+                "%.3f",
+                2.f);
+            ImGui::DragFloat(
+                "Scaling",
+                &settings.view_scaling,
+                1.f, 0.001f, 1000.f,
+                "%.3f",
+                2.f);
             ImGui::TreePop();
         }
         if(ImGui::TreeNode("Terrain")) {
@@ -89,7 +113,7 @@ void App::ui() {
                     upper_bound(terrain.drainage_area.range));
                 { // Formula.
                     auto items = std::array{
-                        "Steepest", "Two steepest", "Weighted"};
+                        "Steepest", "Weighted"};
                     auto current = int(settings.drainage_area_formula);
                     auto used = ImGui::Combo(
                         "Formula",
@@ -122,7 +146,7 @@ void App::ui() {
                     lower_bound(terrain.slope.range),
                     upper_bound(terrain.slope.range));
                 { // Formula.
-                    auto items = std::array{"Gradient"};
+                    auto items = std::array{"Gradient", "Weighted"};
                     auto current = int(settings.slope_formula);
                     auto used = ImGui::Combo(
                         "Formula",
