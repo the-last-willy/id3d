@@ -9,5 +9,6 @@ void reset_terrain(App& a) {
         "./galin/data/srtm1/N45E005.hgt",
         {1000, 500},
         {500, 500});
+    a.settings.is_height_outdated = true;
     update_terrain(a);
 }
