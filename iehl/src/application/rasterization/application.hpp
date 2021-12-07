@@ -25,6 +25,8 @@ struct Application : Program {
     Bvh scene_bvh;
     Grid scene_grid;
 
+    GridLights scene_grid_lights;
+
     agl::engine::RenderPass wireframe_pass;
     std::shared_ptr<agl::engine::MeshInstance> bb_mesh;
 

@@ -63,6 +63,8 @@ void Application::init() {
         scene.index_buffer = index_buffer(scene_grid, scene);
 
         initialize_gpu(scene);
+
+        scene_grid_lights = lights(scene_grid, std::span(scene.lights));
     }
     { // 
 
