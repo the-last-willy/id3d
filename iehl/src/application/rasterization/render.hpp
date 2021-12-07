@@ -68,6 +68,14 @@ void Application::render() {
                 glBindBufferBase(
                     GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
             }
+            {
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER, 4,
+                    scene_grid_lights.light_index_ssbo);
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER, 5,
+                    scene_grid_lights.light_span_ssbo);
+            }
 
             update_lights(scene, wtv);
 
