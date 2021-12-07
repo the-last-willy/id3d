@@ -14,34 +14,70 @@
 inline
 void load_lights(Scene& scene) {
     std::cout << "Loading lights." << std::endl;
+
+    // LIGHT PER OBJECT EXCEPT ITS NOT WORKING VERY WELL.
+
+    // auto t = std::size_t();
+    // for(t = 0; t < size(scene.triangle_material_ids); ++t) {
+    //     auto mid = scene.triangle_material_ids[t];
+    //     auto oid = scene.triangle_object_ids[t];
+    //     auto& material = scene.materials[mid];
+    //     if(is_emissive(material)) {
+    //         auto bounds = agl::common::interval(
+    //             scene.vertex_positions[scene.triangle_indices[t][0]]);
+    //         for(; t < size(scene.triangle_material_ids); ++t) {
+    //             if(scene.triangle_object_ids[t] != oid
+    //                 or scene.triangle_material_ids[t] != mid)
+    //             {
+    //                 break;
+    //             } else {
+    //                 for(std::size_t i = 0; i < 3; ++i) {
+    //                     extend(
+    //                         bounds, 
+    //                         scene.vertex_positions[scene.triangle_indices[t][i]]);
+    //                 }
+    //             }
+    //         }
+    //         auto& l = scene.lights.emplace_back();
+    //         l.color = agl::vec4(
+    //             material.emission_factor[0],
+    //             material.emission_factor[1],
+    //             material.emission_factor[2],
+    //             1.f);
+    //         if(mid != -1) {
+    //             glGetTextureSubImage(
+    //                 scene.albedo_array_texture.texture,
+    //                 0,
+    //                 0, 0, mid,
+    //                 1, 1, 1,
+    //                 GL_RGB,
+    //                 GL_FLOAT,
+    //                 32,
+    //                 data(l.color));
+    //         }
+    //         l.position = agl::vec4(midpoint(bounds), 1.f);
+    //     }
+    // }
+
+    // Light per triangle.
     auto t = std::size_t();
     for(t = 0; t < size(scene.triangle_material_ids); ++t) {
         auto mid = scene.triangle_material_ids[t];
-        auto oid = scene.triangle_object_ids[t];
         auto& material = scene.materials[mid];
         if(is_emissive(material)) {
-            auto bounds = agl::common::interval(
-                scene.vertex_positions[scene.triangle_indices[t][0]]);
-            for(; t < size(scene.triangle_material_ids); ++t) {
-                if(scene.triangle_object_ids[t] != oid
-                    or scene.triangle_material_ids[t] != mid)
-                {
-                    break;
-                } else {
-                    for(std::size_t i = 0; i < 3; ++i) {
-                        extend(
-                            bounds, 
-                            scene.vertex_positions[scene.triangle_indices[t][i]]);
-                    }
-                }
-            }
             auto& l = scene.lights.emplace_back();
-            l.color = agl::vec4(
-                material.emission_factor[0],
-                material.emission_factor[1],
-                material.emission_factor[2],
-                1.f);
-            l.position = agl::vec4(midpoint(bounds), 1.f);
+            l.position = agl::vec4(centroid(scene, t), 1.f);
+            if(mid != -1) {
+                glGetTextureSubImage(
+                    scene.albedo_array_texture.texture,
+                    0,
+                    0, 0, mid,
+                    1, 1, 1,
+                    GL_RGB,
+                    GL_FLOAT,
+                    32,
+                    data(l.color));
+            }
         }
     }
     std::cout << "  light count = " << size(scene.lights) << std::endl;
