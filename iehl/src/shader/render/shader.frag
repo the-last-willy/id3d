@@ -10,6 +10,11 @@ struct Material {
     vec4 emission_factor;
 };
 
+struct Span {
+    uint offset;
+    uint count;
+};
+
 layout(binding = 0) uniform sampler2DArray albedo_array_texture;
 
 layout(std430, binding = 0) buffer material_ids {
@@ -28,6 +33,14 @@ layout(std430, binding = 3) readonly buffer light_buffer {
     Light lights[];
 };
 
+layout(std430, binding = 4) readonly buffer light_index_buffer {
+    uint light_indices[];
+};
+
+layout(std430, binding = 5) readonly buffer light_span_buffer {
+    Span light_spans[/*draw id*/];
+};
+
 uniform int light_count = 0;
 
 in flat uint vertex_draw_id;
@@ -44,16 +57,16 @@ void main() {
 
     vec3 normal = normalize(vertex_normal);
 
-    vec3 color = normal * 0.5 + 0.5;
-    fragment_color = vec4(color, 1.);
-
     vec3 lighting = vec3(0.);
     {
-        for(int l = 0; l < light_count; ++l) {
-            Light light = lights[l]; 
-            float distance = max(distance(vertex_position, light.position.xyz), 1.);
-            // lighting += light.color.xyz / (distance * distance);
-            lighting += vec3((1. - step(2., distance)) / 2.f, 0., 0.);
+        Span span = light_spans[vertex_draw_id];
+        for(uint li = span.offset; li < span.offset + span.count; ++li) {
+            Light light = lights[light_indices[li]];
+
+            float d = distance(vertex_position, light.position.xyz);
+            float md = max(d, 1.);
+            lighting += light.color.xyz / (50. * md * md);
+            // lighting += (1. - step(1., d)) * light.color.xyz;
         }
     }
 
