@@ -9,6 +9,35 @@ void render_ui(Application& app) {
             ImGui::Checkbox(
                 "Enabled",
                 &app.settings.rasterization_enabled);
+            if(ImGui::TreeNode("Frustum culling")) {
+                {
+                    auto used = ImGui::RadioButton(
+                        "Disabled",
+                        app.settings.rasterization.frustum_culling.mode == FrustumCullingMode::disabled);
+                    if(used) {
+                        app.settings.rasterization.frustum_culling.mode = FrustumCullingMode::disabled;
+                    }
+                }
+                ImGui::SameLine();
+                {
+                    auto used = ImGui::RadioButton(
+                        "CPU",
+                        app.settings.rasterization.frustum_culling.mode == FrustumCullingMode::cpu);
+                    if(used) {
+                        app.settings.rasterization.frustum_culling.mode = FrustumCullingMode::cpu;
+                    }
+                }
+                ImGui::SameLine();
+                {
+                    auto used = ImGui::RadioButton(
+                        "GPU",
+                        app.settings.rasterization.frustum_culling.mode == FrustumCullingMode::gpu);
+                    if(used) {
+                        app.settings.rasterization.frustum_culling.mode = FrustumCullingMode::gpu;
+                    }
+                }
+                ImGui::TreePop();
+            }
             ImGui::TreePop();
         }
         if(ImGui::TreeNode("BVH")) {
