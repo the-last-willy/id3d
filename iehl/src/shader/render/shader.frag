@@ -18,11 +18,11 @@ struct Span {
 layout(binding = 0) uniform sampler2DArray albedo_array_texture;
 
 layout(std430, binding = 0) buffer material_ids {
-    int triangle_material_ids[/*primitive id*/];
+    int triangle_material_ids[/*primitive index*/];
 };
 
 layout(std430, binding = 1) buffer material_buffer {
-    Material materials[/*material id*/];
+    Material materials[/*material index*/];
 };
 
 layout(std430, binding = 2) buffer primitive_offset_buffer {
@@ -38,12 +38,13 @@ layout(std430, binding = 4) readonly buffer light_index_buffer {
 };
 
 layout(std430, binding = 5) readonly buffer light_span_buffer {
-    Span light_spans[/*draw id*/];
+    Span light_spans[/*instance index*/];
 };
 
 uniform int light_count = 0;
 
 in flat uint vertex_draw_id;
+in flat uint vertex_instance_index;
 in vec3 vertex_normal;
 in vec3 vertex_position;
 in vec2 vertex_texcoords;
@@ -58,19 +59,17 @@ void main() {
     vec3 normal = normalize(vertex_normal);
 
     vec3 lighting = vec3(0.);
-    {
-        Span span = light_spans[vertex_draw_id];
-        for(uint li = span.offset; li < span.offset + span.count; ++li) {
-            Light light = lights[light_indices[li]];
+    // {
+    //     Span span = light_spans[vertex_draw_id];
+    //     for(uint li = span.offset; li < span.offset + span.count; ++li) {
+    //         Light light = lights[light_indices[li]];
 
-            float d = distance(vertex_position, light.position.xyz);
-            float md = max(d, 1.);
-            lighting += light.color.xyz / (50. * md * md);
-            // lighting += (1. - step(1., d)) * light.color.xyz;
-        }
-    }
-
-    fragment_color = vec4(lighting, 1.);
+    //         float d = distance(vertex_position, light.position.xyz);
+    //         float md = max(d, 1.);
+    //         lighting += light.color.xyz / (50. * md * md);
+    //         // lighting += (1. - step(1., d)) * light.color.xyz;
+    //     }
+    // }
 
     int material_id = triangle_material_ids[primitive_id];
     if(material_id != -1) {
