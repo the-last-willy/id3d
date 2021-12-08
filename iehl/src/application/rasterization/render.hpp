@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frustum_culling/all.hpp"
+// #include "frustum_culling/all.hpp"
 #include "render_ui.hpp"
 
 #include <agl/engine/all.hpp>
@@ -34,37 +34,102 @@ void Application::render() {
         uniform(scene.program, "world_to_normal", nt);
         uniform(scene.program, "world_to_view", wtv);
 
-        auto frustum_aabb = agl::common::interval(
-            agl::vec3(-1.f), agl::vec3(1.f));
-
-        auto counts = std::vector<GLsizei>();
-        auto offsets4 = std::vector<GLuint>();
-        auto offsets = std::vector<GLintptr>();
-
-        // auto draw_parameters = agl::Buffer();
-        // storage<DrawElementsParameters>(
-        //     draw_parameters,
-        //     scene_grid.non_empty_cell_count,
-        //     GL_MAP_WRITE_BIT !);
-        // auto draw_parameters_count = GLsizei(0);
-
-        for(auto& c : scene_grid.cells) {
-            if(not is_empty(c)) {
-                // if(aabb_intersecting(c.bounds, wtc, frustum_aabb, ctw)) {
-                    counts.push_back(GLsizei(3 * (c.last - c.first)));
-                    offsets4.push_back(GLuint(c.first));
-                    offsets.push_back(GLintptr(12 * c.first));
-                    // auto& dps = draw_parameters.emplace_back();
-                    // dps.count = GLuint(3 * (c.last - c.first));
-                    // dps.offset = GLuint(12 * c.first);
-                // }
+        auto draw_parameters = std::vector<DrawElementsParameters>();
+        auto objects_bounds = std::vector<agl::common::Interval<agl::Vec3>>();
+        auto primitive_offsets = std::vector<GLuint>();
+        {
+            for(auto& c : scene_grid.cells) {
+                if(not is_empty(c)) {
+                    draw_parameters.push_back(DrawElementsParameters{
+                        .count = GLuint(3 * (c.last - c.first)),
+                        .primitive_count = 1,
+                        .offset = GLuint(3 * c.first),
+                        .base_vertex = 0,
+                        .base_instance = GLuint(size(draw_parameters))});
+                    objects_bounds.push_back(c.bounds);
+                    primitive_offsets.push_back(GLuint(c.first));
+                }
             }
         }
 
-        if(not empty(counts)) {
+        if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::cpu) {
+            auto frustum_clip_bounds = agl::common::interval(agl::vec3(-1.f), agl::vec3(1.f));
+            auto frustum_world_bounds = agl::common::Interval<agl::Vec3>();
+            { // Compute frustun worl bounds.
+                auto cs = corners(frustum_clip_bounds);
+                for(auto& c : cs) {
+                    auto homogeneous = ctw * agl::vec4(c, 1.f);
+                    c = homogeneous.xyz() / homogeneous[3];
+                }
+                frustum_world_bounds = agl::common::interval(cs[0]);
+                for(std::size_t i = 1; i < 8; ++i) {
+                    extend(frustum_world_bounds, cs[i]);
+                }
+            }
+
+            auto accepted_draw_parameters = agl::standard::reserved_vector<DrawElementsParameters>(size(draw_parameters));
+            for(const auto& dps : draw_parameters) {
+                auto& object_bounds = objects_bounds[dps.base_instance];
+                { // World space.
+                    auto are_separated = false
+                        or lower_bound(object_bounds)[0] > upper_bound(frustum_world_bounds)[0]
+                        or lower_bound(object_bounds)[1] > upper_bound(frustum_world_bounds)[1]
+                        or lower_bound(object_bounds)[2] > upper_bound(frustum_world_bounds)[2]
+                        or upper_bound(object_bounds)[0] < lower_bound(frustum_world_bounds)[0]
+                        or upper_bound(object_bounds)[1] < lower_bound(frustum_world_bounds)[1]
+                        or upper_bound(object_bounds)[2] < lower_bound(frustum_world_bounds)[2];
+                    if(are_separated) {
+                        continue;
+                    }
+                }
+                { // Clip space.
+
+                }
+                accepted_draw_parameters.push_back(dps);
+            }
+            // std::cout << size(accepted_draw_parameters);
+            draw_parameters = std::move(accepted_draw_parameters);
+        } else if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::gpu) {
+            auto objects_bounds_ssbo = agl::create(agl::buffer_tag);
+            {
+                auto objects_bounds4 = std::vector<agl::common::Interval<agl::Vec4>>(size(objects_bounds));
+                for(std::size_t i = 0; i < size(objects_bounds); ++i) {
+                    objects_bounds4[i] = agl::common::interval(
+                        agl::vec4(lower_bound(objects_bounds[i]), 1.f),
+                        agl::vec4(upper_bound(objects_bounds[i]), 1.f));
+                }
+                storage(objects_bounds_ssbo, std::span(objects_bounds4));
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_bounds_ssbo);
+            }
+            
+            auto input_parameters_ssbo = agl::create(agl::buffer_tag);
+            storage(input_parameters_ssbo, std::span(draw_parameters));
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, objects_bounds_ssbo);
+
+            auto zero = std::array<GLuint, 1>{0};
+            auto output_count_ssbo = agl::create(agl::buffer_tag);
+            storage(output_count_ssbo, std::span(zero));
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, objects_bounds_ssbo);
+
+            auto output_parameters_ssbo = agl::create(agl::buffer_tag);
+            storage(output_parameters_ssbo, std::span(draw_parameters));
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, objects_bounds_ssbo);
+
+            use(frustum_culling_shader.program);
+            glDispatchCompute(1, 1, 1);
+
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+            delete_(objects_bounds_ssbo);
+            delete_(input_parameters_ssbo);
+            delete_(output_count_ssbo);
+            delete_(output_parameters_ssbo);
+        }
+
+        if(not empty(draw_parameters)) {
             auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
             {
-                storage(primitive_offsets_ssbo, std::span(offsets4));
+                storage(primitive_offsets_ssbo, std::span(primitive_offsets));
                 glBindBufferBase(
                     GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
             }
@@ -79,9 +144,7 @@ void Application::render() {
 
             update_lights(scene, wtv);
 
-            // ::render(scene, draw_parameters);
-            ::render(scene, counts, offsets);
-            // ::render(scene);
+            ::render(scene, draw_parameters);
 
             delete_(primitive_offsets_ssbo);
         }

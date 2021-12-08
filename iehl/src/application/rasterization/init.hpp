@@ -11,6 +11,9 @@ void Application::init() {
     {
         shader_compiler.log_folder = "logs/";
     }
+    { // Frustum culling.
+        frustum_culling_shader = ::frustum_culling_shader(shader_compiler);
+    }
     {
         wireframe_pass.program = agl::standard::shared(
             shader::wireframe(shader_compiler));
