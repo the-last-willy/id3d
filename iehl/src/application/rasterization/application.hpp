@@ -4,6 +4,7 @@
 #include "grid/all.hpp"
 #include "settings/all.hpp"
 #include "scene/all.hpp"
+#include "statistics.hpp"
 
 #include <agl/standard/all.hpp>
 #include <id3d/common/all.hpp>
@@ -33,6 +34,7 @@ struct Application : Program {
     std::shared_ptr<eng::Mesh> box_wireframe;
 
     Settings settings;
+    Statistics statistics;
 
     eng::Program frustum_culling_shader;
 
