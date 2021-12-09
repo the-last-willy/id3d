@@ -36,6 +36,15 @@ void render_ui(Application& app) {
                         app.settings.rasterization.frustum_culling.mode = FrustumCullingMode::gpu;
                     }
                 }
+                if(ImGui::TreeNode("Statistics")) {
+                    ImGui::Text("Accepted: %i (%f%%)", 
+                        app.statistics.frustum_culling.accepted_count,
+                        100.f * accepted_ratio(app.statistics.frustum_culling));
+                    ImGui::Text("Rejected: %i (%f%%)",
+                        app.statistics.frustum_culling.rejected_count,
+                        100.f * rejected_ratio(app.statistics.frustum_culling));
+                    ImGui::TreePop();
+                }
                 ImGui::TreePop();
             }
             ImGui::TreePop();
