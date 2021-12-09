@@ -83,11 +83,37 @@ void Application::render() {
                     }
                 }
                 { // Clip space.
-
+                    auto object_clip_bounds = agl::common::Interval<agl::Vec3>();
+                    {
+                        auto cs = corners(object_bounds);
+                        for(auto& c : cs) {
+                            auto homogeneous = wtc * agl::vec4(c, 1.f);
+                            c = homogeneous.xyz() / homogeneous[3];
+                        }
+                        object_clip_bounds = agl::common::interval(cs[0]);
+                        for(std::size_t i = 1; i < 8; ++i) {
+                            extend(object_clip_bounds, cs[i]);
+                        }
+                    }
+                    auto are_separated = false
+                        or lower_bound(object_clip_bounds)[0] > upper_bound(frustum_clip_bounds)[0]
+                        or lower_bound(object_clip_bounds)[1] > upper_bound(frustum_clip_bounds)[1]
+                        or lower_bound(object_clip_bounds)[2] > upper_bound(frustum_clip_bounds)[2]
+                        or upper_bound(object_clip_bounds)[0] < lower_bound(frustum_clip_bounds)[0]
+                        or upper_bound(object_clip_bounds)[1] < lower_bound(frustum_clip_bounds)[1]
+                        or upper_bound(object_clip_bounds)[2] < lower_bound(frustum_clip_bounds)[2];
+                    if(are_separated) {
+                        continue;
+                    }
                 }
                 accepted_draw_parameters.push_back(dps);
             }
-            // std::cout << size(accepted_draw_parameters);
+
+            statistics.frustum_culling.accepted_count
+            = size(accepted_draw_parameters);
+            statistics.frustum_culling.rejected_count
+            = size(draw_parameters) - size(accepted_draw_parameters);
+
             draw_parameters = std::move(accepted_draw_parameters);
         } else if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::gpu) {
             auto frustum_clip_bounds = agl::common::interval(agl::vec3(-1.f), agl::vec3(1.f));
@@ -135,16 +161,34 @@ void Application::render() {
                 frustum_culling_shader.program,
                 *agl::uniform_location(
                     frustum_culling_shader.program,
-                    "frustum_world_bounds_lb"),
+                    "frustum_clip_bounds.lb"),
+                agl::vec4(lower_bound(frustum_clip_bounds), 1.f));
+            uniform(
+                frustum_culling_shader.program,
+                *agl::uniform_location(
+                    frustum_culling_shader.program,
+                    "frustum_clip_bounds.ub"),
+                agl::vec4(upper_bound(frustum_clip_bounds), 1.f));
+            uniform(
+                frustum_culling_shader.program,
+                *agl::uniform_location(
+                    frustum_culling_shader.program,
+                    "frustum_world_bounds.lb"),
                 agl::vec4(lower_bound(frustum_world_bounds), 1.f));
             uniform(
                 frustum_culling_shader.program,
                 *agl::uniform_location(
                     frustum_culling_shader.program,
-                    "frustum_world_bounds_ub"),
+                    "frustum_world_bounds.ub"),
                 agl::vec4(upper_bound(frustum_world_bounds), 1.f));
+            uniform(
+                frustum_culling_shader.program,
+                *agl::uniform_location(
+                    frustum_culling_shader.program,
+                    "world_to_clip"),
+                wtc);
 
-            glDispatchCompute((size(objects_bounds) + 255) / 256, 1, 1);
+            glDispatchCompute((GLuint(size(objects_bounds)) + 255) / 256, 1, 1);
 
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
@@ -162,6 +206,11 @@ void Application::render() {
                 0,
                 output_count * sizeof(DrawElementsParameters),
                 data(accepted_draw_parameters));
+
+            statistics.frustum_culling.accepted_count
+            = size(accepted_draw_parameters);
+            statistics.frustum_culling.rejected_count
+            = size(draw_parameters) - size(accepted_draw_parameters);
 
             draw_parameters = std::move(accepted_draw_parameters);
 
