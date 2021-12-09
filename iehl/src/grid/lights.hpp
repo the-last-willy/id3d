@@ -27,7 +27,7 @@ auto lights(const Grid& g, std::span<const Light> lights) {
             for(GLuint li = 0; li < size(lights); ++li) {
                 auto& l = lights[li];
                 auto d = length(l.position.xyz() - clamp(c.bounds, l.position.xyz()));
-                if(d < 10.f) {
+                if(d < 0.05f) {
                     count += 1;
                     gls.indices.emplace_back(li);
                 }

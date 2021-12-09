@@ -90,6 +90,20 @@ void Application::render() {
             // std::cout << size(accepted_draw_parameters);
             draw_parameters = std::move(accepted_draw_parameters);
         } else if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::gpu) {
+            auto frustum_clip_bounds = agl::common::interval(agl::vec3(-1.f), agl::vec3(1.f));
+            auto frustum_world_bounds = agl::common::Interval<agl::Vec3>();
+            { // Compute frustun worl bounds.
+                auto cs = corners(frustum_clip_bounds);
+                for(auto& c : cs) {
+                    auto homogeneous = ctw * agl::vec4(c, 1.f);
+                    c = homogeneous.xyz() / homogeneous[3];
+                }
+                frustum_world_bounds = agl::common::interval(cs[0]);
+                for(std::size_t i = 1; i < 8; ++i) {
+                    extend(frustum_world_bounds, cs[i]);
+                }
+            }
+
             auto objects_bounds_ssbo = agl::create(agl::buffer_tag);
             {
                 auto objects_bounds4 = std::vector<agl::common::Interval<agl::Vec4>>(size(objects_bounds));
@@ -104,30 +118,63 @@ void Application::render() {
             
             auto input_parameters_ssbo = agl::create(agl::buffer_tag);
             storage(input_parameters_ssbo, std::span(draw_parameters));
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, objects_bounds_ssbo);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, input_parameters_ssbo);
 
             auto zero = std::array<GLuint, 1>{0};
             auto output_count_ssbo = agl::create(agl::buffer_tag);
             storage(output_count_ssbo, std::span(zero));
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, objects_bounds_ssbo);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, output_count_ssbo);
 
             auto output_parameters_ssbo = agl::create(agl::buffer_tag);
             storage(output_parameters_ssbo, std::span(draw_parameters));
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, objects_bounds_ssbo);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, output_parameters_ssbo);
 
             use(frustum_culling_shader.program);
-            glDispatchCompute(1, 1, 1);
+
+            uniform(
+                frustum_culling_shader.program,
+                *agl::uniform_location(
+                    frustum_culling_shader.program,
+                    "frustum_world_bounds_lb"),
+                agl::vec4(lower_bound(frustum_world_bounds), 1.f));
+            uniform(
+                frustum_culling_shader.program,
+                *agl::uniform_location(
+                    frustum_culling_shader.program,
+                    "frustum_world_bounds_ub"),
+                agl::vec4(upper_bound(frustum_world_bounds), 1.f));
+
+            glDispatchCompute((size(objects_bounds) + 255) / 256, 1, 1);
 
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+            GLuint output_count;
+            glGetNamedBufferSubData(
+                output_count_ssbo,
+                0,
+                4,
+                &output_count);
+
+            auto accepted_draw_parameters 
+            = std::vector<DrawElementsParameters>(output_count);
+            glGetNamedBufferSubData(
+                output_parameters_ssbo,
+                0,
+                output_count * sizeof(DrawElementsParameters),
+                data(accepted_draw_parameters));
+
+            draw_parameters = std::move(accepted_draw_parameters);
 
             delete_(objects_bounds_ssbo);
             delete_(input_parameters_ssbo);
             delete_(output_count_ssbo);
             delete_(output_parameters_ssbo);
         }
-
         if(not empty(draw_parameters)) {
             auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
+
+            bind(scene.program);
+
             {
                 storage(primitive_offsets_ssbo, std::span(primitive_offsets));
                 glBindBufferBase(
@@ -145,6 +192,8 @@ void Application::render() {
             update_lights(scene, wtv);
 
             ::render(scene, draw_parameters);
+
+            unbind(scene.program);
 
             delete_(primitive_offsets_ssbo);
         }

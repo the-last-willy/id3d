@@ -55,7 +55,7 @@ void render(Scene& s, std::span<GLsizei> counts, std::span<GLintptr> offsets) {
 
 inline
 void render(Scene& s, std::span<DrawElementsParameters> deps) {
-    bind(s.program);
+    // bind(s.program);
     bind(s.vertex_array);
 
     { // SSBOs.
@@ -79,5 +79,5 @@ void render(Scene& s, std::span<DrawElementsParameters> deps) {
 
     delete_(indirect);
     
-    unbind(s.program);
+    // unbind(s.program);
 }

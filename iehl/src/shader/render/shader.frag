@@ -59,17 +59,18 @@ void main() {
     vec3 normal = normalize(vertex_normal);
 
     vec3 lighting = vec3(0.);
-    // {
-    //     Span span = light_spans[vertex_draw_id];
-    //     for(uint li = span.offset; li < span.offset + span.count; ++li) {
-    //         Light light = lights[light_indices[li]];
+    if(false) {
+        Span span = light_spans[vertex_draw_id];
+        for(uint li = span.offset; li < span.offset + span.count; ++li) {
+            Light light = lights[light_indices[li]];
 
-    //         float d = distance(vertex_position, light.position.xyz);
-    //         float md = max(d, 1.);
-    //         lighting += light.color.xyz / (50. * md * md);
-    //         // lighting += (1. - step(1., d)) * light.color.xyz;
-    //     }
-    // }
+            float d = distance(vertex_position, light.position.xyz);
+            float md = max(d, 1.);
+            // lighting += light.color.xyz / (50. * md * md);
+            lighting += light.color.xyz / (100 * md * md);
+            // lighting += (1. - step(1., d)) * light.color.xyz;
+        }
+    }
 
     int material_id = triangle_material_ids[primitive_id];
     if(material_id != -1) {
@@ -81,4 +82,6 @@ void main() {
     } else {
         fragment_color = vec4(vec3(1., 1., 1.), 1.);
     }
+
+    fragment_color = vec4(normal * .5 + .5, 1.);
 }

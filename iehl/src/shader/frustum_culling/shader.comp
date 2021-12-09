@@ -13,9 +13,11 @@ struct Interval {
     vec4 ub;
 };
 
-layout(location = 0 ) uniform Interval frustum_clip_bounds;
-layout(location = 2 ) uniform Interval frustum_world_bounds;
-layout(location = 4) uniform mat4     world_to_clip;
+layout(location = 0) uniform vec4 frustum_clip_bounds_lb;
+layout(location = 1) uniform vec4 frustum_clip_bounds_ub;
+layout(location = 2) uniform vec4 frustum_world_bounds_lb;
+layout(location = 3) uniform vec4 frustum_world_bounds_ub;
+layout(location = 4) uniform mat4 world_to_clip;
 
 layout(std430, binding = 0) readonly buffer objects_bounds_buffer {
     Interval objects_bounds[];
@@ -41,17 +43,26 @@ layout(std430, binding = 3) writeonly buffer output_draw_parameters_buffer {
 //     return false;
 // }
 
-// bool is_frustum_culled(in Interval bounds) {
-//     return are_separated_in_clip_space(bounds)
-//     || are_separated_in_local_space(bounds);
-// }
+bool is_frustum_culled(in Interval bounds) {
+    return any(bounds.lb > frustum_world_bounds_ub)
+    || any(bounds.ub < frustum_world_bounds_lb);
+}
+
+// shared uint output_index;
 
 layout(local_size_x = 256) in;
 
 void main() {
+    if(gl_GlobalInvocationID.x == 0) {
+        output_index = 0;
+    }
+    barrier();
+
     uint index = gl_GlobalInvocationID.x;
     if(index < objects_bounds.length()) {
-        output_draw_parameters[index] = input_draw_parameters[index];
-        atomicAdd(output_count, 1);
+        if(!is_frustum_culled(objects_bounds[index])) {
+            uint output_index = atomicAdd(output_count, 1);
+            output_draw_parameters[output_index] = input_draw_parameters[index];
+        }
     }
 }
