@@ -36,6 +36,12 @@ void render_ui(Application& app) {
                         app.settings.rasterization.frustum_culling.mode = FrustumCullingMode::gpu;
                     }
                 }
+                if(ImGui::TreeNode("Debugging")) {
+                    ImGui::Checkbox(
+                        "Anchor frustum",
+                        &app.settings.rasterization.frustum_culling.is_anchored);
+                    ImGui::TreePop();
+                }
                 if(ImGui::TreeNode("Statistics")) {
                     ImGui::Text("Accepted: %i (%f%%)", 
                         app.statistics.frustum_culling.accepted_count,

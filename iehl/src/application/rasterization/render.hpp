@@ -52,13 +52,15 @@ void Application::render() {
             }
         }
 
+        auto fc_ctw = agl::engine::clip_to_world(frustum_culling_camera);
+        auto fc_wtc = agl::engine::world_to_clip(frustum_culling_camera);
         if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::cpu) {
             auto frustum_clip_bounds = agl::common::interval(agl::vec3(-1.f), agl::vec3(1.f));
             auto frustum_world_bounds = agl::common::Interval<agl::Vec3>();
             { // Compute frustun worl bounds.
                 auto cs = corners(frustum_clip_bounds);
                 for(auto& c : cs) {
-                    auto homogeneous = ctw * agl::vec4(c, 1.f);
+                    auto homogeneous = fc_ctw * agl::vec4(c, 1.f);
                     c = homogeneous.xyz() / homogeneous[3];
                 }
                 frustum_world_bounds = agl::common::interval(cs[0]);
@@ -87,7 +89,7 @@ void Application::render() {
                     {
                         auto cs = corners(object_bounds);
                         for(auto& c : cs) {
-                            auto homogeneous = wtc * agl::vec4(c, 1.f);
+                            auto homogeneous = fc_wtc * agl::vec4(c, 1.f);
                             c = homogeneous.xyz() / homogeneous[3];
                         }
                         object_clip_bounds = agl::common::interval(cs[0]);
@@ -121,7 +123,7 @@ void Application::render() {
             { // Compute frustun worl bounds.
                 auto cs = corners(frustum_clip_bounds);
                 for(auto& c : cs) {
-                    auto homogeneous = ctw * agl::vec4(c, 1.f);
+                    auto homogeneous = fc_ctw * agl::vec4(c, 1.f);
                     c = homogeneous.xyz() / homogeneous[3];
                 }
                 frustum_world_bounds = agl::common::interval(cs[0]);
@@ -186,7 +188,7 @@ void Application::render() {
                 *agl::uniform_location(
                     frustum_culling_shader.program,
                     "world_to_clip"),
-                wtc);
+                fc_wtc);
 
             glDispatchCompute((GLuint(size(objects_bounds)) + 255) / 256, 1, 1);
 
@@ -246,6 +248,16 @@ void Application::render() {
 
             delete_(primitive_offsets_ssbo);
         }
+    }
+    if(settings.rasterization.frustum_culling.is_anchored) {
+        auto&& instance = subscribe(wireframe_pass, box_wireframe);
+        instance->uniforms["color"]
+        = std::make_shared<eng::Uniform<agl::Vec4>>(
+            agl::vec4(0.f, 1.f, 0.f, 1.f));
+        instance->uniforms["model_to_clip"]
+        = std::make_shared<eng::Uniform<agl::Mat4>>(
+            wtc * gizmo::box_wireframe_model_to_world(
+                agl::engine::bounding_box(frustum_culling_camera)));
     }
     if(settings.bvh_debugging_enabled) {
         traverse(scene_bvh, [&, this](const BvhNode& bn, std::size_t depth) {

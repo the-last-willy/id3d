@@ -22,10 +22,10 @@ void Application::init() {
                 eng::Mesh()));
     }
     {
-        scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
+        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
         // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+        scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
 
         
 
@@ -77,6 +77,7 @@ void Application::init() {
             pp->aspect_ratio = 16.f / 9.f;
             pp->z_far = 1000.f;
         }
+        frustum_culling_camera = camera;
     }
     { // Meshes.
         box_wireframe = agl::standard::shared(

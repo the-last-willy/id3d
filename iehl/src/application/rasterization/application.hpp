@@ -18,6 +18,7 @@ struct Application : Program {
     eng::ShaderCompiler shader_compiler;
 
     eng::Camera camera;
+    eng::Camera frustum_culling_camera;
 
     Scene scene;
 
