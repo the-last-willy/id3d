@@ -20,6 +20,10 @@ void App::render() {
     = std::make_shared<eng::Uniform<agl::Mat4>>(wte);
     subscribe(mesh_pass, terrain.gpu_mesh);
 
+    ::render(forest, ForestRenderParameters{
+        .world_to_clip = wtc,
+        .world_to_view = wte});
+
     agl::engine::render(mesh_pass);
 
     ui();
