@@ -14,4 +14,6 @@ void update_colors_using_slope(Terrain& t) {
         auto val = s(i, j) / extent;
         c(i, j) = agl::vec3(val);
     }
+
+    update_road(t);
 }
