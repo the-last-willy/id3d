@@ -1,18 +1,11 @@
 #pragma once
 
+#include "opengl/draw_elements_parameters.hpp"
 #include "scene.hpp"
 
 #include <agl/engine/all.hpp>
 
 #include <span>
-
-struct DrawElementsParameters {
-    GLuint count = 0;
-    GLuint primitive_count = 1;
-    GLuint offset = 0;
-    GLuint base_vertex = 0;
-    GLuint base_instance = 0;
-};
 
 inline
 void render(Scene& s) {
@@ -62,15 +55,29 @@ void render(Scene& s, std::span<GLsizei> counts, std::span<GLintptr> offsets) {
 
 inline
 void render(Scene& s, std::span<DrawElementsParameters> deps) {
-    bind(s.program);
+    // bind(s.program);
     bind(s.vertex_array);
 
+    { // SSBOs.
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, s.material_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, s.light_ssbo);
+    }
+    { // Uniforms.
+        eng::uniform(s.program, "light_count", int(size(s.lights)));
+    }
+
+    auto indirect = agl::create(agl::buffer_tag);
+    storage(indirect, deps);
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirect);
     glMultiDrawElementsIndirect(
         GL_TRIANGLES,
         GL_UNSIGNED_INT,
-        data(deps),
+        0,
         GLsizei(size(deps)),
         0);
+
+    delete_(indirect);
     
-    unbind(s.program);
+    // unbind(s.program);
 }

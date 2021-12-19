@@ -33,6 +33,7 @@ struct App : Program {
     agl::engine::RenderPass mesh_pass;
     
     Terrain terrain;
+    Forest forest;
 
     Settings settings;
 

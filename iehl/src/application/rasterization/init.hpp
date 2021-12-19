@@ -11,6 +11,9 @@ void Application::init() {
     {
         shader_compiler.log_folder = "logs/";
     }
+    { // Frustum culling.
+        frustum_culling_shader = ::frustum_culling_shader(shader_compiler);
+    }
     {
         wireframe_pass.program = agl::standard::shared(
             shader::wireframe(shader_compiler));
@@ -74,6 +77,7 @@ void Application::init() {
             pp->aspect_ratio = 16.f / 9.f;
             pp->z_far = 1000.f;
         }
+        frustum_culling_camera = camera;
     }
     { // Meshes.
         box_wireframe = agl::standard::shared(

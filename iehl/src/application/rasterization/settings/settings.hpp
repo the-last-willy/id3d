@@ -8,6 +8,10 @@ enum class FrustumCullingMode {
 
 struct FrustumCullingSettings {
     FrustumCullingMode mode = FrustumCullingMode::disabled;
+
+    // Debugging.
+
+    bool is_anchored = false;
 };
 
 struct RasterizationSettings {
