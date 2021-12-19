@@ -1,6 +1,7 @@
 #pragma once
 
 #include "application.hpp"
+#include "generate_trees.hpp"
 
 void update_terrain(App& a) {
     if(a.settings.is_height_outdated) {
@@ -93,13 +94,14 @@ void update_terrain(App& a) {
     }
 
     // Requires drainage area, laplacian, shading, slope, wetness.
-    // Required by color.
+    // Required by color, vegetation.
     if(a.settings.is_vegetation_probability_outdated) {
         a.settings.is_vegetation_probability_outdated = false;
 
         update_vegetation_probability(a.terrain);
 
         a.settings.is_color_outdated = true;
+        a.settings.is_vegetation_outdated = true;
     }
 
     // Requires drainage, laplacian, normal, shading, slope, vegetation probability.
@@ -125,6 +127,13 @@ void update_terrain(App& a) {
         }
 
         a.settings.is_mesh_outdated = true;
+    }
+
+    // Requires vegetation probabilities.
+    if(a.settings.show_vegetation and a.settings.is_vegetation_outdated) {
+        a.settings.is_vegetation_outdated = false;
+
+        generate_trees(a);
     }
 
     if(a.settings.is_mesh_outdated) {

@@ -16,7 +16,7 @@ void App::ui() {
                         &settings.debris_slope_erosion_extent,
                         1.f, 0.f, 1000.f,
                         "%.4f",
-                        2.f);
+                        ImGuiSliderFlags_Logarithmic);
                     if(ImGui::Button("Erode")) {
                         debris_slope_erosion(
                             terrain,
@@ -31,7 +31,7 @@ void App::ui() {
                         &settings.hill_slope_erosion_extent,
                         1.f, 0.f, 1000.f,
                         "%.4f",
-                        2.f);
+                        ImGuiSliderFlags_Logarithmic);
                     if(ImGui::Button("Erode")) {
                         hill_slope_erosion(
                             terrain,
@@ -46,7 +46,7 @@ void App::ui() {
                         &settings.stream_power_erosion_extent,
                         1.f, 0.f, 1000.f,
                         "%.4f",
-                        2.f);
+                        ImGuiSliderFlags_Logarithmic);
                     if(ImGui::Button("Erode")) {
                         stream_power_erosion(
                             terrain,
@@ -72,13 +72,14 @@ void App::ui() {
                 &settings.view_height_scaling,
                 1.f, 0.f, 1000.f,
                 "%.3f",
-                2.f);
+                ImGuiSliderFlags_Logarithmic);
             ImGui::DragFloat(
                 "Scaling",
                 &settings.view_scaling,
                 1.f, 0.001f, 1000.f,
                 "%.3f",
-                2.f);
+                ImGuiSliderFlags_Logarithmic);
+            ImGui::Checkbox("Show vegetation", &settings.show_vegetation);
             ImGui::TreePop();
         }
         if(ImGui::TreeNode("Terrain")) {

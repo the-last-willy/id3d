@@ -17,21 +17,6 @@ void App::init() {
     { // Terrain.
         reset_terrain(*this);
     }
-    { // Forest.
-        auto trees = std::vector<Tree>();
-        for(int i = 0; i < 10; ++i) {
-            auto color = (i % 2 == 0) ? agl::vec4(1.f, 0.f, 0.f, 1.f) : agl::vec4(0.f, 1.f, 0.f, 1.f);
-            for(int j = 0; j < 10; ++j) {
-                trees.emplace_back(Tree{
-                    .color = color,
-                    .position = {float(i), float(j), 0}});
-            }
-        }
-        
-        forest = ::forest(ForestParameters{
-            .shader_compiler = &shader_compiler,
-            .trees = &trees});
-    }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
             pp->aspect_ratio = 16.f / 9.f;

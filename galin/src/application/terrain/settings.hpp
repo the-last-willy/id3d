@@ -27,6 +27,7 @@ enum class SlopeFormula {
 
 struct Settings {
     bool show_heights = true;
+    bool show_vegetation = true;
 
     bool is_mesh_outdated = true;
 
@@ -53,6 +54,8 @@ struct Settings {
 
     bool is_slope_outdated = true;
     SlopeFormula slope_formula = SlopeFormula::gradient;
+
+    bool is_vegetation_outdated = true;
 
     bool is_vegetation_probability_outdated = true;
 

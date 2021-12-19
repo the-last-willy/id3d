@@ -109,7 +109,10 @@ auto forest(const ForestParameters& fps) {
             glEnableVertexArrayAttrib(f.vao, 1);
         }
     }
-    { // SSBOs.
+    { // Draw paramters.
+        f.instance_count = size(*fps.trees);
+    }
+    if(f.instance_count > 0) { // SSBOs.
         auto& trees = *fps.trees;
         {
             glNamedBufferStorage(
@@ -138,9 +141,6 @@ auto forest(const ForestParameters& fps) {
             }
         }
     }
-    { // Draw paramters.
-        f.instance_count = size(*fps.trees);
-    }
     return f;
 }
 
@@ -152,8 +152,15 @@ struct ForestRenderParameters {
 
 inline
 void render(Forest& f, const ForestRenderParameters& frps) {
+    if(f.instance_count == 0) {
+        return;
+    }
     {
         glUseProgram(f.shader);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
     }
     {
         glBindVertexArray(f.vao);
@@ -175,5 +182,9 @@ void render(Forest& f, const ForestRenderParameters& frps) {
             GLsizei(f.instance_count),
             0,
             0);
+    }
+    {
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
     }
 }

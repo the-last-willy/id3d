@@ -17,14 +17,14 @@ void update_vegetation_probability(Terrain& t) {
     for(size_t j = 0; j < n1; ++j) {
         auto& vp_ij = vp(i, j);
         { // 0
-            vp_ij[0] = std::max(1.f - std::sqrt(2.f * s(i, j)), 0.f);
-            vp_ij[0] = std::min(vp_ij[0], 1.f - w(i, j) / upper_bound(t.wetness.range));
-            vp_ij[0] = std::min(vp_ij[0], 1.f - (h(i, j) - lower_bound(t.height.range)) / length(t.height.range));
+            vp_ij[0] = std::max(1.f - std::sqrt(5.f * s(i, j)), 0.f);
+            vp_ij[0] = std::min(vp_ij[0], std::max(1.f - 2.f * (h(i, j) - lower_bound(t.height.range)) / length(t.height.range), 0.f));
+            vp_ij[0] = std::min(vp_ij[0], std::max(1.f / (1.f + w(i, j) / upper_bound(t.wetness.range)), 0.f));
         } { // 1
-            vp_ij[1] = std::max(1.f - std::pow(2.f * s(i, j), 1.f / 4.f), 0.f);
-            vp_ij[1] = std::min(vp_ij[1], (h(i, j) - lower_bound(t.height.range)) / length(t.height.range));
+            vp_ij[1] = std::max(1.f - std::sqrt(4.f * s(i, j)), 0.f);
+            vp_ij[1] = std::min(vp_ij[1], std::max(1.1f * (h(i, j) - lower_bound(t.height.range)) / length(t.height.range) - 0.1f, 0.f));
         } { // 2
-            vp_ij[2] = w(i, j) / upper_bound(t.wetness.range);
+            vp_ij[2] = agl::clamp(10.f * ((l(i, j) - lower_bound(t.laplacian.range)) / length(t.laplacian.range) - 0.55f), 0.f, 1.f);
         }
     }
 
