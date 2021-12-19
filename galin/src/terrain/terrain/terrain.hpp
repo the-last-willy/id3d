@@ -1,6 +1,7 @@
 #pragma once
 
 #include "field/field.hpp"
+#include "road/neighbour.hpp"
 #include "settings.hpp"
 
 #include <array>
@@ -19,6 +20,8 @@ struct Terrain {
     Field<float> slope;
     Field<std::array<float, 3>> vegetation_probability;
     Field<float> wetness;
+
+    agl::common::Grid<std::vector<neighbour>> graph;
 
     // CPU.
 

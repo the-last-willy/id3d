@@ -34,6 +34,7 @@ auto create(TerrainSettings ts) {
         t.slope = field(nx, ny, 0.f);
         t.vegetation_probability = field(nx, ny, std::array{0.f, 0.f, 0.f});
         t.wetness = field(nx, ny, 0.f);
+        t.graph = agl::common::grid<std::vector<neighbour>>(nx, ny);
 
         auto da = value_accessor(t.drainage_area);
         for(std::size_t i = 0; i < nx; ++i) {
