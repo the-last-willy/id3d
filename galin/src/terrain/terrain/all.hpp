@@ -9,6 +9,7 @@
 #include "terrain.hpp"
 #include "update_cpu.hpp"
 #include "update_gpu.hpp"
+#include "road/all.hpp"
 
 #include <agl/engine/all.hpp>
 
