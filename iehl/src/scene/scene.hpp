@@ -1,14 +1,12 @@
 #pragma once
 
+#include "light/all.hpp"
+#include "light_grid/all.hpp"
+
 #include <agl/engine/all.hpp>
 
 #include <array>
 #include <vector>
-
-struct Light {
-    agl::Vec4 color;
-    agl::Vec4 position;
-};
 
 struct Material {
     std::array<float, 4> color_factor;
