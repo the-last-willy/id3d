@@ -1,10 +1,5 @@
 #version 450 core
 
-struct Light {
-    vec4 color;
-    vec4 position;
-};
-
 struct Material {
     vec4 color_factor;
     vec4 emission_factor;
@@ -29,19 +24,76 @@ layout(std430, binding = 2) buffer primitive_offset_buffer {
     uint primitive_offsets[/*draw id*/]; 
 };
 
+// Lights.
+
+struct Light {
+    // Cubic attenuation factors: [0] * X2 + [1] * X + [2].
+    // [3] is unused.
+    vec4 attenuation;
+    // [3] is unused.
+    vec4 color;
+    // [3] should be '1.'.
+    vec4 position;
+
+    // Direction ?
+};
+
+// Not required for light culling.
+uniform uint light_count = 0;
+
 layout(std430, binding = 3) readonly buffer light_buffer {
     Light lights[];
 };
 
-layout(std430, binding = 4) readonly buffer light_index_buffer {
-    uint light_indices[];
+vec3 lighting(in Light l, in vec3 position) {
+    float d = distance(l.position.xyz, position);
+    vec3 monomial_basis = vec3(1., d, d * d);
+    float attenuation = dot(monomial_basis, light.attenuation.xyz);
+    return l.color.rgb / attenuation;
+}
+
+// Light culling.
+
+struct LightCullingSpan {
+    uint first;
+    uint count;
 };
 
-layout(std430, binding = 5) readonly buffer light_span_buffer {
-    Span light_spans[/*instance index*/];
+uniform vec3 light_culling_domain_lower_bound;
+uniform vec3 light_culling_domain_upper_bound;
+uniform vec3 light_culling_resolution;
+
+layout(std430, binding = 4) readonly buffer light_culling_index_buffer {
+    uint light_culling_indices[/*light culling span point*/];
 };
 
-uniform int light_count = 0;
+layout(std430, binding = 5) readonly buffer light_culling_span_buffer {
+    LightCullingSpan light_culling_spans[/*cell index*/];
+};
+
+vec3 light_culling_lighting(in vec3 position) {
+    // Aliases.
+
+    vec3 lb = light_culling_domain_lower_bound;
+    vec3 ub = light_culling_domain_upper_bound;
+    vec3 r = light_culling_resolution;
+
+    // Retrieve the lights.
+
+    vec3 indices = trunc((position - lb) / (ub - lb) * resolution);
+    uint cell_i = indices[0] * r[1] * r[2] + indices[1] * r[2] * indices[2];
+    LightCullingSpan span = light_culling_spans[cell_i];
+
+    // Accumulate the lighting.
+
+    vec3 lighting = vec3(0.);
+    for(uint i = span.first; i < span.first + span.count; ++i) {
+        lighting += lighting(lights[i], position);
+    }
+    return lighting;
+}
+
+//
 
 in flat uint vertex_draw_id;
 in flat uint vertex_instance_index;

@@ -67,6 +67,10 @@ void Application::init() {
 
         initialize_gpu(scene);
 
+        light_grid = ::light_grid(
+            scene.lights,
+            scene.bounds,
+            {10, 10, 10});
         scene_grid_lights = lights(scene_grid, std::span(scene.lights));
     }
     { // 

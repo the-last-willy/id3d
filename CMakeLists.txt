@@ -18,6 +18,6 @@ endif()
 
 add_subdirectory(common)
 
-add_subdirectory(chaine)
-add_subdirectory(galin)
+# add_subdirectory(chaine)
+# add_subdirectory(galin)
 add_subdirectory(iehl)
