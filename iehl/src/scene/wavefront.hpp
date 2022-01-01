@@ -61,15 +61,15 @@ void load_lights(Scene& scene) {
 
     // Light per triangle.
     auto t = std::size_t();
-    for(t = 0; t < size(scene.triangle_material_ids); ++t) {
-        auto mid = scene.triangle_material_ids[t];
-        auto& material = scene.materials[mid];
+    for(t = 0; t < size(scene.vertex_attribute_group.triangle_material_ids); ++t) {
+        auto mid = scene.vertex_attribute_group.triangle_material_ids[t];
+        auto& material = scene.material_group.properties[mid];
         if(is_emissive(material)) {
-            auto& l = scene.lights.emplace_back();
+            auto& l = scene.light_group.lights.emplace_back();
             l.position = agl::vec4(centroid(scene, t), 1.f);
             if(mid != -1) {
                 glGetTextureSubImage(
-                    scene.albedo_array_texture.texture,
+                    scene.material_group.albedo_texture_array,
                     0,
                     0, 0, mid,
                     1, 1, 1,
@@ -80,7 +80,7 @@ void load_lights(Scene& scene) {
             }
         }
     }
-    std::cout << "  light count = " << size(scene.lights) << std::endl;
+    std::cout << "  light count = " << size(scene.light_group.lights) << std::endl;
 }
 
 inline
@@ -98,12 +98,12 @@ void load_albedo_textures(
     auto depth = agl::Depth(GLsizei(size(materials)));
 
     {
-        auto s = agl::create(agl::sampler_tag);
-        mag_filter(s, GL_LINEAR);
-        min_filter(s, GL_LINEAR);
-        auto t = agl::create(agl::TextureTarget::_2d_array);
-        storage(t, 1, GL_RGB8, width, height, depth);
-        scene.albedo_array_texture = {s, t};
+        glSamplerParameteri(scene.material_group.albedo_sampler,
+            GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(scene.material_group.albedo_sampler,
+            GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureStorage3D(scene.material_group.albedo_texture_array,
+            1, GL_RGB8, width, height, depth);
     }
 
     stbi_set_flip_vertically_on_load(true);
@@ -126,7 +126,7 @@ void load_albedo_textures(
                     resized.get(), width.value, height.value, 0,
                     3);
                 glTextureSubImage3D(
-                    scene.albedo_array_texture.texture,
+                    scene.material_group.albedo_texture_array,
                     0,
                     0, 0, GLsizei(m),
                     width, height, 1,
@@ -134,7 +134,7 @@ void load_albedo_textures(
                     resized.get());
             } else {
                 glTextureSubImage3D(
-                    scene.albedo_array_texture.texture,
+                    scene.material_group.albedo_texture_array,
                     0,
                     0, 0, GLsizei(m),
                     x, y, 1,
@@ -145,7 +145,7 @@ void load_albedo_textures(
         } else {
             auto white = std::array<GLubyte, 3>{255, 255, 255};
             glClearTexSubImage(
-                scene.albedo_array_texture.texture,
+                scene.material_group.albedo_texture_array,
                 0,
                 0, 0, 0,
                 width, height, depth,
@@ -160,10 +160,10 @@ inline
 void load_materials(Scene& s, const tinyobj::ObjReader& wavefront) {
     auto& materials = wavefront.GetMaterials();
     { // Material factors.
-        s.materials.resize(size(materials));
+        s.material_group.properties.resize(size(materials));
         for(std::size_t i = 0; i < size(materials); ++i) {
             auto& m = materials[i];
-            auto& sm = s.materials[i];
+            auto& sm = s.material_group.properties[i];
             sm.color_factor = {m.diffuse[0], m.diffuse[1], m.diffuse[2], 1.f};
             sm.emission_factor = {m.emission[0], m.emission[1], m.emission[2], 1.f};
         }
@@ -212,21 +212,21 @@ Scene wavefront_scene(std::filesystem::path file_path) {
                 vertex_to_index[vertex] = unsigned(size(vertex_to_index));
                 auto normal_i = vertex.normal_index;
                 if(normal_i != -1) {
-                    scene.vertex_normals.push_back(
+                    scene.vertex_attribute_group.normals.push_back(
                         agl::vec3(
                             attrib.normals[3 * normal_i + 0],
                             attrib.normals[3 * normal_i + 1],
                             attrib.normals[3 * normal_i + 2]));
                 }
                 auto position_i = vertex.vertex_index;
-                scene.vertex_positions.push_back(
+                scene.vertex_attribute_group.positions.push_back(
                     agl::vec3(
                         attrib.vertices[3 * position_i + 0],
                         attrib.vertices[3 * position_i + 1],
                         attrib.vertices[3 * position_i + 2]));
                 auto texcoord_i = vertex.texcoord_index;
                 if(texcoord_i != -1) {
-                    scene.vertex_texcoords.push_back(
+                    scene.vertex_attribute_group.texcoords.push_back(
                         agl::vec2(
                             attrib.texcoords[2 * texcoord_i + 0],
                             attrib.texcoords[2 * texcoord_i + 1]));
@@ -241,17 +241,17 @@ Scene wavefront_scene(std::filesystem::path file_path) {
         // std::cout << "Loading \"" << shape.name << "\".\n";
         auto& mesh = shape.mesh;
         auto tcount = size(mesh.indices) / 3;
-        agl::standard::reserve_more(scene.triangle_material_ids, tcount);
-        agl::standard::reserve_more(scene.triangle_indices, tcount);
+        agl::standard::reserve_more(scene.vertex_attribute_group.triangle_material_ids, tcount);
+        agl::standard::reserve_more(scene.vertex_attribute_group.triangle_indices, tcount);
         for(std::size_t i = 0; i < size(mesh.indices); i += 3) {
-            scene.triangle_indices.push_back(
+            scene.vertex_attribute_group.triangle_indices.push_back(
                 std::array<unsigned, 3>{
                     vertex_to_index[mesh.indices[i + 0]],
                     vertex_to_index[mesh.indices[i + 1]],
                     vertex_to_index[mesh.indices[i + 2]]});
-            scene.triangle_material_ids.push_back(
+            scene.vertex_attribute_group.triangle_material_ids.push_back(
                 mesh.material_ids[i / 3]);
-            scene.triangle_object_ids.push_back(s);
+            scene.vertex_attribute_group.triangle_object_ids.push_back(s);
         }
     }
     load_albedo_textures(scene, reader, folder_path);

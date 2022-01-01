@@ -30,9 +30,9 @@ void Application::render() {
             wtc * gizmo::box_wireframe_model_to_world(bb));
     }
     if(settings.rasterization_enabled) {
-        uniform(scene.program, "world_to_clip", wtc);
-        uniform(scene.program, "world_to_normal", nt);
-        uniform(scene.program, "world_to_view", wtv);
+        // uniform(scene.program, "world_to_clip", wtc);
+        // uniform(scene.program, "world_to_normal", nt);
+        // uniform(scene.program, "world_to_view", wtv);
 
         auto draw_parameters = std::vector<DrawElementsParameters>();
         auto objects_bounds = std::vector<agl::common::Interval<agl::Vec3>>();
@@ -224,27 +224,39 @@ void Application::render() {
         if(not empty(draw_parameters)) {
             auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
 
-            bind(scene.program);
+            // bind(scene.program);
 
             {
                 storage(primitive_offsets_ssbo, std::span(primitive_offsets));
                 glBindBufferBase(
                     GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
             }
-            {
-                glBindBufferBase(
-                    GL_SHADER_STORAGE_BUFFER, 4,
-                    scene_grid_lights.light_index_ssbo);
-                glBindBufferBase(
-                    GL_SHADER_STORAGE_BUFFER, 5,
-                    scene_grid_lights.light_span_ssbo);
+            { // Lights.
+
+            }
+            { // Light culling.
+                // glUniform3fv(
+                //     agl::uniform_location(scene.program.program, "light_culling_domain_lower_bound"),
+                //     1, data(lower_bound(light_grid.domain)));
+                // glUniform3fv(
+                //     agl::uniform_location(scene.program.program, "light_culling_domain_upper_bound"),
+                //     1, data(upper_bound(light_grid.domain)));
+                // glUniform3fv(
+                //     agl::uniform_location(scene.program.program, "light_culling_resolution"),
+                //     1, data(std::array{float(light_grid.resolution[0]), float(light_grid.resolution[1]), float(light_grid.resolution[2])}));
+                // glBindBufferBase(
+                //     GL_SHADER_STORAGE_BUFFER, 4,
+                //     light_grid.light_index_ssbo);
+                // glBindBufferBase(
+                //     GL_SHADER_STORAGE_BUFFER, 5,
+                //     light_grid.light_span_ssbo);
             }
 
-            update_lights(scene, wtv);
+            // update_lights(scene, wtv);
 
             ::render(scene, draw_parameters);
 
-            unbind(scene.program);
+            // unbind(scene.program);
 
             delete_(primitive_offsets_ssbo);
         }

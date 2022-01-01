@@ -28,11 +28,12 @@ layout(std430, binding = 2) buffer primitive_offset_buffer {
 
 struct Light {
     // Cubic attenuation factors: [0] * X2 + [1] * X + [2].
-    // [3] is unused.
+    // [3] is for padding.
     vec4 attenuation;
-    // [3] is unused.
+    // [3] is for padding.
     vec4 color;
-    // [3] should be '1.'.
+    // In view space.
+    // [3] is for padding and should be '1.'.
     vec4 position;
 
     // Direction ?
@@ -48,7 +49,7 @@ layout(std430, binding = 3) readonly buffer light_buffer {
 vec3 lighting(in Light l, in vec3 position) {
     float d = distance(l.position.xyz, position);
     vec3 monomial_basis = vec3(1., d, d * d);
-    float attenuation = dot(monomial_basis, light.attenuation.xyz);
+    float attenuation = dot(monomial_basis, l.attenuation.xyz);
     return l.color.rgb / attenuation;
 }
 
@@ -59,7 +60,9 @@ struct LightCullingSpan {
     uint count;
 };
 
+// World space.
 uniform vec3 light_culling_domain_lower_bound;
+// World space.
 uniform vec3 light_culling_domain_upper_bound;
 uniform vec3 light_culling_resolution;
 
@@ -80,54 +83,44 @@ vec3 light_culling_lighting(in vec3 position) {
 
     // Retrieve the lights.
 
-    vec3 indices = trunc((position - lb) / (ub - lb) * resolution);
-    uint cell_i = indices[0] * r[1] * r[2] + indices[1] * r[2] * indices[2];
+    vec3 indices = trunc((position - lb) / (ub - lb) * r);
+    uint cell_i = uint(indices[0] * r[1] * r[2] + indices[1] * r[2] * indices[2]);
     LightCullingSpan span = light_culling_spans[cell_i];
 
     // Accumulate the lighting.
 
-    vec3 lighting = vec3(0.);
+    vec3 sum = vec3(0.);
     for(uint i = span.first; i < span.first + span.count; ++i) {
-        lighting += lighting(lights[i], position);
+        sum += lighting(lights[i], position);
     }
-    return lighting;
+    return sum;
 }
 
 //
 
-in flat uint vertex_draw_id;
-in flat uint vertex_instance_index;
-in vec3 vertex_normal;
-in vec3 vertex_position;
-in vec2 vertex_texcoords;
+in flat uint v_draw_id;
+in flat uint v_instance_index;
+// World space.
+in vec3 v_normal;
+// World space.
+in vec3 v_position;
+in vec2 v_texcoords;
 
 out vec4 fragment_color;
 
 void main() {
-    uint primitive_id = primitive_offsets[vertex_draw_id] + gl_PrimitiveID;
+    uint primitive_id = primitive_offsets[v_draw_id] + gl_PrimitiveID;
 
     triangle_material_ids.length;
 
-    vec3 normal = normalize(vertex_normal);
+    vec3 normal = normalize(v_normal);
 
     vec3 lighting = vec3(0.);
-    if(false) {
-        Span span = light_spans[vertex_draw_id];
-        for(uint li = span.offset; li < span.offset + span.count; ++li) {
-            Light light = lights[light_indices[li]];
-
-            float d = distance(vertex_position, light.position.xyz);
-            float md = max(d, 1.);
-            // lighting += light.color.xyz / (50. * md * md);
-            lighting += light.color.xyz / (100 * md * md);
-            // lighting += (1. - step(1., d)) * light.color.xyz;
-        }
-    }
 
     int material_id = triangle_material_ids[primitive_id];
     if(material_id != -1) {
         const Material material = materials[material_id];
-        vec4 texel = texture(albedo_array_texture, vec3(vertex_texcoords, material_id));
+        vec4 texel = texture(albedo_array_texture, vec3(v_texcoords, material_id));
         // fragment_color = material.emission_factor * material.color_factor * texel + vec4(lighting, 0.);
         fragment_color = 2. * material.emission_factor * material.color_factor * texel + vec4(lighting, 0.);
         // fragment_color = vec4(vec3(material.emission_factor), 1.) + vec4(lighting, 0.);

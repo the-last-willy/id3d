@@ -32,11 +32,11 @@ auto grid(const Scene& s, std::size_t resolution) {
     {
         g.cells = agl::common::grid<GridCell>(
             resolution, resolution, resolution);
-        g.triangle_indices = s.triangle_indices;
+        g.triangle_indices = s.vertex_attribute_group.triangle_indices;
     }
     {
         auto triangles = std::vector<std::pair<std::size_t, unsigned>>();
-        triangles.resize(size(s.triangle_indices));
+        triangles.resize(size(s.vertex_attribute_group.triangle_indices));
         auto sb = s.bounds;
         auto m0 = mapping(
             projection(sb, 0),
@@ -65,9 +65,9 @@ auto grid(const Scene& s, std::size_t resolution) {
         }
         { // Re-order triangles.
             auto sorted = std::vector<std::array<unsigned, 3>>();
-            sorted.resize(size(s.triangle_indices));
+            sorted.resize(size(s.vertex_attribute_group.triangle_indices));
             for(std::size_t i = 0; i < size(sorted); ++i) {
-                sorted[i] = s.triangle_indices[g.triangle_arrangement[i]];
+                sorted[i] = s.vertex_attribute_group.triangle_indices[g.triangle_arrangement[i]];
             }
             g.triangle_indices = std::move(sorted);
         }
@@ -96,10 +96,10 @@ auto grid(const Scene& s, std::size_t resolution) {
             if(not is_empty(c)) {
                 g.non_empty_cell_count += 1;
                 c.bounds = agl::common::interval(
-                    s.vertex_positions[g.triangle_indices[c.first][0]]);
+                    s.vertex_attribute_group.positions[g.triangle_indices[c.first][0]]);
                 for(auto i = c.first; i != c.last; ++i) 
                 for(auto ti : g.triangle_indices[i]) {
-                    extend(c.bounds, s.vertex_positions[ti]);
+                    extend(c.bounds, s.vertex_attribute_group.positions[ti]);
                 }
             }
         }
@@ -112,10 +112,10 @@ auto index_buffer(const Grid& g, const Scene& s) {
     auto data = std::vector<std::array<GLuint, 3>>();
     data.resize(size(g.triangle_arrangement));
     for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
-        data[i] = s.triangle_indices[g.triangle_arrangement[i]];
+        data[i] = s.vertex_attribute_group.triangle_indices[g.triangle_arrangement[i]];
     }
-    auto b = agl::create(agl::buffer_tag);
-    storage(b, std::span(data));
+    auto b = gl::Buffer();
+    gl::NamedBufferStorage(b, std::span(data));
     return b;
 }
 
@@ -124,10 +124,10 @@ auto triangle_material_id_buffer(const Grid& g, const Scene& s) {
     auto data = std::vector<int>();
     data.resize(size(g.triangle_arrangement));
     for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
-        data[i] = s.triangle_material_ids[g.triangle_arrangement[i]];
+        data[i] = s.vertex_attribute_group.triangle_material_ids[g.triangle_arrangement[i]];
     }
-    auto b = agl::create(agl::buffer_tag);
-    storage(b, std::span(data));
+    auto b = gl::Buffer();
+    NamedBufferStorage(b, std::span(data));
     return b;
 }
 

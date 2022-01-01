@@ -2,7 +2,7 @@
 
 #include "bvh/all.hpp"
 #include "grid/all.hpp"
-#include "light_grid/all.hpp"
+#include "lighting/all.hpp"
 #include "settings/all.hpp"
 #include "scene/all.hpp"
 #include "statistics.hpp"
@@ -23,13 +23,10 @@ struct Application : Program {
 
     Scene scene;
 
-    agl::Buffer scene_triangle_material_id_buffer;
+    // agl::Buffer scene_triangle_material_id_buffer;
 
     Bvh scene_bvh;
     Grid scene_grid;
-
-    // GridLights scene_grid_lights;
-    LightGrid light_grid;
 
     agl::engine::RenderPass wireframe_pass;
     std::shared_ptr<agl::engine::MeshInstance> bb_mesh;

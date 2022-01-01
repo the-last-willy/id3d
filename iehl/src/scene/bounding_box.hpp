@@ -6,8 +6,8 @@
 
 inline
 auto bounding_box(const Scene& s) {
-    auto bb = agl::common::interval(s.vertex_positions[0]);
-    for(auto& vp : s.vertex_positions) {
+    auto bb = agl::common::interval(s.vertex_attribute_group.positions[0]);
+    for(auto& vp : s.vertex_attribute_group.positions) {
         extend(bb, vp);
     }
     return bb;

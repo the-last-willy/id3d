@@ -2,6 +2,8 @@
 
 #pragma warning(disable : 4005 4996)
 
+#include <glad/glad.h>
+
 #include "application.hpp"
 #include "init.hpp"
 #include "render.hpp"
