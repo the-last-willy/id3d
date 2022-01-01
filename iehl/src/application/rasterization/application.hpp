@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bvh/all.hpp"
+#include "forawrd_rendering/all.hpp"
 #include "grid/all.hpp"
 #include "lighting/all.hpp"
 #include "settings/all.hpp"
@@ -17,11 +18,17 @@
 
 struct Application : Program {
     eng::ShaderCompiler shader_compiler;
+    
+    Scene scene;
+
+    ForwardRenderer forward_renderer;
+    gl::VertexArray forward_rendering_vao;
+
+
 
     eng::Camera camera;
     eng::Camera frustum_culling_camera;
 
-    Scene scene;
 
     // agl::Buffer scene_triangle_material_id_buffer;
 
@@ -35,8 +42,6 @@ struct Application : Program {
 
     Settings settings;
     Statistics statistics;
-
-    eng::Program frustum_culling_shader;
 
     void init() override;
 

@@ -59,7 +59,7 @@ void Application::init() {
 
         scene.object_group.element_buffer = index_buffer(scene_grid, scene);
 
-        initialize_gpu(scene);
+        // initialize_gpu(scene);
 
         // light_grid = ::light_grid(
         //     scene.lights,

@@ -6,7 +6,9 @@
 #include <agl/engine/all.hpp>
 
 void Application::render() {
-    clear(agl::default_framebuffer, agl::depth_tag, 1.f);
+    gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
+
+    
 
     clear(wireframe_pass);
 

@@ -10,7 +10,7 @@
 inline
 void render(Scene& s, std::span<DrawElementsParameters> deps) {
     // bind(s.program);
-    glBindVertexArray(s.object_group.vertex_array);
+    // glBindVertexArray(s.object_group.vertex_array);
 
     { // SSBOs.
         // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, s.material_ssbo);
