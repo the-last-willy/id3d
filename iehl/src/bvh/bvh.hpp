@@ -50,7 +50,7 @@ void construct_leaf(
         it->node_index = n.index;
     }
     { // Compute bounds.
-        auto& indices = scene(b).vertex_attribute_group.triangle_indices;
+        auto& indices = scene(b).object_group.triangle_indices;
         auto& positions = scene(b).vertex_attribute_group.positions;
         n.bounds = agl::common::interval(positions[indices[first->primitive_index][0]]);
         for(auto it = first; it != last; ++it) 
@@ -124,7 +124,7 @@ Bvh bvh(const Scene& s) {
     auto b = Bvh();
     b.scene = &s;
     { // Leaves.
-        b.leaves.resize(size(s.vertex_attribute_group.triangle_indices));
+        b.leaves.resize(size(s.object_group.triangle_indices));
         for(std::size_t i = 0; i < size(b.leaves); ++i) {
             b.leaves[i].primitive_index = i;
         }

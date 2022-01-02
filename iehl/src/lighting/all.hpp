@@ -2,4 +2,4 @@
 
 #include "light_culling.hpp"
 #include "light_group.hpp"
-#include "light.hpp"
+#include "light_properties.hpp"

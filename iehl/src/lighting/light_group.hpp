@@ -1,21 +1,11 @@
 #pragma once
 
-#include "light.hpp"
-
-#include <agl/engine/opengl/all.hpp>
+#include "light_properties.hpp"
+#include "opengl.hpp"
 
 #include <vector>
 
 struct LightGroup {
-    std::vector<Light> lights;
-    agl::engine::opengl::Buffer light_ssbo;
+    std::vector<LightProperties> light_properties;
+    agl::opengl::Buffer light_properties_ssbo;
 };
-
-inline
-void init_ssbos(LightGroup& lg) {
-    glNamedBufferStorage(
-        lg.light_ssbo,
-        size(lg.lights) * sizeof(Light),
-        data(lg.lights),
-        GL_NONE);
-}

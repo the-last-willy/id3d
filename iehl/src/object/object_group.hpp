@@ -29,8 +29,3 @@ struct ObjectGroup {
     GLsizei draw_count = 0;
     gl::Buffer draw_count_buffer;
 };
-
-inline
-void update_element_buffer(ObjectGroup& og) {
-    gl::NamedBufferStorage(og.element_buffer, std::span(og.triangle_indices));
-}

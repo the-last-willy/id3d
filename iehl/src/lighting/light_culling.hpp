@@ -1,11 +1,14 @@
 #pragma once
 
 #include "light_group.hpp"
+#include "opengl.hpp"
 
 #include <agl/common/all.hpp>
-#include <agl/engine/opengl/all.hpp>
+#include <agl/standard/all.hpp>
 
+#include <algorithm>
 #include <array>
+#include <random>
 #include <vector>
 
 struct LightSpan {
@@ -15,21 +18,22 @@ struct LightSpan {
 
 struct LightCulling {
     agl::common::Interval<agl::Vec3> domain;
-    std::array<GLuint, 3> resolution = {1, 1, 1};
+    std::array<GLint, 3> resolution = {0, 0, 0};
 
     std::vector<GLuint> light_indices;
     std::vector<LightSpan> light_spans;
 
-    agl::engine::opengl::Buffer light_index_ssbo;
-    agl::engine::opengl::Buffer light_span_ssbo;
+    agl::opengl::Buffer light_index_ssbo;
+    agl::opengl::Buffer light_span_ssbo;
 };
 
 inline
 auto light_culling(
     const LightGroup& lg,
     agl::common::Interval<agl::Vec3> domain,
-    std::array<GLuint, 3> resolution)
+    std::array<GLint, 3> resolution)
 {
+    auto random = std::default_random_engine(agl::standard::random_seed());
     auto lc = LightCulling();
     {
         lc.domain = domain;
@@ -40,36 +44,44 @@ auto light_culling(
         step[0] /= float(lc.resolution[0]);
         step[1] /= float(lc.resolution[1]);
         step[2] /= float(lc.resolution[2]);
-        for(GLuint i0 = 0; i0 < lc.resolution[0]; ++i0)
-        for(GLuint i1 = 0; i1 < lc.resolution[1]; ++i1)
-        for(GLuint i2 = 0; i2 < lc.resolution[2]; ++i2) {
+        for(GLint i0 = 0; i0 < lc.resolution[0]; ++i0)
+        for(GLint i1 = 0; i1 < lc.resolution[1]; ++i1)
+        for(GLint i2 = 0; i2 < lc.resolution[2]; ++i2) {
             auto cell = agl::common::interval(
                 agl::vec3(float(i0), float(i1), float(i2)) * step + lower_bound(lc.domain),
                 agl::vec3(float(i0 + 1), float(i1 + 1), float(i2 + 1)) * step + lower_bound(lc.domain));
             auto first = GLuint(size(lc.light_indices));
             auto count = GLuint(0);
-            for(GLuint li = 0; li < size(lg.lights); ++li) {
-                auto lp = lg.lights[li].position;
+            for(GLuint li = 0; li < size(lg.light_properties); ++li) {
+                auto lp = lg.light_properties[li].position.xyz();
                 auto d = agl::distance(clamp(cell, lp), lp);
-                if(d < 5.f) {
+                if(d <= 10.f) {
                     lc.light_indices.push_back(li);
                     count += 1;
                 }
             }
-            lc.light_spans.emplace_back(first, count);
+            auto& s = lc.light_spans.emplace_back(first, count);
+            std::shuffle(
+                data(lc.light_indices) + s.first,
+                data(lc.light_indices) + s.first + s.count,
+                random);
         }
     }
     {
-        glNamedBufferStorage(
-            lc.light_index_ssbo, 
-            size(lc.light_indices) * sizeof(GLuint), 
-            data(lc.light_indices),
-            GL_NONE);
-        glNamedBufferStorage(
-            lc.light_span_ssbo, 
-            size(lc.light_spans) * sizeof(LightSpan), 
-            data(lc.light_spans),
-            GL_NONE);
+        auto m = GLuint(0);
+        for(auto& ls : lc.light_spans) {
+            m = std::max(m, ls.count);
+        }
+        std::cout << "  light index count = " << size(lc.light_indices) << std::endl;
+        std::cout << "  max light per cell = " << m << std::endl;
+    }
+    {
+        gl::NamedBufferStorage(
+            lc.light_index_ssbo,
+            std::span(lc.light_indices));
+        gl::NamedBufferStorage(
+            lc.light_span_ssbo,
+            std::span(lc.light_spans));
     }
     return lc;
 }

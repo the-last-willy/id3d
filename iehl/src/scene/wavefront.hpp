@@ -61,11 +61,12 @@ void load_lights(Scene& scene) {
 
     // Light per triangle.
     auto t = std::size_t();
-    for(t = 0; t < size(scene.vertex_attribute_group.triangle_material_ids); ++t) {
-        auto mid = scene.vertex_attribute_group.triangle_material_ids[t];
+    for(t = 0; t < size(scene.object_group_data.triangle_material_ids); ++t) {
+        auto mid = scene.object_group_data.triangle_material_ids[t];
         auto& material = scene.material_group.properties[mid];
         if(is_emissive(material)) {
-            auto& l = scene.light_group.lights.emplace_back();
+            auto& l = scene.light_group.light_properties.emplace_back();
+            l.attenuation = agl::vec4(1.f, 0.f, 50.f, 0.f);
             l.position = agl::vec4(centroid(scene, t), 1.f);
             if(mid != -1) {
                 glGetTextureSubImage(
@@ -76,11 +77,11 @@ void load_lights(Scene& scene) {
                     GL_RGB,
                     GL_FLOAT,
                     32,
-                    data(l.color));
+                    data(l.rgb_color));
             }
         }
     }
-    std::cout << "  light count = " << size(scene.light_group.lights) << std::endl;
+    std::cout << "  light count = " << size(scene.light_group.light_properties) << std::endl;
 }
 
 inline
@@ -241,23 +242,65 @@ Scene wavefront_scene(std::filesystem::path file_path) {
         // std::cout << "Loading \"" << shape.name << "\".\n";
         auto& mesh = shape.mesh;
         auto tcount = size(mesh.indices) / 3;
-        agl::standard::reserve_more(scene.vertex_attribute_group.triangle_material_ids, tcount);
-        agl::standard::reserve_more(scene.vertex_attribute_group.triangle_indices, tcount);
+        agl::standard::reserve_more(scene.object_group_data.triangle_material_ids, tcount);
+        agl::standard::reserve_more(scene.object_group.triangle_indices, tcount);
         for(std::size_t i = 0; i < size(mesh.indices); i += 3) {
-            scene.vertex_attribute_group.triangle_indices.push_back(
+            scene.object_group.triangle_indices.push_back(
                 std::array<unsigned, 3>{
                     vertex_to_index[mesh.indices[i + 0]],
                     vertex_to_index[mesh.indices[i + 1]],
                     vertex_to_index[mesh.indices[i + 2]]});
-            scene.vertex_attribute_group.triangle_material_ids.push_back(
+            scene.object_group_data.triangle_material_ids.push_back(
                 mesh.material_ids[i / 3]);
-            scene.vertex_attribute_group.triangle_object_ids.push_back(s);
+            scene.object_group_data.triangle_object_ids.push_back(s);
         }
     }
+
     load_albedo_textures(scene, reader, folder_path);
     load_materials(scene, reader);
 
     load_lights(scene);
+
+    { // Light group.
+        if(size(scene.light_group.light_properties) > 0) {
+            gl::NamedBufferStorage(scene.light_group.light_properties_ssbo,
+                std::span(scene.light_group.light_properties));
+        }
+    }
+    { // Object group.
+        gl::NamedBufferStorage(scene.object_group.element_buffer,
+            std::span(scene.object_group.triangle_indices));
+
+        scene.object_group.draw_commands.push_back(gl::DrawElementsIndirectCommand{
+            .count = 3 * GLuint(size(scene.object_group.triangle_indices)),
+            .instanceCount = 1,
+            .firstIndex = 0,
+            .baseVertex = 0,
+            .baseInstance = 0});
+        gl::NamedBufferStorage(scene.object_group.draw_command_buffer,
+            std::span(scene.object_group.draw_commands));
+
+        scene.object_group.draw_count = 1;
+    }
+    { // Object group data.
+        gl::NamedBufferStorage(
+            scene.object_group_data.triangle_material_id_ssbo,
+            std::span(scene.object_group_data.triangle_material_ids));
+    }
+    { // Vertex attribute group.
+        if(size(scene.vertex_attribute_group.normals) > 0) {
+            gl::NamedBufferStorage(scene.vertex_attribute_group.normal_buffer,
+                std::span(scene.vertex_attribute_group.normals));
+        }
+        if(size(scene.vertex_attribute_group.positions) > 0) {
+            gl::NamedBufferStorage(scene.vertex_attribute_group.position_buffer,
+                std::span(scene.vertex_attribute_group.positions));
+        }
+        if(size(scene.vertex_attribute_group.texcoords) > 0) {
+            gl::NamedBufferStorage(scene.vertex_attribute_group.texcoords_buffer,
+                std::span(scene.vertex_attribute_group.texcoords));
+        }
+    }
 
     return scene;
 }

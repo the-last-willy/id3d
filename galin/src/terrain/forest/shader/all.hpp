@@ -5,7 +5,7 @@
 
 inline
 auto trees_shader(eng::ShaderCompiler& sc) {
-    auto p = agl::engine::opengl::Program();
+    auto p = agl::opengl::Program();
     load(agl::Program(p.name), sc, {
         {
             agl::vertex_shader_tag,

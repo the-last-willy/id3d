@@ -3,52 +3,50 @@
 // Unqualified normals and positions are assumed to be in world space.
 // Lighting is done in world space.
 
+struct FragmentContext {
+    vec3 normal_dir;
+    vec3 view_dir;
+
+    vec3 position;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Interface.
 
 ////////////////////////////////////////////////////////////////////////////////
-// Geometry.
+// Lighting.
 
-in flat uint v_draw_id;
-in flat uint v_instance_index;
-in vec3 v_world_normal;
-in vec3 v_world_position;
-in vec2 v_texcoords;
-
-////////////////////////////////////////////////////////////////////////////////
-// Light.
-
-struct Light {
+struct LightProperties {
     // Cubic attenuation factors: [0] + [1] * X + [2] * X2.
     // [3] is for padding.
     vec4 attenuation;
-    // [3] is for padding.
-    vec4 rgb_color;
     // In world space.
     // [3] is for padding and is expected to be '1.'.
     vec4 position;
+    // [3] is for padding.
+    vec4 rgb_color;
 
     // Direction ?
 };
 
-vec3 lighting(in Light l, in vec3 position) {
-    float d = distance(l.position.xyz, position);
+vec3 lighting(in LightProperties lps, in vec3 position) {
+    float d = distance(lps.position.xyz, position);
     vec3 monomial_basis = vec3(1., d, d * d);
-    float attenuation = dot(monomial_basis, l.attenuation.xyz);
-    return l.rgb_color.rgb / attenuation;
+    float attenuation = dot(monomial_basis, lps.attenuation.xyz);
+    return lps.rgb_color.rgb / attenuation;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Light/group.
+// Lighting/light_group.
 
-layout(std430, binding = 3) readonly buffer light_buffer {
-    Light lights[];
+layout(std430) readonly buffer light_group_light_properties_buffer {
+    LightProperties light_properties[/*light index*/];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// Light/group/culling.
+// Lighting/light_group/light_culling.
 
 struct LightCullingSpan {
     uint first;
@@ -61,68 +59,75 @@ uniform vec3 light_culling_domain_lower_bounds;
 uniform vec3 light_culling_domain_upper_bounds;
 uniform ivec3 light_culling_resolution;
 
-layout(std430, binding = 4) readonly buffer light_culling_index_buffer {
-    uint light_culling_indices[/*light culling span point*/];
+layout(std430) readonly buffer light_culling_index_buffer {
+    uint light_culling_indices[/*light culling span index*/];
 };
 
-layout(std430, binding = 5) readonly buffer light_culling_span_buffer {
+layout(std430) readonly buffer light_culling_span_buffer {
     LightCullingSpan light_culling_spans[/*cell index*/];
 };
 
-// Returns '-1' if position does not belong to the domain.
-int light_culling_cell_index(in vec3 position) {
-    vec3 lbs = light_culling_domain_lower_bound;
-    vec3 ubs = light_culling_domain_upper_bound;
-    vec3 r = light_culling_resolution;
+ivec3 light_culling_cell_coords(in vec3 position) {
+    vec3 lbs = light_culling_domain_lower_bounds;
+    vec3 ubs = light_culling_domain_upper_bounds;
+    ivec3 r = light_culling_resolution;
 
-    ivec3 cell = ivec3(trunc((position - lb) / (ub - lb) * r));
-    if(any(lessThan(cell, ivec3(0))) || any(greaterThanEqual(cell, r))) {
-        return -1;
-    } else {
-        return int(indices[0] * r[1] * r[2] + indices[1] * r[2] * indices[2]);
-    }
+    return ivec3(trunc((position - lbs) / (ubs - lbs) * r));
+    
 }
 
 vec3 light_culling_lighting(in vec3 position) {
-    int cell_i = light_culling_cell_index(position);
-    LightCullingSpan span = light_culling_spans[cell_i];
+    ivec3 r = light_culling_resolution;
 
-    vec3 sum = vec3(0.);
-    for(uint i = span.first; i < span.first + span.count; ++i) {
-        sum += lighting(lights[i], position);
+    ivec3 cell = light_culling_cell_coords(position);
+    if(any(lessThan(cell, ivec3(0))) || any(greaterThanEqual(cell, r))) {
+        return vec3(0.);
+    } else {
+        int cell_i = cell[0] * r[1] * r[2] + cell[1] * r[2] + cell[2];
+        LightCullingSpan span = light_culling_spans[cell_i];
+
+        vec3 sum = vec3(0.f);
+        for(uint i = span.first; i < span.first + min(span.count, 500); ++i) {
+            sum += lighting(light_properties[light_culling_indices[i]], position);
+        }
+        return sum;
     }
-    return sum;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Material.
 
-struct Material {
+struct MaterialProperties {
     vec4 color_factor;
-    vec4 emission_factor;
+    vec4 emissivity_factor;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // Material/group.
 
-struct Span {
-    uint offset;
-    uint count;
-};
+// struct Span {
+//     uint offset;
+//     uint count;
+// };
 
-layout(binding = 0) uniform sampler2DArray albedo_array_texture;
+// layout(binding = 0) uniform sampler2DArray albedo_array_texture;
 
-layout(std430) buffer material_ids {
-    int triangle_material_ids[/*primitive index*/];
-};
+// layout(std430) buffer material_ids {
+//     int triangle_material_ids[/*primitive index*/];
+// };
 
-layout(std430) buffer material_buffer {
-    Material materials[/*material index*/];
-};
+// layout(std430) buffer material_buffer {
+//     Material materials[/*material index*/];
+// };
 
-layout(std430) buffer primitive_offset_buffer {
-    uint primitive_offsets[/*draw index*/]; 
-};
+// layout(std430) buffer material_offsets {
+//     uint primitive_offsets[/*instance index*/]; 
+// };
+
+////////////////////////////////////////////////////////////////////////////////
+// View.
+
+uniform vec3 eye_world_position;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Fragment output.
@@ -130,30 +135,24 @@ layout(std430) buffer primitive_offset_buffer {
 out vec4 f_rgba_color;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Vertex input.
+
+in flat uint v_instance_index;
+in vec3 v_world_normal;
+in vec3 v_world_position;
+in vec2 v_texcoords;
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 void main() {
-    // uint primitive_id = primitive_offsets[v_draw_id] + gl_PrimitiveID;
+    // In world space, outward the position.
+    vec3 normal_dir = normalize(v_world_normal);
+    vec3 view_dir = normalize(eye_world_position - v_world_position);
 
-    // triangle_material_ids.length;
+    float lambertian = max(dot(view_dir, normal_dir), 0.);
+    vec3 lighting = light_culling_lighting(v_world_position);
 
-    // vec3 normal = normalize(v_normal);
-
-    // vec3 lighting = vec3(0.);
-
-    // int material_id = triangle_material_ids[primitive_id];
-    // if(material_id != -1) {
-    //     const Material material = materials[material_id];
-    //     vec4 texel = texture(albedo_array_texture, vec3(v_texcoords, material_id));
-    //     // f_rgba_color = material.emission_factor * material.color_factor * texel + vec4(lighting, 0.);
-    //     f_rgba_color = 2. * material.emission_factor * material.color_factor * texel + vec4(lighting, 0.);
-    //     // f_rgba_color = vec4(vec3(material.emission_factor), 1.) + vec4(lighting, 0.);
-    // } else {
-    //     f_rgba_color = vec4(vec3(1., 1., 1.), 1.);
-    // }
-
-    // f_rgba_color = vec4(normal * .5 + .5, 1.);
-
-    f_rgba_color = vec4(1.);
+    f_rgba_color = vec4(lighting, 1.);
 }

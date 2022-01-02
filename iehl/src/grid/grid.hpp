@@ -32,11 +32,11 @@ auto grid(const Scene& s, std::size_t resolution) {
     {
         g.cells = agl::common::grid<GridCell>(
             resolution, resolution, resolution);
-        g.triangle_indices = s.vertex_attribute_group.triangle_indices;
+        g.triangle_indices = s.object_group.triangle_indices;
     }
     {
         auto triangles = std::vector<std::pair<std::size_t, unsigned>>();
-        triangles.resize(size(s.vertex_attribute_group.triangle_indices));
+        triangles.resize(size(s.object_group.triangle_indices));
         auto sb = s.bounds;
         auto m0 = mapping(
             projection(sb, 0),
@@ -65,9 +65,9 @@ auto grid(const Scene& s, std::size_t resolution) {
         }
         { // Re-order triangles.
             auto sorted = std::vector<std::array<unsigned, 3>>();
-            sorted.resize(size(s.vertex_attribute_group.triangle_indices));
+            sorted.resize(size(s.object_group.triangle_indices));
             for(std::size_t i = 0; i < size(sorted); ++i) {
-                sorted[i] = s.vertex_attribute_group.triangle_indices[g.triangle_arrangement[i]];
+                sorted[i] = s.object_group.triangle_indices[g.triangle_arrangement[i]];
             }
             g.triangle_indices = std::move(sorted);
         }
@@ -112,7 +112,7 @@ auto index_buffer(const Grid& g, const Scene& s) {
     auto data = std::vector<std::array<GLuint, 3>>();
     data.resize(size(g.triangle_arrangement));
     for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
-        data[i] = s.vertex_attribute_group.triangle_indices[g.triangle_arrangement[i]];
+        data[i] = s.object_group.triangle_indices[g.triangle_arrangement[i]];
     }
     auto b = gl::Buffer();
     gl::NamedBufferStorage(b, std::span(data));
@@ -124,7 +124,7 @@ auto triangle_material_id_buffer(const Grid& g, const Scene& s) {
     auto data = std::vector<int>();
     data.resize(size(g.triangle_arrangement));
     for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
-        data[i] = s.vertex_attribute_group.triangle_material_ids[g.triangle_arrangement[i]];
+        data[i] = s.object_group_data.triangle_material_ids[g.triangle_arrangement[i]];
     }
     auto b = gl::Buffer();
     NamedBufferStorage(b, std::span(data));

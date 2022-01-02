@@ -18,7 +18,7 @@ struct GridLights {
 };
 
 inline
-auto lights(const Grid& g, std::span<const Light> lights) {
+auto lights(const Grid& g, std::span<const LightProperties> lights) {
     auto gls = GridLights();
     auto offset = GLuint(0);
     for(auto& c : g.cells) {

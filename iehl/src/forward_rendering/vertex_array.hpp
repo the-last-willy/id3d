@@ -8,6 +8,8 @@ gl::VertexArray vertex_array(
     const ForwardRenderer& fr,
     const VertexAttributeGroup& vag)
 {
+    std::ignore = fr;
+
     auto vao = gl::VertexArray();
     if(gl::GetNamedBufferParameter(vag.normal_buffer, GL_BUFFER_SIZE) > 0) {
         auto attribindex = GLuint(0);

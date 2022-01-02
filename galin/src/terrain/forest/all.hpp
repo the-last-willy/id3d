@@ -15,25 +15,25 @@ struct Forest {
 
     // GPU program.
 
-    agl::engine::opengl::Program shader;
+    agl::opengl::Program shader;
 
     // GPU VBOs.
 
-    agl::engine::opengl::Buffer index_vbo;
-    agl::engine::opengl::Buffer normal_vbo;
-    agl::engine::opengl::Buffer position_vbo;
+    agl::opengl::Buffer index_vbo;
+    agl::opengl::Buffer normal_vbo;
+    agl::opengl::Buffer position_vbo;
 
     // GPU VAO.
     std::size_t triangle_count = 0;
     std::size_t vertex_count = 0;
-    agl::engine::opengl::VertexArray vao;
+    agl::opengl::VertexArray vao;
 
     // GPU draw parameters.
     std::size_t instance_count = 0;
 
     // GPU SSBOs.
-    agl::engine::opengl::Buffer color_ssbo;
-    agl::engine::opengl::Buffer model_to_world_ssbo;
+    agl::opengl::Buffer color_ssbo;
+    agl::opengl::Buffer model_to_world_ssbo;
 };
 
 struct ForestParameters {
