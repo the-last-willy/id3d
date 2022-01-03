@@ -7,14 +7,9 @@
 #include <vector>
 
 struct MaterialGroup {
-    std::vector<MaterialProperties> properties;
-    gl::Buffer properties_ssbo;
+    std::vector<MaterialProperties> material_properties;
+    gl::Buffer material_properties_ssbo;
 
     gl::Sampler albedo_sampler;
     gl::Texture albedo_texture_array = GL_TEXTURE_2D_ARRAY;
 };
-
-inline
-void update_ssbos(MaterialGroup& mg) {
-    gl::NamedBufferStorage(mg.properties_ssbo, std::span(mg.properties));
-}

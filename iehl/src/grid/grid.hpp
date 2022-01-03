@@ -32,11 +32,11 @@ auto grid(const Scene& s, std::size_t resolution) {
     {
         g.cells = agl::common::grid<GridCell>(
             resolution, resolution, resolution);
-        g.triangle_indices = s.object_group.triangle_indices;
+        g.triangle_indices = s.objects.topology.triangle_indices;
     }
     {
         auto triangles = std::vector<std::pair<std::size_t, unsigned>>();
-        triangles.resize(size(s.object_group.triangle_indices));
+        triangles.resize(size(s.objects.topology.triangle_indices));
         auto sb = s.bounds;
         auto m0 = mapping(
             projection(sb, 0),
@@ -48,7 +48,7 @@ auto grid(const Scene& s, std::size_t resolution) {
             projection(sb, 2),
             agl::common::interval(0.f, float(resolution)));
         for(std::size_t i = 0; i < size(g.triangle_indices); ++i) {
-            auto c = centroid(s, i);
+            auto c = triangle_centroid(s.objects, i);
             auto i0 = unsigned(m0(c[0]) - (c[0] >= upper_bound(sb)[0]));
             auto i1 = unsigned(m1(c[1]) - (c[1] >= upper_bound(sb)[1]));
             auto i2 = unsigned(m2(c[2]) - (c[2] >= upper_bound(sb)[2]));
@@ -65,9 +65,9 @@ auto grid(const Scene& s, std::size_t resolution) {
         }
         { // Re-order triangles.
             auto sorted = std::vector<std::array<unsigned, 3>>();
-            sorted.resize(size(s.object_group.triangle_indices));
+            sorted.resize(size(s.objects.topology.triangle_indices));
             for(std::size_t i = 0; i < size(sorted); ++i) {
-                sorted[i] = s.object_group.triangle_indices[g.triangle_arrangement[i]];
+                sorted[i] = s.objects.topology.triangle_indices[g.triangle_arrangement[i]];
             }
             g.triangle_indices = std::move(sorted);
         }
@@ -96,10 +96,10 @@ auto grid(const Scene& s, std::size_t resolution) {
             if(not is_empty(c)) {
                 g.non_empty_cell_count += 1;
                 c.bounds = agl::common::interval(
-                    s.vertex_attribute_group.positions[g.triangle_indices[c.first][0]]);
+                    s.objects.vertex_attributes.positions[g.triangle_indices[c.first][0]]);
                 for(auto i = c.first; i != c.last; ++i) 
                 for(auto ti : g.triangle_indices[i]) {
-                    extend(c.bounds, s.vertex_attribute_group.positions[ti]);
+                    extend(c.bounds, s.objects.vertex_attributes.positions[ti]);
                 }
             }
         }
@@ -112,7 +112,7 @@ auto index_buffer(const Grid& g, const Scene& s) {
     auto data = std::vector<std::array<GLuint, 3>>();
     data.resize(size(g.triangle_arrangement));
     for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
-        data[i] = s.object_group.triangle_indices[g.triangle_arrangement[i]];
+        data[i] = s.objects.topology.triangle_indices[g.triangle_arrangement[i]];
     }
     auto b = gl::Buffer();
     gl::NamedBufferStorage(b, std::span(data));
@@ -124,7 +124,7 @@ auto triangle_material_id_buffer(const Grid& g, const Scene& s) {
     auto data = std::vector<int>();
     data.resize(size(g.triangle_arrangement));
     for(std::size_t i = 0; i < size(g.triangle_arrangement); ++i) {
-        data[i] = s.object_group_data.triangle_material_ids[g.triangle_arrangement[i]];
+        data[i] = s.objects.data.triangle_material_ids[g.triangle_arrangement[i]];
     }
     auto b = gl::Buffer();
     NamedBufferStorage(b, std::span(data));

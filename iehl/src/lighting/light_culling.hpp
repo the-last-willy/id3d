@@ -55,7 +55,7 @@ auto light_culling(
             for(GLuint li = 0; li < size(lg.light_properties); ++li) {
                 auto lp = lg.light_properties[li].position.xyz();
                 auto d = agl::distance(clamp(cell, lp), lp);
-                if(d <= 10.f) {
+                if(d <= 1.f) {
                     lc.light_indices.push_back(li);
                     count += 1;
                 }
@@ -76,12 +76,16 @@ auto light_culling(
         std::cout << "  max light per cell = " << m << std::endl;
     }
     {
-        gl::NamedBufferStorage(
-            lc.light_index_ssbo,
-            std::span(lc.light_indices));
-        gl::NamedBufferStorage(
-            lc.light_span_ssbo,
-            std::span(lc.light_spans));
+        if(size(lc.light_indices) > 0) {
+            gl::NamedBufferStorage(
+                lc.light_index_ssbo,
+                std::span(lc.light_indices));
+        }
+        if(size(lc.light_spans) > 0) {
+            gl::NamedBufferStorage(
+                lc.light_span_ssbo,
+                std::span(lc.light_spans));
+        }
     }
     return lc;
 }

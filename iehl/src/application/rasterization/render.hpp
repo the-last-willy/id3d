@@ -17,22 +17,13 @@ void Application::render() {
 
     upload(forward_renderer, light_culling);
     upload(forward_renderer, scene.light_group);
+    upload(forward_renderer, scene.material_group);
+    upload(forward_renderer, scene.objects.data);
+    upload(forward_renderer, scene.objects.topology);
 
     glProgramUniform3fv(forward_renderer.program,
         forward_renderer.eye_position_location_location,
         1, data(eye_world_position));
-
-    glBindVertexArray(forward_rendering_vao);
-
-    glVertexArrayElementBuffer(forward_rendering_vao, 
-        scene.object_group.element_buffer);
-
-    // glCullFace(GL_BACK);
-    // glEnable(GL_CULL_FACE);
-
-    glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST);
-
     glProgramUniformMatrix4fv(forward_renderer.program,
         forward_renderer.model_to_clip_location,
         1, GL_FALSE, data(m2c));
@@ -43,17 +34,35 @@ void Application::render() {
         forward_renderer.model_to_world_normal_location,
         1, GL_FALSE, data(m2w));
 
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, scene.object_group.draw_command_buffer);
+    glBindVertexArray(forward_rendering_vao);
+
+    glVertexArrayElementBuffer(forward_rendering_vao, 
+        scene.objects.topology.element_buffer);
+
+    // glCullFace(GL_BACK);
+    // glEnable(GL_CULL_FACE);
+
+    glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);
+
+    
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, scene.objects.topology.draw_command_buffer);
 
     glMultiDrawElementsIndirect(
         GL_TRIANGLES, GL_UNSIGNED_INT,
-        0, scene.object_group.draw_count, 0);
+        0, scene.objects.topology.draw_count, 0);
 
     // glDisable(GL_CULL_FACE);
 
     glDisable(GL_DEPTH_TEST);
 
-    // clear(wireframe_pass);
+
+
+
+
+
+
 
     // auto ctw = agl::engine::clip_to_world(camera);
     // auto nt = agl::engine::normal_transform(camera);

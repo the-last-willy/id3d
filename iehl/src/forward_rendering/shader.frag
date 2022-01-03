@@ -1,5 +1,10 @@
 #version 450 core
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Fragment interface.
+
 // Unqualified normals and positions are assumed to be in world space.
 // Lighting is done in world space.
 
@@ -11,9 +16,23 @@ struct FragmentContext {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// Inputs.
+
+in flat uint v_draw_id;
+in flat uint v_instance_index;
+in vec3 v_world_normal;
+in vec3 v_world_position;
+in vec2 v_texcoords;
+
+////////////////////////////////////////////////////////////////////////////////
+// Outputs.
+
+out vec4 f_rgba_color;
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-// Interface.
+////////////////////////////////////////////////////////////////////////////////
+// Modules.
 
 ////////////////////////////////////////////////////////////////////////////////
 // Lighting.
@@ -68,12 +87,11 @@ layout(std430) readonly buffer light_culling_span_buffer {
 };
 
 ivec3 light_culling_cell_coords(in vec3 position) {
-    vec3 lbs = light_culling_domain_lower_bounds;
-    vec3 ubs = light_culling_domain_upper_bounds;
+    vec3 lb = light_culling_domain_lower_bounds;
+    vec3 ub = light_culling_domain_upper_bounds;
     ivec3 r = light_culling_resolution;
 
-    return ivec3(trunc((position - lbs) / (ubs - lbs) * r));
-    
+    return ivec3((position - lb) / (ub - lb) * r);
 }
 
 vec3 light_culling_lighting(in vec3 position) {
@@ -83,6 +101,7 @@ vec3 light_culling_lighting(in vec3 position) {
     if(any(lessThan(cell, ivec3(0))) || any(greaterThanEqual(cell, r))) {
         return vec3(0.);
     } else {
+        // Linearize index triplet.
         int cell_i = cell[0] * r[1] * r[2] + cell[1] * r[2] + cell[2];
         LightCullingSpan span = light_culling_spans[cell_i];
 
@@ -103,44 +122,53 @@ struct MaterialProperties {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// Material/group.
+// Material/material_group.
 
-// struct Span {
-//     uint offset;
-//     uint count;
-// };
+uniform sampler2DArray albedo_texture_array;
 
-// layout(binding = 0) uniform sampler2DArray albedo_array_texture;
+layout(std430) readonly buffer material_properties_buffer {
+    MaterialProperties material_properties[/*material index*/];
+};
 
-// layout(std430) buffer material_ids {
-//     int triangle_material_ids[/*primitive index*/];
-// };
+layout(std430) readonly buffer material_triangle_material_id_buffer {
+    int triangle_material_ids[/*primitive index*/];
+};
 
-// layout(std430) buffer material_buffer {
-//     Material materials[/*material index*/];
-// };
+vec4 material(in vec3 position, in uint triangle_id) {
+    uint material_id = triangle_material_ids[triangle_id];
+    MaterialProperties properties = material_properties[material_id];
+    return texture(albedo_texture_array, vec3(v_texcoords, material_id));
+}
 
-// layout(std430) buffer material_offsets {
-//     uint primitive_offsets[/*instance index*/]; 
-// };
+////////////////////////////////////////////////////////////////////////////////
+// Object.
+
+// Only need firstIndex to calculate the triandle id.
+// Don't know how to do without passing everything
+// or yet another buffer containing only the indices ?
+struct DrawElementsIndirectCommand {
+    uint  count;
+    uint  instanceCount;
+    uint  firstIndex;
+    uint  baseVertex;
+    uint  baseInstance;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Object/object_group.
+
+layout(std430) readonly buffer object_draw_indirect_buffer {
+    DrawElementsIndirectCommand object_draw_commands[/*draw id*/];
+};
+
+uint object_global_primitive_id(in uint draw_id) {
+    return object_draw_commands[draw_id].firstIndex / 3 + gl_PrimitiveID;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // View.
 
 uniform vec3 eye_world_position;
-
-////////////////////////////////////////////////////////////////////////////////
-// Fragment output.
-
-out vec4 f_rgba_color;
-
-////////////////////////////////////////////////////////////////////////////////
-// Vertex input.
-
-in flat uint v_instance_index;
-in vec3 v_world_normal;
-in vec3 v_world_position;
-in vec2 v_texcoords;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +180,8 @@ void main() {
     vec3 view_dir = normalize(eye_world_position - v_world_position);
 
     float lambertian = max(dot(view_dir, normal_dir), 0.);
-    vec3 lighting = light_culling_lighting(v_world_position);
+    // vec3 lighting = light_culling_lighting(v_world_position);
+    vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
 
     f_rgba_color = vec4(lighting, 1.);
 }

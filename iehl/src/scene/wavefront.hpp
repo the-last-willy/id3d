@@ -61,13 +61,13 @@ void load_lights(Scene& scene) {
 
     // Light per triangle.
     auto t = std::size_t();
-    for(t = 0; t < size(scene.object_group_data.triangle_material_ids); ++t) {
-        auto mid = scene.object_group_data.triangle_material_ids[t];
-        auto& material = scene.material_group.properties[mid];
+    for(t = 0; t < size(scene.objects.data.triangle_material_ids); ++t) {
+        auto mid = scene.objects.data.triangle_material_ids[t];
+        auto& material = scene.material_group.material_properties[mid];
         if(is_emissive(material)) {
             auto& l = scene.light_group.light_properties.emplace_back();
-            l.attenuation = agl::vec4(1.f, 0.f, 50.f, 0.f);
-            l.position = agl::vec4(centroid(scene, t), 1.f);
+            l.attenuation = agl::vec4(1.f, 0.f, 50.f, 0.f) * 1.f;
+            l.position = agl::vec4(triangle_centroid(scene.objects, t), 1.f);
             if(mid != -1) {
                 glGetTextureSubImage(
                     scene.material_group.albedo_texture_array,
@@ -161,13 +161,17 @@ inline
 void load_materials(Scene& s, const tinyobj::ObjReader& wavefront) {
     auto& materials = wavefront.GetMaterials();
     { // Material factors.
-        s.material_group.properties.resize(size(materials));
+        s.material_group.material_properties.resize(size(materials));
         for(std::size_t i = 0; i < size(materials); ++i) {
             auto& m = materials[i];
-            auto& sm = s.material_group.properties[i];
+            auto& sm = s.material_group.material_properties[i];
             sm.color_factor = {m.diffuse[0], m.diffuse[1], m.diffuse[2], 1.f};
             sm.emission_factor = {m.emission[0], m.emission[1], m.emission[2], 1.f};
         }
+    }
+    {
+        gl::NamedBufferStorage(s.material_group.material_properties_ssbo,
+            std::span(s.material_group.material_properties));
     }
 }
 
@@ -213,21 +217,21 @@ Scene wavefront_scene(std::filesystem::path file_path) {
                 vertex_to_index[vertex] = unsigned(size(vertex_to_index));
                 auto normal_i = vertex.normal_index;
                 if(normal_i != -1) {
-                    scene.vertex_attribute_group.normals.push_back(
+                    scene.objects.vertex_attributes.normals.push_back(
                         agl::vec3(
                             attrib.normals[3 * normal_i + 0],
                             attrib.normals[3 * normal_i + 1],
                             attrib.normals[3 * normal_i + 2]));
                 }
                 auto position_i = vertex.vertex_index;
-                scene.vertex_attribute_group.positions.push_back(
+                scene.objects.vertex_attributes.positions.push_back(
                     agl::vec3(
                         attrib.vertices[3 * position_i + 0],
                         attrib.vertices[3 * position_i + 1],
                         attrib.vertices[3 * position_i + 2]));
                 auto texcoord_i = vertex.texcoord_index;
                 if(texcoord_i != -1) {
-                    scene.vertex_attribute_group.texcoords.push_back(
+                    scene.objects.vertex_attributes.texcoords.push_back(
                         agl::vec2(
                             attrib.texcoords[2 * texcoord_i + 0],
                             attrib.texcoords[2 * texcoord_i + 1]));
@@ -242,17 +246,17 @@ Scene wavefront_scene(std::filesystem::path file_path) {
         // std::cout << "Loading \"" << shape.name << "\".\n";
         auto& mesh = shape.mesh;
         auto tcount = size(mesh.indices) / 3;
-        agl::standard::reserve_more(scene.object_group_data.triangle_material_ids, tcount);
-        agl::standard::reserve_more(scene.object_group.triangle_indices, tcount);
+        agl::standard::reserve_more(scene.objects.data.triangle_material_ids, tcount);
+        agl::standard::reserve_more(scene.objects.topology.triangle_indices, tcount);
         for(std::size_t i = 0; i < size(mesh.indices); i += 3) {
-            scene.object_group.triangle_indices.push_back(
+            scene.objects.topology.triangle_indices.push_back(
                 std::array<unsigned, 3>{
                     vertex_to_index[mesh.indices[i + 0]],
                     vertex_to_index[mesh.indices[i + 1]],
                     vertex_to_index[mesh.indices[i + 2]]});
-            scene.object_group_data.triangle_material_ids.push_back(
+            scene.objects.data.triangle_material_ids.push_back(
                 mesh.material_ids[i / 3]);
-            scene.object_group_data.triangle_object_ids.push_back(s);
+            scene.objects.data.triangle_object_ids.push_back(s);
         }
     }
 
@@ -268,37 +272,46 @@ Scene wavefront_scene(std::filesystem::path file_path) {
         }
     }
     { // Object group.
-        gl::NamedBufferStorage(scene.object_group.element_buffer,
-            std::span(scene.object_group.triangle_indices));
+        gl::NamedBufferStorage(scene.objects.topology.element_buffer,
+            std::span(scene.objects.topology.triangle_indices));
 
-        scene.object_group.draw_commands.push_back(gl::DrawElementsIndirectCommand{
-            .count = 3 * GLuint(size(scene.object_group.triangle_indices)),
+        scene.objects.topology.draw_commands.push_back(gl::DrawElementsIndirectCommand{
+            .count = 3 * GLuint(size(scene.objects.topology.triangle_indices)),
             .instanceCount = 1,
             .firstIndex = 0,
             .baseVertex = 0,
             .baseInstance = 0});
-        gl::NamedBufferStorage(scene.object_group.draw_command_buffer,
-            std::span(scene.object_group.draw_commands));
+        gl::NamedBufferStorage(scene.objects.topology.draw_command_buffer,
+            std::span(scene.objects.topology.draw_commands));
 
-        scene.object_group.draw_count = 1;
+        scene.objects.topology.draw_count = 1;
     }
     { // Object group data.
         gl::NamedBufferStorage(
-            scene.object_group_data.triangle_material_id_ssbo,
-            std::span(scene.object_group_data.triangle_material_ids));
+            scene.objects.data.triangle_material_id_ssbo,
+            std::span(scene.objects.data.triangle_material_ids));
     }
     { // Vertex attribute group.
-        if(size(scene.vertex_attribute_group.normals) > 0) {
-            gl::NamedBufferStorage(scene.vertex_attribute_group.normal_buffer,
-                std::span(scene.vertex_attribute_group.normals));
+        if(size(scene.objects.vertex_attributes.normals) > 0) {
+            gl::NamedBufferStorage(scene.objects.vertex_attributes.normal_buffer,
+                std::span(scene.objects.vertex_attributes.normals));
         }
-        if(size(scene.vertex_attribute_group.positions) > 0) {
-            gl::NamedBufferStorage(scene.vertex_attribute_group.position_buffer,
-                std::span(scene.vertex_attribute_group.positions));
+        if(size(scene.objects.vertex_attributes.positions) > 0) {
+            gl::NamedBufferStorage(scene.objects.vertex_attributes.position_buffer,
+                std::span(scene.objects.vertex_attributes.positions));
         }
-        if(size(scene.vertex_attribute_group.texcoords) > 0) {
-            gl::NamedBufferStorage(scene.vertex_attribute_group.texcoords_buffer,
-                std::span(scene.vertex_attribute_group.texcoords));
+        if(size(scene.objects.vertex_attributes.texcoords) > 0) {
+            gl::NamedBufferStorage(scene.objects.vertex_attributes.texcoords_buffer,
+                std::span(scene.objects.vertex_attributes.texcoords));
+        }
+    }
+    { // Compute scene bounds.
+        auto& positions = scene.objects.vertex_attributes.positions;
+        if(not positions.empty()) {
+            scene.objects.data.bounds = agl::common::interval(agl::vec4(positions[0], 1.f));
+            for(auto& p : positions) {
+                extend(scene.objects.data.bounds, agl::vec4(p, 1.f));
+            }
         }
     }
 

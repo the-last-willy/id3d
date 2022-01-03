@@ -13,9 +13,7 @@
 struct Scene {
     LightGroup light_group;
     MaterialGroup material_group;
-    ObjectGroup object_group;
-    ObjectGroupData object_group_data;
-    VertexAttributeGroup vertex_attribute_group;
+    ObjectGroup objects;
 
     // Cached.
 

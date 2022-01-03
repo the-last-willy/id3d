@@ -29,9 +29,7 @@ struct Application : Program {
 
     LightCulling light_culling;
 
-    // agl::Buffer scene_triangle_material_id_buffer;
-
-    Bvh scene_bvh;
+    // Bvh scene_bvh;
     Grid scene_grid;
 
     Settings settings;

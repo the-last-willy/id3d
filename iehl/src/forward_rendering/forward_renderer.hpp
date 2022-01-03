@@ -1,7 +1,8 @@
 #pragma once
 
-#include "shader/render/all.hpp"
 #include "opengl.hpp"
+
+#include <agl/engine/all.hpp>
 
 struct ForwardRenderer {
     gl::Program program;
@@ -17,9 +18,17 @@ struct ForwardRenderer {
     GLuint light_culling_index_buffer_binding = 0;
     GLuint light_culling_span_buffer_binding = 1;
     GLuint light_group_light_properties_buffer_binding = 2;
+    GLuint material_properties_buffer_binding = 3;
+    GLuint material_triangle_material_id_buffer_binding = 4;
+    GLuint object_draw_indirect_buffer_binding = 5;
+
+    // Texture units.
+
+    GLuint albedo_texture_array_unit = 0;
 
     // Uniform locations.
 
+    GLint albedo_texture_array_location = 0;
     GLint eye_position_location_location = -1;
     GLint light_culling_domain_lower_bounds_location = -1;
     GLint light_culling_domain_upper_bounds_location = -1;
@@ -59,9 +68,26 @@ auto forward_renderer(eng::ShaderCompiler& sc) {
             GL_SHADER_STORAGE_BLOCK,
             "light_group_light_properties_buffer"),
         fr.light_group_light_properties_buffer_binding);
+    glShaderStorageBlockBinding(fr.program,
+        glGetProgramResourceIndex(fr.program,
+            GL_SHADER_STORAGE_BLOCK,
+            "material_properties_buffer"),
+        fr.material_properties_buffer_binding);
+    glShaderStorageBlockBinding(fr.program,
+        glGetProgramResourceIndex(fr.program,
+            GL_SHADER_STORAGE_BLOCK,
+            "material_triangle_material_id_buffer"),
+        fr.material_triangle_material_id_buffer_binding);
+    glShaderStorageBlockBinding(fr.program,
+        glGetProgramResourceIndex(fr.program,
+            GL_SHADER_STORAGE_BLOCK,
+            "object_draw_indirect_buffer"),
+        fr.object_draw_indirect_buffer_binding);
 
     // Uniform locations.
 
+    fr.albedo_texture_array_location
+    = glGetUniformLocation(fr.program, "albedo_texture_array");
     fr.eye_position_location_location
     = glGetUniformLocation(fr.program, "eye_world_position");
     fr.light_culling_domain_lower_bounds_location
