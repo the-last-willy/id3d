@@ -137,7 +137,8 @@ layout(std430) readonly buffer material_triangle_material_id_buffer {
 vec4 material(in vec3 position, in uint triangle_id) {
     uint material_id = triangle_material_ids[triangle_id];
     MaterialProperties properties = material_properties[material_id];
-    return texture(albedo_texture_array, vec3(v_texcoords, material_id));
+    // return texture(albedo_texture_array, vec3(v_texcoords, material_id));
+    return properties.color_factor;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

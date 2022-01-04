@@ -3,9 +3,11 @@
 #include "bvh/all.hpp"
 #include "forward_rendering/all.hpp"
 #include "grid/all.hpp"
+#include "hdr_framebuffer/all.hpp"
 #include "lighting/all.hpp"
 #include "settings/all.hpp"
 #include "scene/all.hpp"
+#include "tone_mapping/all.hpp"
 #include "statistics.hpp"
 
 #include <agl/standard/all.hpp>
@@ -21,8 +23,13 @@ struct Application : Program {
     
     Scene scene;
 
+    HDR_Framebuffer hdr_framebuffer;
+
     ForwardRenderer forward_renderer;
     gl::VertexArray forward_rendering_vao;
+
+    ToneMapper tone_mapper;
+    gl::VertexArray tone_mapping_vao;
 
     eng::Camera camera;
     eng::Camera frustum_culling_camera;

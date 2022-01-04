@@ -6,12 +6,17 @@
 #include <agl/engine/all.hpp>
 
 void Application::render() {
-    gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
 
     auto m2c = agl::engine::world_to_clip(camera);
     auto m2w = agl::mat4(agl::identity);
 
     auto eye_world_position = camera.view.position;
+
+    bind(hdr_framebuffer);
+    // gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
+    gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0, 1.f);
+    auto clear_color = std::array{0.f, 0.f, 0.f};
+    glClearNamedFramebufferfv(hdr_framebuffer.fbo, GL_COLOR, 0, data(clear_color));
 
     glUseProgram(forward_renderer.program);
 
@@ -45,8 +50,6 @@ void Application::render() {
     glDepthFunc(GL_LESS);
     glEnable(GL_DEPTH_TEST);
 
-    
-
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, scene.objects.topology.draw_command_buffer);
 
     glMultiDrawElementsIndirect(
@@ -57,12 +60,10 @@ void Application::render() {
 
     glDisable(GL_DEPTH_TEST);
 
+    bind(tone_mapper);
+    bind(tone_mapper, hdr_framebuffer);
 
-
-
-
-
-
+    draw(tone_mapper);
 
     // auto ctw = agl::engine::clip_to_world(camera);
     // auto nt = agl::engine::normal_transform(camera);
