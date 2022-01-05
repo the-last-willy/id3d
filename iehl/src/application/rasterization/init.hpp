@@ -18,7 +18,8 @@ void Application::init() {
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
         scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
         // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
-        grid_subdivision(scene.objects, {4, 4, 4});
+        
+        // grid_subdivision(scene.objects, {4, 4, 4});
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
@@ -27,10 +28,14 @@ void Application::init() {
         }
         frustum_culling_camera = camera;
     }
+
     { // Forward rendering.
         forward_renderer = ::forward_renderer(shader_compiler);
         forward_rendering_vao = vertex_array(
             forward_renderer, scene.objects.vertex_attributes);
+    }
+    { // Occlusion culling.
+        occlusion_culler = ::occlusion_culler(shader_compiler);
     }
     { // Tone mapping.
         tone_mapper = ::tone_mapper(shader_compiler);

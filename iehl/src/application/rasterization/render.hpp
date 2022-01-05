@@ -26,6 +26,8 @@ void Application::render() {
     upload(forward_renderer, scene.objects.data);
     upload(forward_renderer, scene.objects.topology);
 
+    glViewport(0, 0, 1280, 720);
+
     glProgramUniform3fv(forward_renderer.program,
         forward_renderer.eye_position_location_location,
         1, data(eye_world_position));
@@ -60,10 +62,67 @@ void Application::render() {
 
     glDisable(GL_DEPTH_TEST);
 
-    bind(tone_mapper);
-    bind(tone_mapper, hdr_framebuffer);
+    { // Occlusion culling.
+        bind_for_drawing(occlusion_culler);
 
-    draw(tone_mapper);
+        gl::ClearNamedFramebuffer(occlusion_culler.depth_fbo,
+            GL_DEPTH, 0, 1.f);
+
+        glViewport(0, 0, 512, 256);
+
+        glProgramUniformMatrix4fv(occlusion_culler.draw_program,
+            occlusion_culler.draw_model_to_clip_uniform_location,
+            1, GL_FALSE, data(m2c));
+
+        glDepthFunc(GL_LESS);
+        glEnable(GL_DEPTH_TEST);
+
+        glMultiDrawElementsIndirect(
+            GL_TRIANGLES, GL_UNSIGNED_INT,
+            0, scene.objects.topology.draw_count, 0);
+
+        glDisable(GL_DEPTH_TEST);
+
+        generate_mipmap(occlusion_culler);
+
+        occlusion_culler.draw_indirect_commands = scene.objects.topology.draw_commands;
+
+        auto& object_bounds = scene.objects.data.object_bounds;
+        for(auto& bounds : object_bounds) {
+            auto corners = std::array{
+                agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+            };
+            auto c = m2c * corners[0];
+            c /= c[3];
+            auto clip_bounds = agl::common::interval(corners[0]);
+            auto clip_box = agl::common::interval(agl::vec3(-1.f), agl::vec3(0.999f));
+            for(auto corner : corners) {
+                c = m2c * corner;
+                c /= c[3];
+                extend(clip_bounds, clamp(clip_box, c));
+            }
+
+            auto l = length(clip_bounds);
+            float level = std::ceil(std::log2(std::max(l[0], l[1])));
+
+            
+        }
+    }
+    { // Tone mapping.
+        bind(tone_mapper);
+        bind(tone_mapper, hdr_framebuffer);
+
+        glViewport(0, 0, 1280, 720);
+
+        draw(tone_mapper);
+    }
 
     // auto ctw = agl::engine::clip_to_world(camera);
     // auto nt = agl::engine::normal_transform(camera);
