@@ -10,6 +10,8 @@ struct OcclusionCuller {
 
     gl::Framebuffer depth_fbo;
 
+    std::vector<GLint> depth_image_widths;
+    std::vector<GLint> depth_image_heights;
     std::vector<std::vector<GLfloat>> depth_images;
     gl::Texture depth_texture = GL_TEXTURE_2D;
 

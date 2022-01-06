@@ -85,10 +85,14 @@ void Application::render() {
 
         generate_mipmap(occlusion_culler);
 
+        occlusion_culler.draw_count = scene.objects.topology.draw_count;
         occlusion_culler.draw_indirect_commands = scene.objects.topology.draw_commands;
+        auto filtered_commands = std::vector<gl::DrawElementsIndirectCommand>();
 
         auto& object_bounds = scene.objects.data.object_bounds;
-        for(auto& bounds : object_bounds) {
+        for(GLsizei i = 0; i < occlusion_culler.draw_count; ++i) {
+            auto& cmd = occlusion_culler.draw_indirect_commands[i];
+            auto bounds = object_bounds[cmd.baseInstance];
             auto corners = std::array{
                 agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
                 agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
@@ -110,10 +114,35 @@ void Application::render() {
             }
 
             auto l = length(clip_bounds);
-            float level = std::ceil(std::log2(std::max(l[0], l[1])));
+            auto level = GLuint(std::ceil(std::log2(std::max(l[0], l[1]))));
 
-            
+            auto depth_image = occlusion_culler.depth_images.at(level);
+
+            auto w = occlusion_culler.depth_image_widths[level];
+            auto h = occlusion_culler.depth_image_heights[level];
+
+            auto x0 = GLint((lower_bound(clip_bounds)[0] * .5 + .5) * w);
+            auto y0 = GLint((lower_bound(clip_bounds)[1] * .5 + .5) * h);
+            auto x1 = GLint((upper_bound(clip_bounds)[0] * .5 + .5) * w);
+            auto y1 = GLint((upper_bound(clip_bounds)[1] * .5 + .5) * h);
+
+            auto d00 = depth_image[x0 + y0 * w];
+            auto d01 = depth_image[x0 + y1 * w];
+            auto d10 = depth_image[x1 + y0 * w];
+            auto d11 = depth_image[x1 + y1 * w];
+
+            auto max = std::max(std::max(d00, d01), std::max(d10, d11));
+
+            if(lower_bound(bounds)[2] <= max) {
+                std::cout << "  " << i << " accepted" << std::endl;
+                filtered_commands.emplace_back(cmd);
+            } else {
+                std::cout << "  " << i << " rejected" << std::endl;
+            }
         }
+
+        std::cout << "OC " << size(occlusion_culler.draw_indirect_commands) << " " << size(filtered_commands) << std::endl;
+        occlusion_culler.draw_indirect_commands = std::move(filtered_commands);
     }
     { // Tone mapping.
         bind(tone_mapper);

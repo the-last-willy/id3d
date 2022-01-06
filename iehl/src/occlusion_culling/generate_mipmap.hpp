@@ -37,6 +37,8 @@ void generate_mipmap(OcclusionCuller& oc) {
 
         pixels.resize(w2 * h2);
         oc.depth_images.emplace_back(pixels);
+        oc.depth_image_widths.emplace_back(w2);
+        oc.depth_image_heights.emplace_back(h2);
 
         w = w2;
         h = h2;
