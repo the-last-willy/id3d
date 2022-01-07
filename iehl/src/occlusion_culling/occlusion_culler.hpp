@@ -17,6 +17,7 @@ struct OcclusionCuller {
 
     // VAOs have to be compatible with the forward rendering program.
     gl::Program draw_program;
+    gl::Program mipmap_program;
     gl::Program test_program;
 
     // Draw indirect commands.
@@ -30,6 +31,8 @@ struct OcclusionCuller {
     // Uniform locations.
 
     GLint draw_model_to_clip_uniform_location = -1;
+    GLint mipmap_input_image_uniform_location = -1;
+    GLint mipmap_output_image_uniform_location = -1;
 };
 
 inline
@@ -45,6 +48,11 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
         }, {
             agl::fragment_shader_tag,
             "iehl/src/occlusion_culling/draw.frag"
+        }});
+    load(agl::Program(oc.mipmap_program), sc, {
+        {
+            agl::compute_shader_tag,
+            "iehl/src/occlusion_culling/mipmap.comp"
         }});
 
     // load(agl::Program(oc.test_program), sc, {
@@ -71,6 +79,13 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
     oc.draw_model_to_clip_uniform_location
     = glGetUniformLocation(oc.draw_program,
         "model_to_clip");
+
+    oc.mipmap_input_image_uniform_location
+    = glGetUniformLocation(oc.mipmap_program,
+        "input_image");
+    oc.mipmap_output_image_uniform_location
+    = glGetUniformLocation(oc.mipmap_program,
+        "output_image");
 
     return oc;
 }

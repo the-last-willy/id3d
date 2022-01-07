@@ -2,13 +2,14 @@
 
 #include "bvh/all.hpp"
 #include "forward_rendering/all.hpp"
-#include "grid/all.hpp"
+#include "gizmo/all.hpp"
 #include "hdr_framebuffer/all.hpp"
 #include "lighting/all.hpp"
 #include "occlusion_culling/all.hpp"
 #include "settings/all.hpp"
 #include "scene/all.hpp"
 #include "tone_mapping/all.hpp"
+#include "wireframe_renderer/all.hpp"
 #include "statistics.hpp"
 
 #include <agl/standard/all.hpp>
@@ -36,11 +37,21 @@ struct Application : Program {
 
     eng::Camera camera;
     eng::Camera frustum_culling_camera;
+    eng::Camera occlusion_culling_camera;
 
     LightCulling light_culling;
 
-    // Bvh scene_bvh;
-    Grid scene_grid;
+    // Gizmos.
+
+    WireframeRenderer wireframe_renderer;
+
+    WireBoxObject wire_box;
+    gl::VertexArray wire_box_vao;
+
+    WireQuadObject wire_quad;
+    gl::VertexArray wire_quad_vao;
+
+    //
 
     Settings settings;
     Statistics statistics;

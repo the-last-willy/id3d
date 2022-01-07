@@ -182,7 +182,8 @@ void main() {
 
     float lambertian = max(dot(view_dir, normal_dir), 0.);
     // vec3 lighting = light_culling_lighting(v_world_position);
-    vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
+    // vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
+    vec3 lighting = vec3(lambertian * .5 + .5);
 
     f_rgba_color = vec4(lighting, 1.);
 }

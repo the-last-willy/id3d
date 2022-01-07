@@ -1,0 +1,26 @@
+#version 450 core
+
+////////////////////////////////////////////////////////////////////////////////
+
+layout(r32f) uniform readonly image2D input_image;
+layout(r32f) uniform writeonly image2D output_image;
+
+////////////////////////////////////////////////////////////////////////////////
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+void main() {
+    uvec2 id = gl_GlobalInvocationID.xy;
+    ivec2 size = imageSize(input_image);
+    ivec2 half_size = size / 2;
+    if(id.x < half_size.x && id.y < half_size.y) {
+        float m = max(
+            max(
+                imageLoad(input_image, ivec2(2 * id.x + 0, 2 * id.y + 0)).x,
+                imageLoad(input_image, ivec2(2 * id.x + 0, 2 * id.y + 1)).x),
+            max(
+                imageLoad(input_image, ivec2(2 * id.x + 1, 2 * id.y + 0)).x,
+                imageLoad(input_image, ivec2(2 * id.x + 1, 2 * id.y + 1)).x));
+        imageStore(output_image, ivec2(id), vec4(m));
+    }
+}

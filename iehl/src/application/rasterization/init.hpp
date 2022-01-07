@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bvh/all.hpp"
-#include "grid/all.hpp"
 #include "scene/all.hpp"
 
 #include <id3d/common/all.hpp>
@@ -15,11 +14,11 @@ void Application::init() {
     }
     { // Scene.
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
-        scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
         // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         
-        // grid_subdivision(scene.objects, {4, 4, 4});
+        grid_subdivision(scene.objects, {10, 10, 10});
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
@@ -43,6 +42,14 @@ void Application::init() {
     { // Light culling.
         std::cout << "Light culling." << std::endl;
         light_culling = ::light_culling(scene.light_group, scene.bounds, {16, 16, 16});
+    }
+
+    { // Gizmos.
+        wireframe_renderer = ::wireframe_renderer(shader_compiler);
+        wire_box_vao = vertex_array(
+            wire_box.vertex_attributes, wireframe_renderer);
+        wire_quad_vao = vertex_array(
+            wire_quad.vertex_attributes, wireframe_renderer);
     }
     
     std::cout << "Initialization done." << std::endl;

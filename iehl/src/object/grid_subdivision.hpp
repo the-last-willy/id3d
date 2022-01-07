@@ -118,7 +118,7 @@ void grid_subdivision(
     ObjectGroup& og,
     std::array<GLint, 3> resolution)
 {
-    std::cout << "Geometry subdivision" << std::endl;
+    std::cout << "--Subdividing geometry." << std::endl;
 
     using cell_i = std::size_t;
     using triangle_i = GLuint;
@@ -150,15 +150,7 @@ void grid_subdivision(
 
     // Sort by cell id.
     {
-        // std::cout << "  cell asgn:" << std::endl;
-        // for(auto [cell, tr] : indexing) {
-        //     std::cout << "    [" << cell << " " << tr << "]" << std::endl;
-        // }
         std::sort(begin(indexing), end(indexing), cell_i_less);
-        // std::cout << "  cell sort:" << std::endl;
-        // for(auto [cell, tr] : indexing) {
-        //     std::cout << "    [" << cell << " " << tr << "]" << std::endl;
-        // }
     }
 
     // Order triangle indices / element buffer.
@@ -188,27 +180,6 @@ void grid_subdivision(
         gl::NamedBufferStorage(og.data.triangle_material_id_ssbo,
             std::span(og.data.triangle_material_ids));
     }
-
-    // Compute bounds.
-    {
-        og.data.object_bounds.clear();
-        for(std::size_t i = 0; i < size(indexing);) {
-            auto current_cell = indexing[i].first;
-            auto bounds = agl::common::interval(
-                triangle_centroid(og, indexing[i].second));
-            for(++i; i < size(indexing); ++i) {
-                if(current_cell == indexing[i].first) {
-                    extend(bounds, triangle_centroid(og, indexing[i].second));
-                } else {
-                    break;
-                }
-            }
-            og.data.object_bounds.push_back(agl::common::interval(
-                agl::vec4(lower_bound(bounds), 1.f),
-                agl::vec4(upper_bound(bounds), 1.f)));
-        }
-    }
-
     // Make draw commands.
     {
         auto commands = std::vector<gl::DrawElementsIndirectCommand>();
@@ -227,7 +198,6 @@ void grid_subdivision(
                 .count = 3 * count,
                 .firstIndex = 3 * first,
                 .baseInstance = GLuint(size(commands))});
-            // std::cout << "    command " << i << " = {first = " << command.firstIndex << ", count = " << command.count << "}" << std::endl;
             first += count;
         }
 
@@ -239,5 +209,22 @@ void grid_subdivision(
             std::span(og.topology.draw_commands));
 
         std::cout << "  command count = " << og.topology.draw_count << std::endl;
+    }
+    { // Compute bounds.
+        auto& positions = og.vertex_attributes.positions;
+        auto& tis = og.topology.triangle_indices;
+
+        og.data.object_bounds.clear();
+        for(auto& c : og.topology.draw_commands) {
+            auto bounds = agl::common::interval(positions[tis[c.firstIndex / 3][0]]);
+            for(GLuint i = c.firstIndex; i < c.firstIndex + c.count / 3; ++i) {
+                extend(bounds, positions[tis[i / 3][0]]);
+                extend(bounds, positions[tis[i / 3][1]]);
+                extend(bounds, positions[tis[i / 3][2]]);
+            }
+            og.data.object_bounds.push_back(agl::common::interval(
+                agl::vec4(lower_bound(bounds), 1.f),
+                agl::vec4(upper_bound(bounds), 1.f)));
+        }
     }
 }

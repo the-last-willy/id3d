@@ -7,62 +7,67 @@
 
 void Application::render() {
 
-    auto m2c = agl::engine::world_to_clip(camera);
+    auto w2c = agl::engine::world_to_clip(camera);
+    auto m2c = w2c;
     auto m2w = agl::mat4(agl::identity);
 
     auto eye_world_position = camera.view.position;
 
-    bind(hdr_framebuffer);
-    // gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
-    gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0, 1.f);
-    auto clear_color = std::array{0.f, 0.f, 0.f};
-    glClearNamedFramebufferfv(hdr_framebuffer.fbo, GL_COLOR, 0, data(clear_color));
+    auto wire_quad_colors = std::vector<agl::Vec4>();
+    auto wire_quad_transforms = std::vector<agl::Mat4>();
 
-    glUseProgram(forward_renderer.program);
+    {
+        bind(hdr_framebuffer);
+        // gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
+        gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0, 1.f);
+        auto clear_color = std::array{0.f, 0.f, 0.f};
+        glClearNamedFramebufferfv(hdr_framebuffer.fbo, GL_COLOR, 0, data(clear_color));
 
-    upload(forward_renderer, light_culling);
-    upload(forward_renderer, scene.light_group);
-    upload(forward_renderer, scene.material_group);
-    upload(forward_renderer, scene.objects.data);
-    upload(forward_renderer, scene.objects.topology);
+        glUseProgram(forward_renderer.program);
 
-    glViewport(0, 0, 1280, 720);
+        upload(forward_renderer, light_culling);
+        upload(forward_renderer, scene.light_group);
+        upload(forward_renderer, scene.material_group);
+        upload(forward_renderer, scene.objects.data);
+        upload(forward_renderer, scene.objects.topology);
 
-    glProgramUniform3fv(forward_renderer.program,
-        forward_renderer.eye_position_location_location,
-        1, data(eye_world_position));
-    glProgramUniformMatrix4fv(forward_renderer.program,
-        forward_renderer.model_to_clip_location,
-        1, GL_FALSE, data(m2c));
-    glProgramUniformMatrix4fv(forward_renderer.program,
-        forward_renderer.model_to_world_location,
-        1, GL_FALSE, data(m2w));
-    glProgramUniformMatrix4fv(forward_renderer.program,
-        forward_renderer.model_to_world_normal_location,
-        1, GL_FALSE, data(m2w));
+        glViewport(0, 0, 1280, 720);
 
-    glBindVertexArray(forward_rendering_vao);
+        glProgramUniform3fv(forward_renderer.program,
+            forward_renderer.eye_position_location_location,
+            1, data(eye_world_position));
+        glProgramUniformMatrix4fv(forward_renderer.program,
+            forward_renderer.model_to_clip_location,
+            1, GL_FALSE, data(m2c));
+        glProgramUniformMatrix4fv(forward_renderer.program,
+            forward_renderer.model_to_world_location,
+            1, GL_FALSE, data(m2w));
+        glProgramUniformMatrix4fv(forward_renderer.program,
+            forward_renderer.model_to_world_normal_location,
+            1, GL_FALSE, data(m2w));
 
-    glVertexArrayElementBuffer(forward_rendering_vao, 
-        scene.objects.topology.element_buffer);
+        glBindVertexArray(forward_rendering_vao);
 
-    // glCullFace(GL_BACK);
-    // glEnable(GL_CULL_FACE);
+        glVertexArrayElementBuffer(forward_rendering_vao, 
+            scene.objects.topology.element_buffer);
 
-    glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST);
+        // glCullFace(GL_BACK);
+        // glEnable(GL_CULL_FACE);
 
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, scene.objects.topology.draw_command_buffer);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_DEPTH_TEST);
 
-    glMultiDrawElementsIndirect(
-        GL_TRIANGLES, GL_UNSIGNED_INT,
-        0, scene.objects.topology.draw_count, 0);
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, scene.objects.topology.draw_command_buffer);
 
-    // glDisable(GL_CULL_FACE);
+        glMultiDrawElementsIndirect(
+            GL_TRIANGLES, GL_UNSIGNED_INT,
+            0, scene.objects.topology.draw_count, 0);
 
-    glDisable(GL_DEPTH_TEST);
+        // glDisable(GL_CULL_FACE);
 
-    { // Occlusion culling.
+        glDisable(GL_DEPTH_TEST);
+    }
+    if constexpr(true) { // Occlusion culling.
         bind_for_drawing(occlusion_culler);
 
         gl::ClearNamedFramebuffer(occlusion_culler.depth_fbo,
@@ -103,18 +108,18 @@ void Application::render() {
                 agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
                 agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
             };
-            auto c = m2c * corners[0];
+            auto clip_box = agl::common::interval(agl::vec4(-1.f), agl::vec4(0.999f));
+            auto c = w2c * corners[0];
             c /= c[3];
-            auto clip_bounds = agl::common::interval(corners[0]);
-            auto clip_box = agl::common::interval(agl::vec3(-1.f), agl::vec3(0.999f));
+            auto clip_bounds = agl::common::interval(clamp(clip_box, c));
             for(auto corner : corners) {
-                c = m2c * corner;
+                c = w2c * corner;
                 c /= c[3];
                 extend(clip_bounds, clamp(clip_box, c));
             }
 
             auto l = length(clip_bounds);
-            auto level = GLuint(std::ceil(std::log2(std::max(l[0], l[1]))));
+            auto level = GLuint(std::ceil(std::log2(std::max(std::max(l[0], l[1]), 1.f))));
 
             auto depth_image = occlusion_culler.depth_images.at(level);
 
@@ -122,9 +127,16 @@ void Application::render() {
             auto h = occlusion_culler.depth_image_heights[level];
 
             auto x0 = GLint((lower_bound(clip_bounds)[0] * .5 + .5) * w);
-            auto y0 = GLint((lower_bound(clip_bounds)[1] * .5 + .5) * h);
             auto x1 = GLint((upper_bound(clip_bounds)[0] * .5 + .5) * w);
+            auto y0 = GLint((lower_bound(clip_bounds)[1] * .5 + .5) * h);
             auto y1 = GLint((upper_bound(clip_bounds)[1] * .5 + .5) * h);
+
+            wire_quad_transforms.emplace_back(wire_quad_model_to_clip(
+                GLfloat(lower_bound(clip_bounds)[0]),
+                GLfloat(upper_bound(clip_bounds)[0]),
+                GLfloat(lower_bound(clip_bounds)[1]),
+                GLfloat(upper_bound(clip_bounds)[1]),
+                0.f));
 
             auto d00 = depth_image[x0 + y0 * w];
             auto d01 = depth_image[x0 + y1 * w];
@@ -133,11 +145,11 @@ void Application::render() {
 
             auto max = std::max(std::max(d00, d01), std::max(d10, d11));
 
-            if(lower_bound(bounds)[2] <= max) {
-                std::cout << "  " << i << " accepted" << std::endl;
+            if(max >= lower_bound(clip_bounds)[2]) {
                 filtered_commands.emplace_back(cmd);
+                wire_quad_colors.push_back(agl::vec4(0.f, 1.f, 0.f, 1.f));
             } else {
-                std::cout << "  " << i << " rejected" << std::endl;
+                wire_quad_colors.push_back(agl::vec4(1.f, 0.f, 0.f, 1.f));
             }
         }
 
@@ -151,6 +163,38 @@ void Application::render() {
         glViewport(0, 0, 1280, 720);
 
         draw(tone_mapper);
+    }
+    { // Gizmos.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glUseProgram(wireframe_renderer.program);
+
+        // glBindVertexArray(wire_box_vao);
+        // glVertexArrayElementBuffer(wire_box_vao,
+        //     wire_box.topology.element_buffer);
+
+        // for(auto& bounds : scene.objects.data.object_bounds) {
+        //     auto model_to_clip = w2c * wire_box_model_to_clip(bounds);
+        //     glProgramUniformMatrix4fv(wireframe_renderer.program,
+        //         wireframe_renderer.model_to_clip_uniform_location,
+        //         1, GL_FALSE, data(model_to_clip));
+        //     draw(wire_box.topology);
+        // }
+
+        glBindVertexArray(wire_quad_vao);
+        glVertexArrayElementBuffer(wire_quad_vao,
+            wire_quad.topology.element_buffer);
+
+        for(unsigned i = 0; i < size(wire_quad_transforms); ++i) {
+            auto model_to_clip = wire_quad_transforms[i];
+            glProgramUniformMatrix4fv(wireframe_renderer.program,
+                wireframe_renderer.model_to_clip_uniform_location,
+                1, GL_FALSE, data(model_to_clip));
+            glProgramUniform4fv(wireframe_renderer.program,
+                wireframe_renderer.rgba_color_uniform_location,
+                1, data(wire_quad_colors[i]));
+            draw(wire_quad.topology);
+        }
     }
 
     // auto ctw = agl::engine::clip_to_world(camera);
