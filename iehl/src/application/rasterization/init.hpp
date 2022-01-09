@@ -18,7 +18,7 @@ void Application::init() {
         scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
         // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         
-        grid_subdivision(scene.objects, {10, 10, 10});
+        grid_subdivision(scene.objects, {1, 1, 1});
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
@@ -32,6 +32,8 @@ void Application::init() {
         forward_renderer = ::forward_renderer(shader_compiler);
         forward_rendering_vao = vertex_array(
             forward_renderer, scene.objects.vertex_attributes);
+        glVertexArrayElementBuffer(forward_rendering_vao,
+                scene.objects.topology.element_buffer);
     }
     { // Occlusion culling.
         occlusion_culler = ::occlusion_culler(shader_compiler);

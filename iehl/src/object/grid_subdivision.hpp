@@ -201,21 +201,19 @@ void grid_subdivision(
             first += count;
         }
 
-        og.topology.draw_count = GLsizei(size(commands));
+        og.topology.commands.commands = std::move(commands);
+        og.topology.commands.commands_buffer = gl::Buffer();
+        gl::NamedBufferStorage(og.topology.commands.commands_buffer,
+            std::span(og.topology.commands.commands));
 
-        og.topology.draw_commands = std::move(commands);
-        og.topology.draw_command_buffer = gl::Buffer();
-        gl::NamedBufferStorage(og.topology.draw_command_buffer,
-            std::span(og.topology.draw_commands));
-
-        std::cout << "  command count = " << og.topology.draw_count << std::endl;
+        std::cout << "  command count = " << size(og.topology.commands) << std::endl;
     }
     { // Compute bounds.
         auto& positions = og.vertex_attributes.positions;
         auto& tis = og.topology.triangle_indices;
 
         og.data.object_bounds.clear();
-        for(auto& c : og.topology.draw_commands) {
+        for(auto& c : og.topology.commands.commands) {
             auto bounds = agl::common::interval(positions[tis[c.firstIndex / 3][0]]);
             for(GLuint i = c.firstIndex; i < c.firstIndex + c.count / 3; ++i) {
                 extend(bounds, positions[tis[i / 3][0]]);

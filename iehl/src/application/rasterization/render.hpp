@@ -16,7 +16,139 @@ void Application::render() {
     auto wire_quad_colors = std::vector<agl::Vec4>();
     auto wire_quad_transforms = std::vector<agl::Mat4>();
 
-    {
+    auto commands = CommandGroup();
+    { // Setup.
+        // Initialize the draw commands with all the draw commands of the scene.
+        // Culling passes will filter these.
+        commands.commands = scene.objects.topology.commands.commands;
+        gl::NamedBufferStorage(commands.commands_buffer,
+            commands.commands);
+        gl::NamedBufferStorage(commands.count_buffer,
+            { GLsizei(size(commands.commands)) });
+    }
+    { // Frustum culling.
+        // Soon TM.
+    }
+    if constexpr(true) { // Occlusion culling.
+        { // Drawing.
+            bind_for_drawing(occlusion_culler);
+
+            gl::ClearNamedFramebuffer(occlusion_culler.depth_fbo,
+                GL_DEPTH, 0, 1.f);
+
+            glViewport(0, 0, 512, 256);
+
+            glBindVertexArray(forward_rendering_vao);
+
+            glProgramUniformMatrix4fv(occlusion_culler.draw_program,
+                occlusion_culler.draw_model_to_clip_uniform_location,
+                1, GL_FALSE, data(m2c));
+
+            glDepthFunc(GL_LESS);
+            glEnable(GL_DEPTH_TEST);
+
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+                commands.commands_buffer);
+
+            glMultiDrawElementsIndirect(
+                GL_TRIANGLES, GL_UNSIGNED_INT,
+                0, GLsizei(size(scene.objects.topology.commands)), 0);
+
+            glDisable(GL_DEPTH_TEST);
+        }
+        { // Mipmapping.
+            generate_mipmap(occlusion_culler);
+        }
+        { // Culling.
+            auto input_commands = CommandGroup();
+            input_commands.commands = commands.commands;
+            copy_cpu_to_gpu(input_commands);
+
+            auto output_commands = CommandGroup();
+            // Dirty way to allocate storage for output commands.
+            output_commands.commands = commands.commands;
+            copy_cpu_to_gpu(output_commands);
+
+            bind_for_culling(occlusion_culler);
+
+            bind_for_culling(occlusion_culler,
+                input_commands, output_commands);
+            bind_for_culling(occlusion_culler,
+                scene.objects.data);
+
+            glDispatchCompute(GLuint((size(input_commands) + 255) / 256), 1, 1);
+
+            copy_gpu_to_cpu(output_commands);
+
+            std::cout << "OC " << size(output_commands) << " " << size(input_commands) << std::endl;
+        }
+        if constexpr(false) {
+            auto commands = scene.objects.topology.commands;
+            auto filtered_commands = std::vector<gl::DrawElementsIndirectCommand>();
+
+            auto& object_bounds = scene.objects.data.object_bounds;
+            for(std::size_t i = 0; i < size(commands); ++i) {
+                auto& cmd = commands.commands[i];
+                auto bounds = object_bounds[cmd.baseInstance];
+                auto corners = std::array{
+                    agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                    agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                    agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                    agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                    agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                    agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                    agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
+                    agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
+                };
+                auto clip_box = agl::common::interval(agl::vec4(-1.f), agl::vec4(0.999f));
+                auto c = w2c * corners[0];
+                c /= c[3];
+                auto clip_bounds = agl::common::interval(clamp(clip_box, c));
+                for(auto corner : corners) {
+                    c = w2c * corner;
+                    c /= c[3];
+                    extend(clip_bounds, clamp(clip_box, c));
+                }
+
+                auto l = length(clip_bounds);
+                auto level = GLuint(std::ceil(std::log2(std::max(std::max(l[0], l[1]), 1.f))));
+
+                auto depth_image = occlusion_culler.depth_images.at(level);
+
+                auto w = occlusion_culler.depth_image_widths[level];
+                auto h = occlusion_culler.depth_image_heights[level];
+
+                auto x0 = GLint((lower_bound(clip_bounds)[0] * .5 + .5) * w);
+                auto x1 = GLint((upper_bound(clip_bounds)[0] * .5 + .5) * w);
+                auto y0 = GLint((lower_bound(clip_bounds)[1] * .5 + .5) * h);
+                auto y1 = GLint((upper_bound(clip_bounds)[1] * .5 + .5) * h);
+
+                wire_quad_transforms.emplace_back(wire_quad_model_to_clip(
+                    GLfloat(lower_bound(clip_bounds)[0]),
+                    GLfloat(upper_bound(clip_bounds)[0]),
+                    GLfloat(lower_bound(clip_bounds)[1]),
+                    GLfloat(upper_bound(clip_bounds)[1]),
+                    0.f));
+
+                auto d00 = depth_image[x0 + y0 * w];
+                auto d01 = depth_image[x0 + y1 * w];
+                auto d10 = depth_image[x1 + y0 * w];
+                auto d11 = depth_image[x1 + y1 * w];
+
+                auto max = std::max(std::max(d00, d01), std::max(d10, d11));
+
+                if(max >= lower_bound(clip_bounds)[2]) {
+                    filtered_commands.emplace_back(cmd);
+                    wire_quad_colors.push_back(agl::vec4(0.f, 1.f, 0.f, 1.f));
+                } else {
+                    wire_quad_colors.push_back(agl::vec4(1.f, 0.f, 0.f, 1.f));
+                }
+            }
+
+            std::cout << "OC " << size(commands) << " " << size(filtered_commands) << std::endl;
+        }
+    }
+    { // Drawing.
         bind(hdr_framebuffer);
         // gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
         gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0, 1.f);
@@ -25,11 +157,11 @@ void Application::render() {
 
         glUseProgram(forward_renderer.program);
 
+        bind(forward_renderer, commands);
         upload(forward_renderer, light_culling);
         upload(forward_renderer, scene.light_group);
         upload(forward_renderer, scene.material_group);
         upload(forward_renderer, scene.objects.data);
-        upload(forward_renderer, scene.objects.topology);
 
         glViewport(0, 0, 1280, 720);
 
@@ -48,113 +180,22 @@ void Application::render() {
 
         glBindVertexArray(forward_rendering_vao);
 
-        glVertexArrayElementBuffer(forward_rendering_vao, 
-            scene.objects.topology.element_buffer);
-
         // glCullFace(GL_BACK);
         // glEnable(GL_CULL_FACE);
 
         glDepthFunc(GL_LESS);
         glEnable(GL_DEPTH_TEST);
 
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, scene.objects.topology.draw_command_buffer);
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+            commands.commands_buffer);
 
         glMultiDrawElementsIndirect(
             GL_TRIANGLES, GL_UNSIGNED_INT,
-            0, scene.objects.topology.draw_count, 0);
+            0, GLsizei(size(commands)), 0);
 
         // glDisable(GL_CULL_FACE);
 
         glDisable(GL_DEPTH_TEST);
-    }
-    if constexpr(true) { // Occlusion culling.
-        bind_for_drawing(occlusion_culler);
-
-        gl::ClearNamedFramebuffer(occlusion_culler.depth_fbo,
-            GL_DEPTH, 0, 1.f);
-
-        glViewport(0, 0, 512, 256);
-
-        glProgramUniformMatrix4fv(occlusion_culler.draw_program,
-            occlusion_culler.draw_model_to_clip_uniform_location,
-            1, GL_FALSE, data(m2c));
-
-        glDepthFunc(GL_LESS);
-        glEnable(GL_DEPTH_TEST);
-
-        glMultiDrawElementsIndirect(
-            GL_TRIANGLES, GL_UNSIGNED_INT,
-            0, scene.objects.topology.draw_count, 0);
-
-        glDisable(GL_DEPTH_TEST);
-
-        generate_mipmap(occlusion_culler);
-
-        occlusion_culler.draw_count = scene.objects.topology.draw_count;
-        occlusion_culler.draw_indirect_commands = scene.objects.topology.draw_commands;
-        auto filtered_commands = std::vector<gl::DrawElementsIndirectCommand>();
-
-        auto& object_bounds = scene.objects.data.object_bounds;
-        for(GLsizei i = 0; i < occlusion_culler.draw_count; ++i) {
-            auto& cmd = occlusion_culler.draw_indirect_commands[i];
-            auto bounds = object_bounds[cmd.baseInstance];
-            auto corners = std::array{
-                agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-            };
-            auto clip_box = agl::common::interval(agl::vec4(-1.f), agl::vec4(0.999f));
-            auto c = w2c * corners[0];
-            c /= c[3];
-            auto clip_bounds = agl::common::interval(clamp(clip_box, c));
-            for(auto corner : corners) {
-                c = w2c * corner;
-                c /= c[3];
-                extend(clip_bounds, clamp(clip_box, c));
-            }
-
-            auto l = length(clip_bounds);
-            auto level = GLuint(std::ceil(std::log2(std::max(std::max(l[0], l[1]), 1.f))));
-
-            auto depth_image = occlusion_culler.depth_images.at(level);
-
-            auto w = occlusion_culler.depth_image_widths[level];
-            auto h = occlusion_culler.depth_image_heights[level];
-
-            auto x0 = GLint((lower_bound(clip_bounds)[0] * .5 + .5) * w);
-            auto x1 = GLint((upper_bound(clip_bounds)[0] * .5 + .5) * w);
-            auto y0 = GLint((lower_bound(clip_bounds)[1] * .5 + .5) * h);
-            auto y1 = GLint((upper_bound(clip_bounds)[1] * .5 + .5) * h);
-
-            wire_quad_transforms.emplace_back(wire_quad_model_to_clip(
-                GLfloat(lower_bound(clip_bounds)[0]),
-                GLfloat(upper_bound(clip_bounds)[0]),
-                GLfloat(lower_bound(clip_bounds)[1]),
-                GLfloat(upper_bound(clip_bounds)[1]),
-                0.f));
-
-            auto d00 = depth_image[x0 + y0 * w];
-            auto d01 = depth_image[x0 + y1 * w];
-            auto d10 = depth_image[x1 + y0 * w];
-            auto d11 = depth_image[x1 + y1 * w];
-
-            auto max = std::max(std::max(d00, d01), std::max(d10, d11));
-
-            if(max >= lower_bound(clip_bounds)[2]) {
-                filtered_commands.emplace_back(cmd);
-                wire_quad_colors.push_back(agl::vec4(0.f, 1.f, 0.f, 1.f));
-            } else {
-                wire_quad_colors.push_back(agl::vec4(1.f, 0.f, 0.f, 1.f));
-            }
-        }
-
-        std::cout << "OC " << size(occlusion_culler.draw_indirect_commands) << " " << size(filtered_commands) << std::endl;
-        occlusion_culler.draw_indirect_commands = std::move(filtered_commands);
     }
     { // Tone mapping.
         bind(tone_mapper);

@@ -73,12 +73,3 @@ void upload(const ForwardRenderer& fr, const ObjectGroupData& ogd) {
         fr.material_triangle_material_id_buffer_binding,
         ogd.triangle_material_id_ssbo);
 }
-
-inline
-void upload(const ForwardRenderer& fr, const ObjectGroupTopology& ogt) {
-    // SSBOs.
-
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,
-        fr.object_draw_indirect_buffer_binding,
-        ogt.draw_command_buffer);
-}

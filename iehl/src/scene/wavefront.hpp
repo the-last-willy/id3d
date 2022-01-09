@@ -275,16 +275,14 @@ Scene wavefront_scene(std::filesystem::path file_path) {
         gl::NamedBufferStorage(scene.objects.topology.element_buffer,
             std::span(scene.objects.topology.triangle_indices));
 
-        scene.objects.topology.draw_commands.push_back(gl::DrawElementsIndirectCommand{
+        scene.objects.topology.commands.commands.push_back(gl::DrawElementsIndirectCommand{
             .count = 3 * GLuint(size(scene.objects.topology.triangle_indices)),
             .instanceCount = 1,
             .firstIndex = 0,
             .baseVertex = 0,
             .baseInstance = 0});
-        gl::NamedBufferStorage(scene.objects.topology.draw_command_buffer,
-            std::span(scene.objects.topology.draw_commands));
-
-        scene.objects.topology.draw_count = 1;
+        gl::NamedBufferStorage(scene.objects.topology.commands.commands_buffer,
+            std::span(scene.objects.topology.commands.commands));
     }
     { // Object group data.
         gl::NamedBufferStorage(

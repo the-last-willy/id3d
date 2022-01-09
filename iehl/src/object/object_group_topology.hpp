@@ -1,5 +1,6 @@
 #pragma once
 
+#include "command/all.hpp"
 #include "opengl.hpp"
 
 #include <array>
@@ -14,18 +15,5 @@ struct ObjectGroupTopology {
     std::vector<std::array<GLuint, 3>> triangle_indices;
     gl::Buffer element_buffer;
 
-    // Should be encapsulated ?
-    // It can be either on CPU or GPU side.
-    // Tricky, think more about it.
-
-    // Count and commands could be in the same buffer ?
-    // For MultiDrawElementCount ?
-
-    // Use persistent mapping ?
-
-    std::vector<gl::DrawElementsIndirectCommand> draw_commands;
-    gl::Buffer draw_command_buffer;
-
-    GLsizei draw_count = 0;
-    // gl::Buffer draw_count_buffer;
+    CommandGroup commands;
 };

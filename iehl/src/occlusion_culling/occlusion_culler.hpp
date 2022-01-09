@@ -15,22 +15,29 @@ struct OcclusionCuller {
     std::vector<std::vector<GLfloat>> depth_images;
     gl::Texture depth_texture = GL_TEXTURE_2D;
 
+    gl::Program cull_program;
     // VAOs have to be compatible with the forward rendering program.
     gl::Program draw_program;
     gl::Program mipmap_program;
-    gl::Program test_program;
 
-    // Draw indirect commands.
+    // Shader storage buffer bindings.
 
-    std::vector<gl::DrawElementsIndirectCommand> draw_indirect_commands;
-    gl::Buffer draw_indirect_buffer;
+    GLuint cull_input_draw_commands_buffer_binding = 0;
+    GLuint cull_output_draw_command_count_buffer_binding = 1;
+    GLuint cull_output_draw_commands_buffer_binding = 2;
+    GLuint cull_world_object_bounds_buffer_binding = 3;
 
-    GLsizei draw_count = 0;
-    gl::Buffer draw_count_buffer;
+    // Texture units.
+
+    GLuint cull_hzb_texture_unit = 0;
 
     // Uniform locations.
 
+    GLint cull_world_to_clip_uniform_location = -1;
+    GLint cull_hzb_uniform_location = -1;
+
     GLint draw_model_to_clip_uniform_location = -1;
+
     GLint mipmap_input_image_uniform_location = -1;
     GLint mipmap_output_image_uniform_location = -1;
 };
@@ -41,6 +48,11 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
 
     // Programs.
 
+    load(agl::Program(oc.cull_program), sc, {
+        {
+            agl::compute_shader_tag,
+            "iehl/src/occlusion_culling/cull.comp"
+        }});
     load(agl::Program(oc.draw_program), sc, {
         {
             agl::vertex_shader_tag,
@@ -74,7 +86,29 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
     glNamedFramebufferTexture(oc.depth_fbo,
         GL_DEPTH_ATTACHMENT, oc.depth_texture, 0);
 
+    // Shader storage buffer bindigs.
+
+    gl::ShaderStorageBlockBinding(oc.cull_program,
+        "input_draw_commands_buffer",
+        oc.cull_input_draw_commands_buffer_binding);
+    gl::ShaderStorageBlockBinding(oc.cull_program,
+        "output_draw_command_count_buffer",
+        oc.cull_output_draw_command_count_buffer_binding);
+    gl::ShaderStorageBlockBinding(oc.cull_program,
+        "output_draw_commands_buffer",
+        oc.cull_output_draw_commands_buffer_binding);
+    gl::ShaderStorageBlockBinding(oc.cull_program,
+        "world_object_bounds_buffer",
+        oc.cull_world_object_bounds_buffer_binding);
+
     // Uniform locations.
+
+    oc.cull_hzb_uniform_location
+    = glGetUniformLocation(oc.cull_program,
+        "hzb");
+    oc.cull_world_to_clip_uniform_location
+    = glGetUniformLocation(oc.cull_program,
+        "world_to_clip");
 
     oc.draw_model_to_clip_uniform_location
     = glGetUniformLocation(oc.draw_program,
