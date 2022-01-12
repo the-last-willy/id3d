@@ -105,11 +105,14 @@ vec3 light_culling_lighting(in vec3 position) {
         int cell_i = cell[0] * r[1] * r[2] + cell[1] * r[2] + cell[2];
         LightCullingSpan span = light_culling_spans[cell_i];
 
-        vec3 sum = vec3(0.f);
-        for(uint i = span.first; i < span.first + min(span.count, 500); ++i) {
-            sum += lighting(light_properties[light_culling_indices[i]], position);
-        }
-        return sum;
+        float val = span.count / 2000.;
+        return vec3(val, 0., 1. - val);
+
+        // vec3 sum = vec3(0.f);
+        // for(uint i = span.first; i < span.first + min(span.count, 500); ++i) {
+        //     sum += lighting(light_properties[light_culling_indices[i]], position);
+        // }
+        // return sum;
     }
 }
 
@@ -180,10 +183,9 @@ void main() {
     vec3 normal_dir = normalize(v_world_normal);
     vec3 view_dir = normalize(eye_world_position - v_world_position);
 
-    float lambertian = max(dot(view_dir, normal_dir), 0.);
-    // vec3 lighting = light_culling_lighting(v_world_position);
+    float lambertian = max(dot(view_dir, normal_dir), 0.) * .5 + .5;
+    vec3 lighting = light_culling_lighting(v_world_position);
     // vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
-    vec3 lighting = vec3(lambertian * .5 + .5);
 
     f_rgba_color = vec4(lighting, 1.);
 }

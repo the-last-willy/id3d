@@ -14,9 +14,4 @@ struct Scene {
     LightGroup light_group;
     MaterialGroup material_group;
     ObjectGroup objects;
-
-    // Cached.
-
-    // Should go inside geometry.
-    agl::common::Interval<agl::Vec3> bounds;
 };

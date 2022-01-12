@@ -104,7 +104,7 @@ buffer input_draw_commands_buffer {
 
 layout(std430) coherent
 buffer output_draw_command_count_buffer {
-    uint draw_command_count;
+    uint output_draw_command_count;
 };
 
 layout(std430) writeonly
@@ -146,6 +146,7 @@ void main() {
 
     if(local_id == 0) {
         local_accepted_count = 0;
+        output_draw_command_count = 0;
     }
 
     barrier();
@@ -160,7 +161,7 @@ void main() {
         // Might not be necessary.
         clamp(clip_bounds, vec3(-1.), vec3(1.));
         vec2 lengths = clip_bounds.b[1].xy - clip_bounds.b[0].xy;
-        float lod = max(ceil(log2(max(lengths.x, lengths.y))), 0.);
+        float lod = ceil(log2(max(max(lengths.x, lengths.y), 1.)));
 
         float clip_min_z = clip_bounds.b[0].z;
         float hzb_max_z = max(
@@ -186,7 +187,7 @@ void main() {
 
     // 'readFirstInvocationARB' would be better here.
     if(global_id == 0) {
-        local_offset = atomicAdd(draw_command_count, local_accepted_count);
+        local_offset = atomicAdd(output_draw_command_count, local_accepted_count);
     }
 
     barrier;

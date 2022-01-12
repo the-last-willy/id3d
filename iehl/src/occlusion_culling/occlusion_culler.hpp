@@ -67,15 +67,6 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
             "iehl/src/occlusion_culling/mipmap.comp"
         }});
 
-    // load(agl::Program(oc.test_program), sc, {
-    //     {
-    //         agl::vertex_shader_tag,
-    //         "iehl/src/occlusion_culling/test.vert"
-    //     }, {
-    //         agl::fragment_shader_tag,
-    //         "iehl/src/occlusion_culling/test.frag"
-    //     }});
-
     // Textures.
     
     glTextureStorage2D(oc.depth_texture,

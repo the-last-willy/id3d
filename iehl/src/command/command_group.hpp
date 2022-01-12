@@ -17,6 +17,17 @@ struct CommandGroup {
     gl::Buffer count_buffer;
     gl::Buffer commands_buffer;
 
+    CommandGroup() {
+        gl::NamedBufferStorage(count_buffer,
+            sizeof(GLuint), GL_DYNAMIC_STORAGE_BIT);
+    }
+
+    CommandGroup(GLsizei capacity)
+        : CommandGroup()
+    {
+        commands.reserve(capacity);
+    }
+
     const gl::DrawElementsIndirectCommand&
     operator[](std::size_t i) const {
         return commands[i];
@@ -29,6 +40,6 @@ struct CommandGroup {
 };
 
 inline
-std::size_t size(const CommandGroup& cg) {
-    return size(cg.commands);
+GLsizei size(const CommandGroup& cg) {
+    return GLsizei(size(cg.commands));
 }

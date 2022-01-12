@@ -30,9 +30,14 @@ void Application::update(float) {
             camera.view.position = camera.view.position - direction / 3.f;
         }
     }
-    { // Frustum.
-        if(not settings.rasterization.frustum_culling.is_anchored) {
+    { // Frustum culling.
+        if(not settings.frustum_culling.is_anchored) {
             frustum_culling_camera = camera;
+        }
+    }
+    { // Occlusion culling.
+        if(not settings.occlusion_culling.is_anchored) {
+            occlusion_culling_camera = camera;
         }
     }
 }

@@ -1,12 +1,12 @@
 #pragma once
 
-// #include "frustum_culling/all.hpp"
 #include "render_ui.hpp"
+#include "transformed.hpp"
 
 #include <agl/engine/all.hpp>
 
 void Application::render() {
-
+    auto v2c = agl::engine::eye_to_clip(camera);
     auto w2c = agl::engine::world_to_clip(camera);
     auto m2c = w2c;
     auto m2w = agl::mat4(agl::identity);
@@ -16,20 +16,84 @@ void Application::render() {
     auto wire_quad_colors = std::vector<agl::Vec4>();
     auto wire_quad_transforms = std::vector<agl::Mat4>();
 
-    auto commands = CommandGroup();
+    auto gizmo_solid_commands = CommandGroup();
+
+    auto accepted_commands = CommandGroup(size(scene.objects.topology.commands));
+    auto frustum_culling_rejected_commands = CommandGroup();
+    auto occlusion_culling_rejected_commands = CommandGroup();
+
     { // Setup.
         // Initialize the draw commands with all the draw commands of the scene.
         // Culling passes will filter these.
-        commands.commands = scene.objects.topology.commands.commands;
-        gl::NamedBufferStorage(commands.commands_buffer,
-            commands.commands);
-        gl::NamedBufferStorage(commands.count_buffer,
-            { GLsizei(size(commands.commands)) });
+        accepted_commands.commands = scene.objects.topology.commands.commands;
+        copy_cpu_to_gpu(accepted_commands);
     }
-    { // Frustum culling.
-        // Soon TM.
+    if constexpr(true) { // Frustum culling.
+        auto output_commands = CommandGroup(size(accepted_commands));
+        copy_cpu_to_gpu(output_commands);
+
+        bind(frustum_culler);
+        bind(frustum_culler,
+            accepted_commands, output_commands);
+        bind(frustum_culler,
+            scene.objects.data);
+
+        auto frustum_culling_clip_to_world
+        = agl::engine::clip_to_world(frustum_culling_camera);
+        auto frustum_culling_world_to_clip
+        = agl::engine::world_to_clip(frustum_culling_camera);
+
+        auto frustum_clip_bounds = agl::common::interval(
+            agl::vec4(agl::vec3(-1.f, -1.f, -1.f), 1.f),
+            agl::vec4(agl::vec3(+1.f), 1.f));
+        auto frustum_world_bounds = transformed(
+            frustum_culling_clip_to_world,
+            frustum_clip_bounds);
+        
+        glProgramUniform4fv(frustum_culler.program,
+            frustum_culler.frustum_clip_bounds_0_uniform_location,
+            1, data(lower_bound(frustum_clip_bounds)));
+        glProgramUniform4fv(frustum_culler.program,
+            frustum_culler.frustum_clip_bounds_1_uniform_location,
+            1, data(upper_bound(frustum_clip_bounds)));
+        glProgramUniform4fv(frustum_culler.program,
+            frustum_culler.frustum_world_bounds_0_uniform_location,
+            1, data(lower_bound(frustum_world_bounds)));
+        glProgramUniform4fv(frustum_culler.program,
+            frustum_culler.frustum_world_bounds_1_uniform_location,
+            1, data(upper_bound(frustum_world_bounds)));
+        glProgramUniformMatrix4fv(frustum_culler.program,
+            frustum_culler.world_to_clip_uniform_location,
+            1, GL_FALSE, data(frustum_culling_world_to_clip));
+
+        glDispatchCompute((size(accepted_commands) + 255) / 256, 1, 1);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+        copy_gpu_to_cpu(output_commands);
+
+        std::sort(begin(accepted_commands.commands), end(accepted_commands.commands));
+        std::sort(begin(output_commands.commands), end(output_commands.commands));
+
+        for(auto& c : output_commands.commands) {
+            std::cout << c.baseInstance << " ";
+        }
+        std::cout << std::endl;
+
+        std::set_difference(
+            begin(accepted_commands.commands), end(accepted_commands.commands),
+            begin(output_commands.commands), end(output_commands.commands),
+            std::back_inserter(frustum_culling_rejected_commands.commands));
+
+        copy_cpu_to_gpu(frustum_culling_rejected_commands);
+
+        statistics.frustum_culling.accepted_count
+        = size(output_commands);
+        statistics.frustum_culling.rejected_count
+        = size(frustum_culling_rejected_commands);
+
+        // accepted_commands = std::move(output_commands);
     }
-    if constexpr(true) { // Occlusion culling.
+    if constexpr(false) { // Occlusion culling.
         { // Drawing.
             bind_for_drawing(occlusion_culler);
 
@@ -48,11 +112,11 @@ void Application::render() {
             glEnable(GL_DEPTH_TEST);
 
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
-                commands.commands_buffer);
+                accepted_commands.commands_buffer);
 
             glMultiDrawElementsIndirect(
                 GL_TRIANGLES, GL_UNSIGNED_INT,
-                0, GLsizei(size(scene.objects.topology.commands)), 0);
+                0, GLsizei(size(accepted_commands.commands)), 0);
 
             glDisable(GL_DEPTH_TEST);
         }
@@ -61,12 +125,12 @@ void Application::render() {
         }
         { // Culling.
             auto input_commands = CommandGroup();
-            input_commands.commands = commands.commands;
+            input_commands.commands = accepted_commands.commands;
             copy_cpu_to_gpu(input_commands);
 
             auto output_commands = CommandGroup();
             // Dirty way to allocate storage for output commands.
-            output_commands.commands = commands.commands;
+            output_commands.commands = accepted_commands.commands;
             copy_cpu_to_gpu(output_commands);
 
             bind_for_culling(occlusion_culler);
@@ -76,94 +140,48 @@ void Application::render() {
             bind_for_culling(occlusion_culler,
                 scene.objects.data);
 
+            glProgramUniformMatrix4fv(occlusion_culler.cull_program,
+                occlusion_culler.cull_world_to_clip_uniform_location,
+                1, GL_FALSE, data(w2c));
+
             glDispatchCompute(GLuint((size(input_commands) + 255) / 256), 1, 1);
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
             copy_gpu_to_cpu(output_commands);
 
-            std::cout << "OC " << size(output_commands) << " " << size(input_commands) << std::endl;
-        }
-        if constexpr(false) {
-            auto commands = scene.objects.topology.commands;
-            auto filtered_commands = std::vector<gl::DrawElementsIndirectCommand>();
+            std::sort(begin(accepted_commands.commands), end(accepted_commands.commands));
+            std::sort(begin(output_commands.commands), end(output_commands.commands));
 
-            auto& object_bounds = scene.objects.data.object_bounds;
-            for(std::size_t i = 0; i < size(commands); ++i) {
-                auto& cmd = commands.commands[i];
-                auto bounds = object_bounds[cmd.baseInstance];
-                auto corners = std::array{
-                    agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                    agl::vec4(lower_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                    agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                    agl::vec4(lower_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                    agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                    agl::vec4(upper_bound(bounds)[0], lower_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                    agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], lower_bound(bounds)[2], 1.f),
-                    agl::vec4(upper_bound(bounds)[0], upper_bound(bounds)[1], upper_bound(bounds)[2], 1.f),
-                };
-                auto clip_box = agl::common::interval(agl::vec4(-1.f), agl::vec4(0.999f));
-                auto c = w2c * corners[0];
-                c /= c[3];
-                auto clip_bounds = agl::common::interval(clamp(clip_box, c));
-                for(auto corner : corners) {
-                    c = w2c * corner;
-                    c /= c[3];
-                    extend(clip_bounds, clamp(clip_box, c));
-                }
+            std::set_difference(
+                begin(accepted_commands.commands), end(accepted_commands.commands),
+                begin(output_commands.commands), end(output_commands.commands),
+                std::back_inserter(gizmo_solid_commands.commands));
 
-                auto l = length(clip_bounds);
-                auto level = GLuint(std::ceil(std::log2(std::max(std::max(l[0], l[1]), 1.f))));
+            copy_cpu_to_gpu(gizmo_solid_commands);
 
-                auto depth_image = occlusion_culler.depth_images.at(level);
-
-                auto w = occlusion_culler.depth_image_widths[level];
-                auto h = occlusion_culler.depth_image_heights[level];
-
-                auto x0 = GLint((lower_bound(clip_bounds)[0] * .5 + .5) * w);
-                auto x1 = GLint((upper_bound(clip_bounds)[0] * .5 + .5) * w);
-                auto y0 = GLint((lower_bound(clip_bounds)[1] * .5 + .5) * h);
-                auto y1 = GLint((upper_bound(clip_bounds)[1] * .5 + .5) * h);
-
-                wire_quad_transforms.emplace_back(wire_quad_model_to_clip(
-                    GLfloat(lower_bound(clip_bounds)[0]),
-                    GLfloat(upper_bound(clip_bounds)[0]),
-                    GLfloat(lower_bound(clip_bounds)[1]),
-                    GLfloat(upper_bound(clip_bounds)[1]),
-                    0.f));
-
-                auto d00 = depth_image[x0 + y0 * w];
-                auto d01 = depth_image[x0 + y1 * w];
-                auto d10 = depth_image[x1 + y0 * w];
-                auto d11 = depth_image[x1 + y1 * w];
-
-                auto max = std::max(std::max(d00, d01), std::max(d10, d11));
-
-                if(max >= lower_bound(clip_bounds)[2]) {
-                    filtered_commands.emplace_back(cmd);
-                    wire_quad_colors.push_back(agl::vec4(0.f, 1.f, 0.f, 1.f));
-                } else {
-                    wire_quad_colors.push_back(agl::vec4(1.f, 0.f, 0.f, 1.f));
-                }
-            }
-
-            std::cout << "OC " << size(commands) << " " << size(filtered_commands) << std::endl;
+            accepted_commands = std::move(output_commands);
         }
     }
-    { // Drawing.
+    { // Setup HDR framebuffer.
         bind(hdr_framebuffer);
-        // gl::ClearNamedFramebuffer(0, GL_DEPTH, 0, 1.f);
-        gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0, 1.f);
-        auto clear_color = std::array{0.f, 0.f, 0.f};
-        glClearNamedFramebufferfv(hdr_framebuffer.fbo, GL_COLOR, 0, data(clear_color));
 
+        gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0,
+            1.f);
+        gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_COLOR, 0,
+            std::array{0.f, 0.f, 0.f, 1.f});
+
+        glViewport(0, 0, 1280, 720);
+    }
+    if constexpr(false) { // Drawing.
         glUseProgram(forward_renderer.program);
 
-        bind(forward_renderer, commands);
+        glBindVertexArray(forward_rendering_vao);
+
+        bind(forward_renderer, accepted_commands);
         upload(forward_renderer, light_culling);
         upload(forward_renderer, scene.light_group);
         upload(forward_renderer, scene.material_group);
         upload(forward_renderer, scene.objects.data);
-
-        glViewport(0, 0, 1280, 720);
 
         glProgramUniform3fv(forward_renderer.program,
             forward_renderer.eye_position_location_location,
@@ -178,7 +196,12 @@ void Application::render() {
             forward_renderer.model_to_world_normal_location,
             1, GL_FALSE, data(m2w));
 
-        glBindVertexArray(forward_rendering_vao);
+        glProgramUniform3fv(forward_renderer.program,
+            forward_renderer.light_culling_domain_lower_bounds_location,
+            1, data(lower_bound(scene.objects.data.bounds).xyz()));
+        glProgramUniform3fv(forward_renderer.program,
+            forward_renderer.light_culling_domain_upper_bounds_location,
+            1, data(upper_bound(scene.objects.data.bounds).xyz()));
 
         // glCullFace(GL_BACK);
         // glEnable(GL_CULL_FACE);
@@ -187,350 +210,241 @@ void Application::render() {
         glEnable(GL_DEPTH_TEST);
 
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
-            commands.commands_buffer);
+            accepted_commands.commands_buffer);
 
         glMultiDrawElementsIndirect(
             GL_TRIANGLES, GL_UNSIGNED_INT,
-            0, GLsizei(size(commands)), 0);
+            0, GLsizei(size(accepted_commands)), 0);
 
         // glDisable(GL_CULL_FACE);
 
         glDisable(GL_DEPTH_TEST);
     }
+    if constexpr(true) { // Solid BBox drawing.
+        glUseProgram(solid_renderer.program);
+
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+        auto cap_b = scoped(gl::Enable(GL_BLEND));
+
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LESS);
+        auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
+
+        glProgramUniform3fv(solid_renderer.program,
+            solid_renderer.view_world_position,
+            1, data(eye_world_position));
+        glProgramUniformMatrix4fv(solid_renderer.program,
+            solid_renderer.object_to_clip_position,
+            1, GL_FALSE, data(w2c));
+        glProgramUniformMatrix4fv(solid_renderer.program,
+            solid_renderer.object_to_world_normal,
+            1, GL_FALSE, data(agl::mat4(agl::identity)));
+        glProgramUniformMatrix4fv(solid_renderer.program,
+            solid_renderer.object_to_world_position,
+            1, GL_FALSE, data(agl::mat4(agl::identity)));
+
+        glBindVertexArray(solid_box_solid_renderer_vao);
+
+        // Frustum culling rejected commands.
+
+        gl::ProgramUniform4fv(solid_renderer.program,
+            solid_renderer.rgba_color,
+            std::array{0.2f, 0.f, 0.f, 1.f});
+
+        for(auto& c : frustum_culling_rejected_commands.commands) {
+            auto o2w = solid_box_object_to_world(
+                scene.objects.data.object_bounds[c.baseInstance]);
+            auto o2c = w2c * o2w;
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_clip_position,
+                1, GL_FALSE, data(o2c));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_normal,
+                1, GL_FALSE, data(o2w));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_position,
+                1, GL_FALSE, data(o2w));
+            draw(solid_box.topology);
+        }
+
+        // Occlusion culling rejected commands.
+
+        gl::ProgramUniform4fv(solid_renderer.program,
+            solid_renderer.rgba_color,
+            std::array{0.f, 0.2f, 0.f, 1.f});
+
+        for(auto& c : occlusion_culling_rejected_commands.commands) {
+            auto o2w = solid_box_object_to_world(
+                scene.objects.data.object_bounds[c.baseInstance]);
+            auto o2c = w2c * o2w;
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_clip_position,
+                1, GL_FALSE, data(o2c));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_normal,
+                1, GL_FALSE, data(o2w));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_position,
+                1, GL_FALSE, data(o2w));
+            draw(solid_box.topology);
+        }
+
+        // Accepted commands.
+
+        gl::ProgramUniform4fv(solid_renderer.program,
+            solid_renderer.rgba_color,
+            std::array{0.f, 0.f, 0.2f, 1.f});
+
+        for(auto& c : accepted_commands.commands) {
+            auto o2w = solid_box_object_to_world(
+                scene.objects.data.object_bounds[c.baseInstance]);
+            auto o2c = w2c * o2w;
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_clip_position,
+                1, GL_FALSE, data(o2c));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_normal,
+                1, GL_FALSE, data(o2w));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_position,
+                1, GL_FALSE, data(o2w));
+            draw(solid_box.topology);
+        }
+
+        glDepthMask(GL_TRUE);
+    }
+    if constexpr(false) { // Solid drawing.
+        glUseProgram(solid_renderer.program);
+
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+        auto cap_b = scoped(gl::Enable(GL_BLEND));
+
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LESS);
+        auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
+
+        glProgramUniform3fv(solid_renderer.program,
+            solid_renderer.view_world_position,
+            1, data(eye_world_position));
+        glProgramUniformMatrix4fv(solid_renderer.program,
+            solid_renderer.object_to_clip_position,
+            1, GL_FALSE, data(w2c));
+        glProgramUniformMatrix4fv(solid_renderer.program,
+            solid_renderer.object_to_world_normal,
+            1, GL_FALSE, data(agl::mat4(agl::identity)));
+        glProgramUniformMatrix4fv(solid_renderer.program,
+            solid_renderer.object_to_world_position,
+            1, GL_FALSE, data(agl::mat4(agl::identity)));
+
+        glBindVertexArray(scene_solid_vao);
+
+        // Frustum culling rejected commands.
+        if(size(frustum_culling_rejected_commands) > 0) {
+            gl::ProgramUniform4fv(solid_renderer.program,
+                solid_renderer.rgba_color,
+                std::array{0.2f, 0.f, 0.f, 1.f});
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+                frustum_culling_rejected_commands.commands_buffer);
+            glMultiDrawElementsIndirect(
+                GL_TRIANGLES, GL_UNSIGNED_INT,
+                0, size(frustum_culling_rejected_commands), 0);
+        }
+         // Occlusion culling rejected commands.
+        if(size(occlusion_culling_rejected_commands) > 0) {
+            gl::ProgramUniform4fv(solid_renderer.program,
+                solid_renderer.rgba_color,
+                std::array{0.f, 0.2f, 0.f, 1.f});
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+                occlusion_culling_rejected_commands.commands_buffer);
+            glMultiDrawElementsIndirect(
+                GL_TRIANGLES, GL_UNSIGNED_INT,
+                0, size(occlusion_culling_rejected_commands), 0);
+        }
+        // Accepted commands.
+        if(size(accepted_commands) > 0) {
+            gl::ProgramUniform4fv(solid_renderer.program,
+                solid_renderer.rgba_color,
+                std::array{0.f, 0.f, 0.2f, 1.f});
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+                accepted_commands.commands_buffer);
+            glMultiDrawElementsIndirect(
+                GL_TRIANGLES, GL_UNSIGNED_INT,
+                0, size(accepted_commands), 0);
+        }
+
+        glDepthMask(GL_TRUE);
+    }
+    if constexpr(true) { // Gizmos.
+        bind(hdr_framebuffer);
+
+        glUseProgram(solid_renderer.program);
+
+        glBindVertexArray(solid_box_solid_renderer_vao);
+
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+        auto cap_b = scoped(gl::Enable(GL_BLEND));
+
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_FALSE);
+        auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
+
+        glCullFace(GL_BACK);
+        auto cap_cf = scoped(gl::Enable(GL_CULL_FACE));
+
+        // Frustum culling frustum.
+        if(settings.frustum_culling.is_anchored) {
+            gl::ProgramUniform4fv(solid_renderer.program,
+                solid_renderer.rgba_color,
+                std::array{0.5f, 0.f, 0.f, 1.f});
+            auto frustum_o2w = solid_box_model_to_world(frustum_culling_camera);
+            auto frustum_o2c = w2c * frustum_o2w;
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_clip_position,
+                1, GL_FALSE, data(frustum_o2c));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_normal,
+                1, GL_FALSE, data(frustum_o2w));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_position,
+                1, GL_FALSE, data(frustum_o2w));
+            draw(solid_box.topology);
+        }
+        // Occlusion culling frustum.
+        if(settings.occlusion_culling.is_anchored) {
+            gl::ProgramUniform4fv(solid_renderer.program,
+                solid_renderer.rgba_color,
+                std::array{0.f, 0.2f, 0.f, 1.f});
+            auto frustum_o2w = solid_box_model_to_world(occlusion_culling_camera);
+            auto frustum_o2c = w2c * frustum_o2w;
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_clip_position,
+                1, GL_FALSE, data(frustum_o2c));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_normal,
+                1, GL_FALSE, data(frustum_o2w));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_position,
+                1, GL_FALSE, data(frustum_o2w));
+            draw(solid_box.topology);
+        }
+
+        glDepthMask(GL_TRUE);
+    }
     { // Tone mapping.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         bind(tone_mapper);
         bind(tone_mapper, hdr_framebuffer);
 
         glViewport(0, 0, 1280, 720);
 
+        glBindVertexArray(tone_mapping_vao);
+
         draw(tone_mapper);
     }
-    { // Gizmos.
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        glUseProgram(wireframe_renderer.program);
-
-        // glBindVertexArray(wire_box_vao);
-        // glVertexArrayElementBuffer(wire_box_vao,
-        //     wire_box.topology.element_buffer);
-
-        // for(auto& bounds : scene.objects.data.object_bounds) {
-        //     auto model_to_clip = w2c * wire_box_model_to_clip(bounds);
-        //     glProgramUniformMatrix4fv(wireframe_renderer.program,
-        //         wireframe_renderer.model_to_clip_uniform_location,
-        //         1, GL_FALSE, data(model_to_clip));
-        //     draw(wire_box.topology);
-        // }
-
-        glBindVertexArray(wire_quad_vao);
-        glVertexArrayElementBuffer(wire_quad_vao,
-            wire_quad.topology.element_buffer);
-
-        for(unsigned i = 0; i < size(wire_quad_transforms); ++i) {
-            auto model_to_clip = wire_quad_transforms[i];
-            glProgramUniformMatrix4fv(wireframe_renderer.program,
-                wireframe_renderer.model_to_clip_uniform_location,
-                1, GL_FALSE, data(model_to_clip));
-            glProgramUniform4fv(wireframe_renderer.program,
-                wireframe_renderer.rgba_color_uniform_location,
-                1, data(wire_quad_colors[i]));
-            draw(wire_quad.topology);
-        }
-    }
-
-    // auto ctw = agl::engine::clip_to_world(camera);
-    // auto nt = agl::engine::normal_transform(camera);
-    // auto wtc = agl::engine::world_to_clip(camera);
-    // auto wtv = agl::engine::world_to_eye(camera);
-
-    // if constexpr(false) {   
-    //     bb_mesh = agl::standard::shared(
-    //         agl::engine::instance(
-    //             agl::engine::wireframe(
-    //                 gizmo::box_wireframe())));
-    //     auto bb = bounding_box(scene);
-    //     subscribe(wireframe_pass, bb_mesh);
-    //     bb_mesh->uniforms["color"]
-    //     = std::make_shared<eng::Uniform<agl::Vec4>>(
-    //         agl::vec4(0.f, 1.f, 0.f, 1.f));
-    //     bb_mesh->uniforms["model_to_clip"]
-    //     = std::make_shared<eng::Uniform<agl::Mat4>>(
-    //         wtc * gizmo::box_wireframe_model_to_world(bb));
-    // }
-    // if(settings.rasterization_enabled) {
-    //     // uniform(scene.program, "world_to_clip", wtc);
-    //     // uniform(scene.program, "world_to_normal", nt);
-    //     // uniform(scene.program, "world_to_view", wtv);
-
-    //     auto draw_parameters = std::vector<DrawElementsParameters>();
-    //     auto objects_bounds = std::vector<agl::common::Interval<agl::Vec3>>();
-    //     auto primitive_offsets = std::vector<GLuint>();
-    //     {
-    //         for(auto& c : scene_grid.cells) {
-    //             if(not is_empty(c)) {
-    //                 draw_parameters.push_back(DrawElementsParameters{
-    //                     .count = GLuint(3 * (c.last - c.first)),
-    //                     .primitive_count = 1,
-    //                     .offset = GLuint(3 * c.first),
-    //                     .base_vertex = 0,
-    //                     .base_instance = GLuint(size(draw_parameters))});
-    //                 objects_bounds.push_back(c.bounds);
-    //                 primitive_offsets.push_back(GLuint(c.first));
-    //             }
-    //         }
-    //     }
-
-    //     auto fc_ctw = agl::engine::clip_to_world(frustum_culling_camera);
-    //     auto fc_wtc = agl::engine::world_to_clip(frustum_culling_camera);
-    //     if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::cpu) {
-    //         auto frustum_clip_bounds = agl::common::interval(agl::vec3(-1.f), agl::vec3(1.f));
-    //         auto frustum_world_bounds = agl::common::Interval<agl::Vec3>();
-    //         { // Compute frustun worl bounds.
-    //             auto cs = corners(frustum_clip_bounds);
-    //             for(auto& c : cs) {
-    //                 auto homogeneous = fc_ctw * agl::vec4(c, 1.f);
-    //                 c = homogeneous.xyz() / homogeneous[3];
-    //             }
-    //             frustum_world_bounds = agl::common::interval(cs[0]);
-    //             for(std::size_t i = 1; i < 8; ++i) {
-    //                 extend(frustum_world_bounds, cs[i]);
-    //             }
-    //         }
-
-    //         auto accepted_draw_parameters = agl::standard::reserved_vector<DrawElementsParameters>(size(draw_parameters));
-    //         for(const auto& dps : draw_parameters) {
-    //             auto& object_bounds = objects_bounds[dps.base_instance];
-    //             { // World space.
-    //                 auto are_separated = false
-    //                     or lower_bound(object_bounds)[0] > upper_bound(frustum_world_bounds)[0]
-    //                     or lower_bound(object_bounds)[1] > upper_bound(frustum_world_bounds)[1]
-    //                     or lower_bound(object_bounds)[2] > upper_bound(frustum_world_bounds)[2]
-    //                     or upper_bound(object_bounds)[0] < lower_bound(frustum_world_bounds)[0]
-    //                     or upper_bound(object_bounds)[1] < lower_bound(frustum_world_bounds)[1]
-    //                     or upper_bound(object_bounds)[2] < lower_bound(frustum_world_bounds)[2];
-    //                 if(are_separated) {
-    //                     continue;
-    //                 }
-    //             }
-    //             { // Clip space.
-    //                 auto object_clip_bounds = agl::common::Interval<agl::Vec3>();
-    //                 {
-    //                     auto cs = corners(object_bounds);
-    //                     for(auto& c : cs) {
-    //                         auto homogeneous = fc_wtc * agl::vec4(c, 1.f);
-    //                         c = homogeneous.xyz() / homogeneous[3];
-    //                     }
-    //                     object_clip_bounds = agl::common::interval(cs[0]);
-    //                     for(std::size_t i = 1; i < 8; ++i) {
-    //                         extend(object_clip_bounds, cs[i]);
-    //                     }
-    //                 }
-    //                 auto are_separated = false
-    //                     or lower_bound(object_clip_bounds)[0] > upper_bound(frustum_clip_bounds)[0]
-    //                     or lower_bound(object_clip_bounds)[1] > upper_bound(frustum_clip_bounds)[1]
-    //                     or lower_bound(object_clip_bounds)[2] > upper_bound(frustum_clip_bounds)[2]
-    //                     or upper_bound(object_clip_bounds)[0] < lower_bound(frustum_clip_bounds)[0]
-    //                     or upper_bound(object_clip_bounds)[1] < lower_bound(frustum_clip_bounds)[1]
-    //                     or upper_bound(object_clip_bounds)[2] < lower_bound(frustum_clip_bounds)[2];
-    //                 if(are_separated) {
-    //                     continue;
-    //                 }
-    //             }
-    //             accepted_draw_parameters.push_back(dps);
-    //         }
-
-    //         statistics.frustum_culling.accepted_count
-    //         = size(accepted_draw_parameters);
-    //         statistics.frustum_culling.rejected_count
-    //         = size(draw_parameters) - size(accepted_draw_parameters);
-
-    //         draw_parameters = std::move(accepted_draw_parameters);
-    //     } else if(settings.rasterization.frustum_culling.mode == FrustumCullingMode::gpu) {
-    //         auto frustum_clip_bounds = agl::common::interval(agl::vec3(-1.f), agl::vec3(1.f));
-    //         auto frustum_world_bounds = agl::common::Interval<agl::Vec3>();
-    //         { // Compute frustun worl bounds.
-    //             auto cs = corners(frustum_clip_bounds);
-    //             for(auto& c : cs) {
-    //                 auto homogeneous = fc_ctw * agl::vec4(c, 1.f);
-    //                 c = homogeneous.xyz() / homogeneous[3];
-    //             }
-    //             frustum_world_bounds = agl::common::interval(cs[0]);
-    //             for(std::size_t i = 1; i < 8; ++i) {
-    //                 extend(frustum_world_bounds, cs[i]);
-    //             }
-    //         }
-
-    //         auto objects_bounds_ssbo = agl::create(agl::buffer_tag);
-    //         {
-    //             auto objects_bounds4 = std::vector<agl::common::Interval<agl::Vec4>>(size(objects_bounds));
-    //             for(std::size_t i = 0; i < size(objects_bounds); ++i) {
-    //                 objects_bounds4[i] = agl::common::interval(
-    //                     agl::vec4(lower_bound(objects_bounds[i]), 1.f),
-    //                     agl::vec4(upper_bound(objects_bounds[i]), 1.f));
-    //             }
-    //             storage(objects_bounds_ssbo, std::span(objects_bounds4));
-    //             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_bounds_ssbo);
-    //         }
-            
-    //         auto input_parameters_ssbo = agl::create(agl::buffer_tag);
-    //         storage(input_parameters_ssbo, std::span(draw_parameters));
-    //         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, input_parameters_ssbo);
-
-    //         auto zero = std::array<GLuint, 1>{0};
-    //         auto output_count_ssbo = agl::create(agl::buffer_tag);
-    //         storage(output_count_ssbo, std::span(zero));
-    //         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, output_count_ssbo);
-
-    //         auto output_parameters_ssbo = agl::create(agl::buffer_tag);
-    //         storage(output_parameters_ssbo, std::span(draw_parameters));
-    //         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, output_parameters_ssbo);
-
-    //         // use(frustum_culling_shader.program);
-
-    //         // uniform(
-    //         //     frustum_culling_shader.program,
-    //         //     *agl::uniform_location(
-    //         //         frustum_culling_shader.program,
-    //         //         "frustum_clip_bounds.lb"),
-    //         //     agl::vec4(lower_bound(frustum_clip_bounds), 1.f));
-    //         // uniform(
-    //         //     frustum_culling_shader.program,
-    //         //     *agl::uniform_location(
-    //         //         frustum_culling_shader.program,
-    //         //         "frustum_clip_bounds.ub"),
-    //         //     agl::vec4(upper_bound(frustum_clip_bounds), 1.f));
-    //         // uniform(
-    //         //     frustum_culling_shader.program,
-    //         //     *agl::uniform_location(
-    //         //         frustum_culling_shader.program,
-    //         //         "frustum_world_bounds.lb"),
-    //         //     agl::vec4(lower_bound(frustum_world_bounds), 1.f));
-    //         // uniform(
-    //         //     frustum_culling_shader.program,
-    //         //     *agl::uniform_location(
-    //         //         frustum_culling_shader.program,
-    //         //         "frustum_world_bounds.ub"),
-    //         //     agl::vec4(upper_bound(frustum_world_bounds), 1.f));
-    //         // uniform(
-    //         //     frustum_culling_shader.program,
-    //         //     *agl::uniform_location(
-    //         //         frustum_culling_shader.program,
-    //         //         "world_to_clip"),
-    //         //     fc_wtc);
-
-    //         glDispatchCompute((GLuint(size(objects_bounds)) + 255) / 256, 1, 1);
-
-    //         glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-    //         GLuint output_count;
-    //         glGetNamedBufferSubData(
-    //             output_count_ssbo,
-    //             0,
-    //             4,
-    //             &output_count);
-
-    //         auto accepted_draw_parameters 
-    //         = std::vector<DrawElementsParameters>(output_count);
-    //         glGetNamedBufferSubData(
-    //             output_parameters_ssbo,
-    //             0,
-    //             output_count * sizeof(DrawElementsParameters),
-    //             data(accepted_draw_parameters));
-
-    //         statistics.frustum_culling.accepted_count
-    //         = size(accepted_draw_parameters);
-    //         statistics.frustum_culling.rejected_count
-    //         = size(draw_parameters) - size(accepted_draw_parameters);
-
-    //         draw_parameters = std::move(accepted_draw_parameters);
-
-    //         delete_(objects_bounds_ssbo);
-    //         delete_(input_parameters_ssbo);
-    //         delete_(output_count_ssbo);
-    //         delete_(output_parameters_ssbo);
-    //     }
-    //     if(not empty(draw_parameters)) {
-    //         auto primitive_offsets_ssbo = agl::create(agl::buffer_tag);
-
-    //         // bind(scene.program);
-
-    //         {
-    //             storage(primitive_offsets_ssbo, std::span(primitive_offsets));
-    //             glBindBufferBase(
-    //                 GL_SHADER_STORAGE_BUFFER, 2, primitive_offsets_ssbo);
-    //         }
-    //         { // Lights.
-
-    //         }
-    //         { // Light culling.
-    //             // glUniform3fv(
-    //             //     agl::uniform_location(scene.program.program, "light_culling_domain_lower_bound"),
-    //             //     1, data(lower_bound(light_grid.domain)));
-    //             // glUniform3fv(
-    //             //     agl::uniform_location(scene.program.program, "light_culling_domain_upper_bound"),
-    //             //     1, data(upper_bound(light_grid.domain)));
-    //             // glUniform3fv(
-    //             //     agl::uniform_location(scene.program.program, "light_culling_resolution"),
-    //             //     1, data(std::array{float(light_grid.resolution[0]), float(light_grid.resolution[1]), float(light_grid.resolution[2])}));
-    //             // glBindBufferBase(
-    //             //     GL_SHADER_STORAGE_BUFFER, 4,
-    //             //     light_grid.light_index_ssbo);
-    //             // glBindBufferBase(
-    //             //     GL_SHADER_STORAGE_BUFFER, 5,
-    //             //     light_grid.light_span_ssbo);
-    //         }
-
-    //         // update_lights(scene, wtv);
-
-    //         // ::render(scene, draw_parameters);
-
-    //         // unbind(scene.program);
-
-    //         delete_(primitive_offsets_ssbo);
-    //     }
-    // }
-    // if(settings.rasterization.frustum_culling.is_anchored) {
-    //     auto&& instance = subscribe(wireframe_pass, box_wireframe);
-    //     instance->uniforms["color"]
-    //     = std::make_shared<eng::Uniform<agl::Vec4>>(
-    //         agl::vec4(0.f, 1.f, 0.f, 1.f));
-    //     instance->uniforms["model_to_clip"]
-    //     = std::make_shared<eng::Uniform<agl::Mat4>>(
-    //         wtc * gizmo::box_wireframe_model_to_world(
-    //             agl::engine::bounding_box(frustum_culling_camera)));
-    // }
-    // if(settings.bvh_debugging_enabled) {
-    //     traverse(scene_bvh, [&, this](const BvhNode& bn, std::size_t depth) {
-    //         auto has_children = bool(bn.inf_node) or bool(bn.sup_node);
-    //         if(depth == settings.bvh_debugging_level
-    //             or (depth < settings.bvh_debugging_level and not has_children))
-    //         {
-    //             auto&& instance = subscribe(wireframe_pass, box_wireframe);
-    //             instance->uniforms["color"]
-    //             = std::make_shared<eng::Uniform<agl::Vec4>>(
-    //                 agl::vec4(0.f, 1.f, 0.f, 1.f));
-    //             instance->uniforms["model_to_clip"]
-    //             = std::make_shared<eng::Uniform<agl::Mat4>>(
-    //                 wtc * gizmo::box_wireframe_model_to_world(bn.bounds));
-    //         }
-    //     });
-    // }
-    // if(settings.object_grid_debugging_enabled) {
-    //     for(auto& cell : scene_grid.cells) {
-    //         if(not is_empty(cell)) {
-    //             auto&& instance = subscribe(wireframe_pass, box_wireframe);
-    //             instance->uniforms["color"]
-    //             = std::make_shared<eng::Uniform<agl::Vec4>>(
-    //                 agl::vec4(0.f, 1.f, 0.f, 1.f));
-    //             instance->uniforms["model_to_clip"]
-    //             = std::make_shared<eng::Uniform<agl::Mat4>>(
-    //                 wtc * gizmo::box_wireframe_model_to_world(cell.bounds));
-    //         }
-    //     }
-    // }
-    // {
-    //     agl::engine::render(wireframe_pass);
-    // }
     {
         render_ui(*this);
     }

@@ -55,7 +55,7 @@ auto light_culling(
             for(GLuint li = 0; li < size(lg.light_properties); ++li) {
                 auto lp = lg.light_properties[li].position.xyz();
                 auto d = agl::distance(clamp(cell, lp), lp);
-                if(d <= 1.f) {
+                if(d <= 0.001f) {
                     lc.light_indices.push_back(li);
                     count += 1;
                 }

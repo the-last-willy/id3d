@@ -2,12 +2,14 @@
 
 #include "bvh/all.hpp"
 #include "forward_rendering/all.hpp"
+#include "frustum_culler/all.hpp"
 #include "gizmo/all.hpp"
 #include "hdr_framebuffer/all.hpp"
 #include "lighting/all.hpp"
 #include "occlusion_culling/all.hpp"
 #include "settings/all.hpp"
 #include "scene/all.hpp"
+#include "solid_renderer/all.hpp"
 #include "tone_mapping/all.hpp"
 #include "wireframe_renderer/all.hpp"
 #include "statistics.hpp"
@@ -30,7 +32,12 @@ struct Application : Program {
     ForwardRenderer forward_renderer;
     gl::VertexArray forward_rendering_vao;
 
+    // Compute shaders.
+
+    FrustumCuller frustum_culler;
     OcclusionCuller occlusion_culler;
+
+    //
 
     ToneMapper tone_mapper;
     gl::VertexArray tone_mapping_vao;
@@ -43,7 +50,13 @@ struct Application : Program {
 
     // Gizmos.
 
+    SolidRenderer solid_renderer;
     WireframeRenderer wireframe_renderer;
+
+    gl::VertexArray scene_solid_vao;
+
+    SolidBoxObject solid_box;
+    gl::VertexArray solid_box_solid_renderer_vao;
 
     WireBoxObject wire_box;
     gl::VertexArray wire_box_vao;

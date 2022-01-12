@@ -7,26 +7,30 @@ enum class FrustumCullingMode {
 };
 
 struct FrustumCullingSettings {
-    FrustumCullingMode mode = FrustumCullingMode::disabled;
+    bool is_enabled = true;
 
     // Debugging.
 
     bool is_anchored = false;
 };
 
+struct OcclusionCullingSettings {
+    bool is_enabled = true;
+
+    // Debugging.
+
+    bool is_anchored = false;
+
+    
+};
+
 struct RasterizationSettings {
     bool enabled = true;
 
-    FrustumCullingSettings frustum_culling;
+    
 };
 
 struct Settings {
-    bool rasterization_enabled = true;  
-
-    RasterizationSettings rasterization;
-
-    bool bvh_debugging_enabled = false;
-    int bvh_debugging_level = 0;
-
-    bool object_grid_debugging_enabled = false;
+    FrustumCullingSettings frustum_culling;
+    OcclusionCullingSettings occlusion_culling;
 };

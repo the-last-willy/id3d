@@ -224,5 +224,7 @@ void grid_subdivision(
                 agl::vec4(lower_bound(bounds), 1.f),
                 agl::vec4(upper_bound(bounds), 1.f)));
         }
+        gl::NamedBufferStorage(og.data.object_bounds_ssbo,
+            og.data.object_bounds);
     }
 }
