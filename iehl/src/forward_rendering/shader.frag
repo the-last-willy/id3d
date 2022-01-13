@@ -128,6 +128,7 @@ struct MaterialProperties {
 // Material/material_group.
 
 uniform sampler2DArray albedo_texture_array;
+uniform sampler2DArray ao_roughness_metallic_roughness_texture_array;
 
 layout(std430) readonly buffer material_properties_buffer {
     MaterialProperties material_properties[/*material index*/];
@@ -140,8 +141,8 @@ layout(std430) readonly buffer material_triangle_material_id_buffer {
 vec4 material(in vec3 position, in uint triangle_id) {
     uint material_id = triangle_material_ids[triangle_id];
     MaterialProperties properties = material_properties[material_id];
-    // return texture(albedo_texture_array, vec3(v_texcoords, material_id));
-    return properties.color_factor;
+    // return texture(ao_roughness_metallic_roughness_texture_array, vec3(v_texcoords, material_id));
+    return properties.emissivity_factor;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -183,9 +184,10 @@ void main() {
     vec3 normal_dir = normalize(v_world_normal);
     vec3 view_dir = normalize(eye_world_position - v_world_position);
 
-    float lambertian = max(dot(view_dir, normal_dir), 0.) * .5 + .5;
-    vec3 lighting = light_culling_lighting(v_world_position);
-    // vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
+    float lambertian = abs(dot(view_dir, normal_dir)) * .5 + .5;
+    // vec3 lighting = light_culling_lighting(v_world_position);
+    vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
+    lighting = lighting * .8 + .2;
 
-    f_rgba_color = vec4(lighting, 1.);
+    f_rgba_color = vec4(lambertian * lighting, 1.);
 }

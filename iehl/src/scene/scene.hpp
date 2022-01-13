@@ -11,7 +11,7 @@
 #include <vector>
 
 struct Scene {
-    LightGroup light_group;
-    MaterialGroup material_group;
+    LightGroup lights;
+    MaterialGroup materials;
     ObjectGroup objects;
 };

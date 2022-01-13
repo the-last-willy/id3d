@@ -24,7 +24,8 @@ struct ForwardRenderer {
 
     // Texture units.
 
-    GLuint albedo_texture_array_unit = 0;
+    GLuint ao_roughness_metallic_texture_unit = 0;
+    GLuint albedo_texture_array_unit = 1;
 
     // Uniform locations.
 
@@ -53,35 +54,23 @@ auto forward_renderer(eng::ShaderCompiler& sc) {
 
     // Shader storage buffer bindings.
 
-    glShaderStorageBlockBinding(fr.program,
-        glGetProgramResourceIndex(fr.program,
-            GL_SHADER_STORAGE_BLOCK,
-            "light_culling_index_buffer"),
+    gl::ShaderStorageBlockBinding(fr.program,
+        "light_culling_index_buffer",
         fr.light_culling_index_buffer_binding);
-    glShaderStorageBlockBinding(fr.program,
-        glGetProgramResourceIndex(fr.program,
-            GL_SHADER_STORAGE_BLOCK,
-            "light_culling_span_buffer"),
+    gl::ShaderStorageBlockBinding(fr.program,
+        "light_culling_span_buffer",
         fr.light_culling_span_buffer_binding);
-    glShaderStorageBlockBinding(fr.program,
-        glGetProgramResourceIndex(fr.program,
-            GL_SHADER_STORAGE_BLOCK,
-            "light_group_light_properties_buffer"),
+    gl::ShaderStorageBlockBinding(fr.program,
+        "light_group_light_properties_buffer",
         fr.light_group_light_properties_buffer_binding);
-    glShaderStorageBlockBinding(fr.program,
-        glGetProgramResourceIndex(fr.program,
-            GL_SHADER_STORAGE_BLOCK,
-            "material_properties_buffer"),
+    gl::ShaderStorageBlockBinding(fr.program,
+        "material_properties_buffer",
         fr.material_properties_buffer_binding);
-    glShaderStorageBlockBinding(fr.program,
-        glGetProgramResourceIndex(fr.program,
-            GL_SHADER_STORAGE_BLOCK,
-            "material_triangle_material_id_buffer"),
+    gl::ShaderStorageBlockBinding(fr.program,
+        "material_triangle_material_id_buffer",
         fr.material_triangle_material_id_buffer_binding);
-    glShaderStorageBlockBinding(fr.program,
-        glGetProgramResourceIndex(fr.program,
-            GL_SHADER_STORAGE_BLOCK,
-            "object_draw_indirect_buffer"),
+    gl::ShaderStorageBlockBinding(fr.program,
+        "object_draw_indirect_buffer",
         fr.object_draw_indirect_buffer_binding);
 
     // Uniform locations.

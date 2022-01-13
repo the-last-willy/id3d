@@ -12,4 +12,7 @@ struct MaterialGroup {
 
     gl::Sampler albedo_sampler;
     gl::Texture albedo_texture_array = GL_TEXTURE_2D_ARRAY;
+
+    gl::Sampler ao_roughness_metallic_sampler;
+    gl::Texture ao_roughness_metallic_texture_array = GL_TEXTURE_2D_ARRAY;
 };

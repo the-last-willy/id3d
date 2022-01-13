@@ -17,7 +17,7 @@
 //         // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, s.light_ssbo);
 //     }
 //     { // Uniforms.
-//         // eng::uniform(s.program, "light_count", int(size(s.light_group.lights)));
+//         // eng::uniform(s.program, "light_count", int(size(s.lights.lights)));
 //     }
 
 //     auto indirect = agl::create(agl::buffer_tag);

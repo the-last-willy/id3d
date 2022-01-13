@@ -70,6 +70,57 @@ Bounds bounds_transformed(in Bounds bs, in mat4 transform) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Frustum culling.
+
+bool frustum_culling_are_clip_separated(
+    in Bounds frustum_bounds,
+    in mat4 world_to_clip,
+    in Bounds world_bounds)
+{
+    vec3[8] world_corners = vec3[8](
+        vec3(world_bounds.b[0].x, world_bounds.b[0].y, world_bounds.b[0].z),
+        vec3(world_bounds.b[0].x, world_bounds.b[0].y, world_bounds.b[1].z),
+        vec3(world_bounds.b[0].x, world_bounds.b[1].y, world_bounds.b[0].z),
+        vec3(world_bounds.b[0].x, world_bounds.b[1].y, world_bounds.b[1].z),
+        vec3(world_bounds.b[1].x, world_bounds.b[0].y, world_bounds.b[0].z),
+        vec3(world_bounds.b[1].x, world_bounds.b[0].y, world_bounds.b[1].z),
+        vec3(world_bounds.b[1].x, world_bounds.b[1].y, world_bounds.b[0].z),
+        vec3(world_bounds.b[1].x, world_bounds.b[1].y, world_bounds.b[1].z));
+    bool[6] axes = bool[6](true, true, true, true, true, true);
+    for(int i = 0; i < 8; ++i) {
+        vec4 clip_corner = world_to_clip * vec4(world_corners[i], 1.);
+        if(clip_corner.x > -clip_corner.w) {
+            axes[0] = false;
+        }
+        if(clip_corner.x < +clip_corner.w) {
+            axes[1] = false;
+        }
+        if(clip_corner.y > -clip_corner.w) {
+            axes[2] = false;
+        }
+        if(clip_corner.y < +clip_corner.w) {
+            axes[3] = false;
+        }
+        if(clip_corner.z > -clip_corner.w) {
+            axes[4] = false;
+        }
+        if(clip_corner.z < +clip_corner.w) {
+            axes[5] = false;
+        }
+    }
+    return axes[0] || axes[1] || axes[2] || axes[3] || axes[4] || axes[5];
+}
+
+bool frustum_culling_are_world_separated(
+    in Bounds frustum_bounds,
+    in Bounds world_bounds)
+{
+    return false
+    || any(greaterThan(world_bounds.b[0].xyz, frustum_bounds.b[1].xyz))
+    || any(lessThan(   world_bounds.b[1].xyz, frustum_bounds.b[0].xyz));
+}
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // IO modules.
@@ -158,14 +209,17 @@ void main() {
     if(global_id < input_draw_commands.length()) {
         draw_command = input_draw_commands[global_id];
 
-        Bounds object_world_bs = object_world_bounds[draw_command.baseInstance];
-        Bounds object_clip_bs = bounds_transformed(object_world_bs, world_to_clip);
+        Bounds o_world_bounds = object_world_bounds[draw_command.baseInstance];
 
-        accepted = false;
-        accepted = accepted || are_separated(object_clip_bs, frustum_clip_bounds);
-        accepted = accepted || are_separated(object_world_bs, frustum_world_bounds);
+        bool are_clip_separated = frustum_culling_are_clip_separated(
+            frustum_clip_bounds,
+            world_to_clip,
+            o_world_bounds);
+        bool are_world_separated = frustum_culling_are_world_separated(
+            frustum_world_bounds,
+            o_world_bounds);
 
-        accepted = !accepted;
+        accepted = !(are_clip_separated || are_world_separated);
         
         if(accepted) {
             atomicAdd(local_accepted_count, 1);
