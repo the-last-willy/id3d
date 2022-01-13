@@ -33,6 +33,9 @@ void Application::update(float) {
     { // Frustum culling.
         if(not settings.frustum_culling.is_anchored) {
             frustum_culling_camera = camera;
+            if(auto pp = std::get_if<eng::PerspectiveProjection>(&frustum_culling_camera.projection)) {
+                pp->z_far = 10.f;
+            }
         }
     }
     { // Occlusion culling.

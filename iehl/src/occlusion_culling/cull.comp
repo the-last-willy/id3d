@@ -146,13 +146,12 @@ void main() {
 
     if(local_id == 0) {
         local_accepted_count = 0;
-        output_draw_command_count = 0;
     }
 
     barrier();
 
     DrawCommand draw_command;
-    bool accepted;
+    bool accepted = false;
 
     if(global_id < input_draw_commands.length()) {
         draw_command = input_draw_commands[global_id];
@@ -186,13 +185,16 @@ void main() {
     barrier();
 
     // 'readFirstInvocationARB' would be better here.
-    if(global_id == 0) {
-        local_offset = atomicAdd(output_draw_command_count, local_accepted_count);
+    if(local_id == 0) {
+        local_offset = atomicAdd(
+            output_draw_command_count,
+            local_accepted_count);
     }
 
-    barrier;
+    barrier();
 
     if(accepted) {
-        output_draw_commands[local_offset + local_id] = draw_command;
+        uint offset = atomicAdd(local_offset, 1);
+        output_draw_commands[offset] = draw_command;
     }
 }

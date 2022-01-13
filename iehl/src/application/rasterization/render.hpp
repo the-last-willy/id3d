@@ -38,46 +38,85 @@ void Application::render() {
         bind(frustum_culler,
             scene.objects.data);
 
-        auto frustum_culling_clip_to_world
+        auto fc_clip_to_world
         = agl::engine::clip_to_world(frustum_culling_camera);
-        auto frustum_culling_world_to_clip
+        auto fc_world_to_clip
         = agl::engine::world_to_clip(frustum_culling_camera);
 
         auto frustum_clip_bounds = agl::common::interval(
-            agl::vec4(agl::vec3(-1.f, -1.f, -1.f), 1.f),
+            agl::vec4(agl::vec3(-1.f), 1.f),
             agl::vec4(agl::vec3(+1.f), 1.f));
         auto frustum_world_bounds = transformed(
-            frustum_culling_clip_to_world,
+            fc_clip_to_world,
             frustum_clip_bounds);
+
+        for(auto& c : accepted_commands.commands) {
+            auto world_bounds = scene.objects.data.object_bounds[c.baseInstance];
+            auto clip_bounds = transformed(fc_world_to_clip, world_bounds);
+
+            bool are_clip_separated = false
+            or lower_bound(clip_bounds)[0] > upper_bound(frustum_clip_bounds)[0]
+            or lower_bound(clip_bounds)[1] > upper_bound(frustum_clip_bounds)[1]
+            or lower_bound(clip_bounds)[2] > upper_bound(frustum_clip_bounds)[2]
+            or upper_bound(clip_bounds)[0] < lower_bound(frustum_clip_bounds)[0]
+            or upper_bound(clip_bounds)[1] < lower_bound(frustum_clip_bounds)[1]
+            or upper_bound(clip_bounds)[2] < lower_bound(frustum_clip_bounds)[2];
+
+            bool are_world_separated = false
+            or lower_bound(world_bounds)[0] > upper_bound(frustum_world_bounds)[0]
+            or lower_bound(world_bounds)[1] > upper_bound(frustum_world_bounds)[1]
+            or lower_bound(world_bounds)[2] > upper_bound(frustum_world_bounds)[2]
+            or upper_bound(world_bounds)[0] < lower_bound(frustum_world_bounds)[0]
+            or upper_bound(world_bounds)[1] < lower_bound(frustum_world_bounds)[1]
+            or upper_bound(world_bounds)[2] < lower_bound(frustum_world_bounds)[2];
+
+            bool are_separated = are_clip_separated or are_world_separated;
+
+            if(not are_clip_separated) {
+                std::cout << "c ";
+            }
+            if(not are_world_separated) {
+                std::cout << "w ";
+            }
+            std::cout << std::endl;
+
+            if(not are_separated) {
+                output_commands.commands.push_back(c);
+            }
+        }
+
+        copy_cpu_to_gpu(output_commands);
         
-        glProgramUniform4fv(frustum_culler.program,
-            frustum_culler.frustum_clip_bounds_0_uniform_location,
-            1, data(lower_bound(frustum_clip_bounds)));
-        glProgramUniform4fv(frustum_culler.program,
-            frustum_culler.frustum_clip_bounds_1_uniform_location,
-            1, data(upper_bound(frustum_clip_bounds)));
-        glProgramUniform4fv(frustum_culler.program,
-            frustum_culler.frustum_world_bounds_0_uniform_location,
-            1, data(lower_bound(frustum_world_bounds)));
-        glProgramUniform4fv(frustum_culler.program,
-            frustum_culler.frustum_world_bounds_1_uniform_location,
-            1, data(upper_bound(frustum_world_bounds)));
-        glProgramUniformMatrix4fv(frustum_culler.program,
-            frustum_culler.world_to_clip_uniform_location,
-            1, GL_FALSE, data(frustum_culling_world_to_clip));
+        if constexpr(false) {
+            glProgramUniform4fv(frustum_culler.program,
+                frustum_culler.frustum_clip_bounds_0_uniform_location,
+                1, data(lower_bound(frustum_clip_bounds)));
+            glProgramUniform4fv(frustum_culler.program,
+                frustum_culler.frustum_clip_bounds_1_uniform_location,
+                1, data(upper_bound(frustum_clip_bounds)));
+            glProgramUniform4fv(frustum_culler.program,
+                frustum_culler.frustum_world_bounds_0_uniform_location,
+                1, data(lower_bound(frustum_world_bounds)));
+            glProgramUniform4fv(frustum_culler.program,
+                frustum_culler.frustum_world_bounds_1_uniform_location,
+                1, data(upper_bound(frustum_world_bounds)));
+            glProgramUniformMatrix4fv(frustum_culler.program,
+                frustum_culler.world_to_clip_uniform_location,
+                1, GL_FALSE, data(fc_world_to_clip));
 
-        glDispatchCompute((size(accepted_commands) + 255) / 256, 1, 1);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            glDispatchCompute((size(accepted_commands) + 255) / 256, 1, 1);
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        copy_gpu_to_cpu(output_commands);
+            copy_gpu_to_cpu(output_commands);
+        }
 
         std::sort(begin(accepted_commands.commands), end(accepted_commands.commands));
         std::sort(begin(output_commands.commands), end(output_commands.commands));
 
-        for(auto& c : output_commands.commands) {
-            std::cout << c.baseInstance << " ";
-        }
-        std::cout << std::endl;
+        // for(auto& c : output_commands.commands) {
+        //     std::cout << c.baseInstance << " ";
+        // }
+        // std::cout << std::endl;
 
         std::set_difference(
             begin(accepted_commands.commands), end(accepted_commands.commands),
@@ -124,27 +163,22 @@ void Application::render() {
             generate_mipmap(occlusion_culler);
         }
         { // Culling.
-            auto input_commands = CommandGroup();
-            input_commands.commands = accepted_commands.commands;
-            copy_cpu_to_gpu(input_commands);
-
-            auto output_commands = CommandGroup();
-            // Dirty way to allocate storage for output commands.
-            output_commands.commands = accepted_commands.commands;
+            auto output_commands = CommandGroup(size(accepted_commands));
             copy_cpu_to_gpu(output_commands);
 
             bind_for_culling(occlusion_culler);
-
             bind_for_culling(occlusion_culler,
-                input_commands, output_commands);
+                accepted_commands, output_commands);
             bind_for_culling(occlusion_culler,
                 scene.objects.data);
 
+            auto oc_w2c = agl::engine::world_to_clip(occlusion_culling_camera);
+
             glProgramUniformMatrix4fv(occlusion_culler.cull_program,
                 occlusion_culler.cull_world_to_clip_uniform_location,
-                1, GL_FALSE, data(w2c));
+                1, GL_FALSE, data(oc_w2c));
 
-            glDispatchCompute(GLuint((size(input_commands) + 255) / 256), 1, 1);
+            glDispatchCompute((size(accepted_commands) + 255) / 256, 1, 1);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
             copy_gpu_to_cpu(output_commands);
@@ -152,12 +186,17 @@ void Application::render() {
             std::sort(begin(accepted_commands.commands), end(accepted_commands.commands));
             std::sort(begin(output_commands.commands), end(output_commands.commands));
 
+            // for(auto& c : output_commands.commands) {
+            //     std::cout << c.baseInstance << " ";
+            // }
+            // std::cout << std::endl;
+
             std::set_difference(
                 begin(accepted_commands.commands), end(accepted_commands.commands),
                 begin(output_commands.commands), end(output_commands.commands),
-                std::back_inserter(gizmo_solid_commands.commands));
+                std::back_inserter(occlusion_culling_rejected_commands.commands));
 
-            copy_cpu_to_gpu(gizmo_solid_commands);
+            copy_cpu_to_gpu(occlusion_culling_rejected_commands);
 
             accepted_commands = std::move(output_commands);
         }
@@ -310,6 +349,26 @@ void Application::render() {
                 solid_renderer.object_to_world_position,
                 1, GL_FALSE, data(o2w));
             draw(solid_box.topology);
+
+            // Clip BBox.
+            auto fc_world_to_clip
+            = agl::engine::world_to_clip(frustum_culling_camera);
+
+            auto world_bounds = scene.objects.data.object_bounds[c.baseInstance];
+            auto clip_bounds = transformed(fc_world_to_clip, world_bounds);
+
+            o2w = solid_box_object_to_world(clip_bounds);
+            o2c = w2c * o2w;
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_clip_position,
+                1, GL_FALSE, data(o2c));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_normal,
+                1, GL_FALSE, data(o2w));
+            glProgramUniformMatrix4fv(solid_renderer.program,
+                solid_renderer.object_to_world_position,
+                1, GL_FALSE, data(o2w));
+            draw(solid_box.topology);
         }
 
         glDepthMask(GL_TRUE);
@@ -411,6 +470,30 @@ void Application::render() {
                 solid_renderer.object_to_world_position,
                 1, GL_FALSE, data(frustum_o2w));
             draw(solid_box.topology);
+
+            // // World BBox.
+            // auto clip_to_world = agl::engine::clip_to_world(frustum_culling_camera);
+
+            // auto frustum_clip_bounds = agl::common::interval(
+            //     agl::vec4(agl::vec3(-1.f), 1.f),
+            //     agl::vec4(agl::vec3(+1.f), 1.f));
+            // auto frustum_world_bounds = transformed(
+            //     clip_to_world,
+            //     frustum_clip_bounds);
+
+            // frustum_o2w = solid_box_object_to_world(frustum_world_bounds);
+            // frustum_o2c = w2c * frustum_o2w;
+
+            // glProgramUniformMatrix4fv(solid_renderer.program,
+            //     solid_renderer.object_to_clip_position,
+            //     1, GL_FALSE, data(frustum_o2c));
+            // glProgramUniformMatrix4fv(solid_renderer.program,
+            //     solid_renderer.object_to_world_normal,
+            //     1, GL_FALSE, data(frustum_o2w));
+            // glProgramUniformMatrix4fv(solid_renderer.program,
+            //     solid_renderer.object_to_world_position,
+            //     1, GL_FALSE, data(frustum_o2w));
+            // draw(solid_box.topology);
         }
         // Occlusion culling frustum.
         if(settings.occlusion_culling.is_anchored) {
@@ -449,3 +532,4 @@ void Application::render() {
         render_ui(*this);
     }
 }
+

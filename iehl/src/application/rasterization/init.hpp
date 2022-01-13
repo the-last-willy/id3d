@@ -15,17 +15,18 @@ void Application::init() {
     { // Scene.
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
-        scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         
-        grid_subdivision(scene.objects, {4, 4, 4});
+        grid_subdivision(scene.objects, {1, 1, 1});
     }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
             pp->aspect_ratio = 16.f / 9.f;
-            pp->z_far = 1000.f;
+            pp->z_far = 100.f;
         }
         frustum_culling_camera = camera;
+        occlusion_culling_camera = camera;
     }
 
     { // Forward rendering.
