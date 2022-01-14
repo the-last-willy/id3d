@@ -13,10 +13,10 @@ void Application::init() {
         
     }
     { // Scene.
-        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
+        scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
         // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
-        scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         
         grid_subdivision(scene.objects, {8, 8, 8});
     }
@@ -49,7 +49,7 @@ void Application::init() {
         auto bounds = agl::common::interval(
             lower_bound(scene.objects.data.bounds).xyz(),
             upper_bound(scene.objects.data.bounds).xyz());
-        light_culling = ::light_culling(scene.lights, bounds, {1, 1, 1});
+        light_culling = ::light_culling(scene.lights, bounds, {16, 16, 16});
     }
 
     { // Gizmos.

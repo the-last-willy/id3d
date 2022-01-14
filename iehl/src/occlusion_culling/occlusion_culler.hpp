@@ -77,40 +77,42 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
     glNamedFramebufferTexture(oc.depth_fbo,
         GL_DEPTH_ATTACHMENT, oc.depth_texture, 0);
 
-    // Shader storage buffer bindigs.
+    if constexpr(false) {
+        // Shader storage buffer bindigs.
 
-    gl::ShaderStorageBlockBinding(oc.cull_program,
-        "input_draw_commands_buffer",
-        oc.cull_input_draw_commands_buffer_binding);
-    gl::ShaderStorageBlockBinding(oc.cull_program,
-        "output_draw_command_count_buffer",
-        oc.cull_output_draw_command_count_buffer_binding);
-    gl::ShaderStorageBlockBinding(oc.cull_program,
-        "output_draw_commands_buffer",
-        oc.cull_output_draw_commands_buffer_binding);
-    gl::ShaderStorageBlockBinding(oc.cull_program,
-        "world_object_bounds_buffer",
-        oc.cull_world_object_bounds_buffer_binding);
+        gl::ShaderStorageBlockBinding(oc.cull_program,
+            "input_draw_commands_buffer",
+            oc.cull_input_draw_commands_buffer_binding);
+        gl::ShaderStorageBlockBinding(oc.cull_program,
+            "output_draw_command_count_buffer",
+            oc.cull_output_draw_command_count_buffer_binding);
+        gl::ShaderStorageBlockBinding(oc.cull_program,
+            "output_draw_commands_buffer",
+            oc.cull_output_draw_commands_buffer_binding);
+        gl::ShaderStorageBlockBinding(oc.cull_program,
+            "world_object_bounds_buffer",
+            oc.cull_world_object_bounds_buffer_binding);
 
-    // Uniform locations.
+        // Uniform locations.
 
-    oc.cull_hzb_uniform_location
-    = glGetUniformLocation(oc.cull_program,
-        "hzb");
-    oc.cull_world_to_clip_uniform_location
-    = glGetUniformLocation(oc.cull_program,
-        "world_to_clip");
+        oc.cull_hzb_uniform_location
+        = glGetUniformLocation(oc.cull_program,
+            "hzb");
+        oc.cull_world_to_clip_uniform_location
+        = glGetUniformLocation(oc.cull_program,
+            "world_to_clip");
 
-    oc.draw_model_to_clip_uniform_location
-    = glGetUniformLocation(oc.draw_program,
-        "model_to_clip");
+        oc.draw_model_to_clip_uniform_location
+        = glGetUniformLocation(oc.draw_program,
+            "model_to_clip");
 
-    oc.mipmap_input_image_uniform_location
-    = glGetUniformLocation(oc.mipmap_program,
-        "input_image");
-    oc.mipmap_output_image_uniform_location
-    = glGetUniformLocation(oc.mipmap_program,
-        "output_image");
+        oc.mipmap_input_image_uniform_location
+        = glGetUniformLocation(oc.mipmap_program,
+            "input_image");
+        oc.mipmap_output_image_uniform_location
+        = glGetUniformLocation(oc.mipmap_program,
+            "output_image");
+    }
 
     return oc;
 }
