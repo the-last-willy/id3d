@@ -29,31 +29,53 @@ void load_lights(
     for(std::size_t si = 0; si < size(shapes); ++si) {
         auto& shape = shapes[si];
         auto& mesh = shape.mesh;
-        auto first_mat = true;
         for(std::size_t fi = 0; fi < size(mesh.material_ids);) {
             auto material_id = mesh.material_ids[fi];
             auto& material = materials[material_id];
-            auto vertex_id = mesh.indices[fi].vertex_index;
             if(is_emissive(material)) {
-                auto count = 0;
-                auto light = LightProperties();
-                light.position = agl::vec4(
-                    attrib.vertices[3 * vertex_id + 0],
-                    attrib.vertices[3 * vertex_id + 1],
-                    attrib.vertices[3 * vertex_id + 2],
-                    1.f);
-                if(first_mat) {
-                    first_mat = false;
-                    std::cout << si << " \"" << shape.name << "\" " << std::endl;
-                }
-                for(++fi; fi < size(mesh.material_ids); ++fi) {
-                    if(mesh.material_ids[fi] != material_id) {
-                        break;
-                    } else {
-                        count += 1;
+                auto centroid_sum = agl::vec3(0.f);
+                auto face_count = 0;
+                auto centroid0 = agl::vec3(0.f);
+                {
+                    for(int vi = 0; vi < 3; ++vi) {
+                        auto vertex_id = mesh.indices[3 * fi + vi].vertex_index;
+                        centroid0 = agl::vec3(
+                            attrib.vertices[3 * vertex_id + 0],
+                            attrib.vertices[3 * vertex_id + 1],
+                            attrib.vertices[3 * vertex_id + 2]);
                     }
                 }
-                std::cout << "  " << count << "\"" << material.name << "\"" << std::endl;
+                for(; fi < size(mesh.material_ids); ++fi) {
+                    if(mesh.num_face_vertices[fi] != 3) {
+                        throw std::runtime_error("Not supported.");
+                    }
+                    if(mesh.material_ids[fi] != material_id) {
+                        break;
+                    }
+                    auto centroid = agl::vec3(0.f);
+                    for(int vi = 0; vi < 3; ++vi) {
+                        auto vertex_id = mesh.indices[3 * fi + vi].vertex_index;
+                        centroid += agl::vec3(
+                            attrib.vertices[3 * vertex_id + 0],
+                            attrib.vertices[3 * vertex_id + 1],
+                            attrib.vertices[3 * vertex_id + 2]);
+                        
+                    }
+                    centroid /= 3.f;
+                    if(distance(centroid, centroid0) > 2.f) {
+                        break;
+                    }
+                    centroid_sum += centroid;
+                    face_count += 1;
+                }
+                auto light = LightProperties();
+                light.attenuation = agl::vec4(1.f, 0.f, 1.f, 0.f) / 2.f;
+                light.rgb_color = agl::vec4(
+                    material.emission[0],
+                    material.emission[1],
+                    material.emission[2],
+                    1.f);
+                light.position = agl::vec4(centroid_sum / float(face_count), 1.f);
                 lg.light_properties.push_back(light);
             } else {
                 for(++fi; fi < size(mesh.material_ids); ++fi) {

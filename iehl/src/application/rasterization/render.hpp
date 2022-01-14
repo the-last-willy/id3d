@@ -426,23 +426,23 @@ void Application::render() {
         }
         glCullFace(GL_FRONT);
         // Lights.
-        for(auto& l : scene.lights.light_properties) {
-            auto l_o2w = agl::translation(l.position.xyz()) * agl::scaling3(0.5f);
-            auto l_o2c = w2c * l_o2w;
-            gl::ProgramUniform4fv(solid_renderer.program,
-                solid_renderer.rgba_color,
-                {1.f, 1.f, 0.f, 1.f});
-            glProgramUniformMatrix4fv(solid_renderer.program,
-                solid_renderer.object_to_clip_position,
-                1, GL_FALSE, data(l_o2c));
-            glProgramUniformMatrix4fv(solid_renderer.program,
-                solid_renderer.object_to_world_normal,
-                1, GL_FALSE, data(l_o2w));
-            glProgramUniformMatrix4fv(solid_renderer.program,
-                solid_renderer.object_to_world_position,
-                1, GL_FALSE, data(l_o2w));
-            draw(solid_box.topology);
-        }
+        // for(auto& l : scene.lights.light_properties) {
+        //     auto l_o2w = agl::translation(l.position.xyz()) * agl::scaling3(0.5f);
+        //     auto l_o2c = w2c * l_o2w;
+        //     gl::ProgramUniform4fv(solid_renderer.program,
+        //         solid_renderer.rgba_color,
+        //         1, data(l.rgb_color));
+        //     glProgramUniformMatrix4fv(solid_renderer.program,
+        //         solid_renderer.object_to_clip_position,
+        //         1, GL_FALSE, data(l_o2c));
+        //     glProgramUniformMatrix4fv(solid_renderer.program,
+        //         solid_renderer.object_to_world_normal,
+        //         1, GL_FALSE, data(l_o2w));
+        //     glProgramUniformMatrix4fv(solid_renderer.program,
+        //         solid_renderer.object_to_world_position,
+        //         1, GL_FALSE, data(l_o2w));
+        //     draw(solid_box.topology);
+        // }
 
         glDepthMask(GL_TRUE);
     }

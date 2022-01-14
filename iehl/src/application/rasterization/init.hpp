@@ -49,7 +49,7 @@ void Application::init() {
         auto bounds = agl::common::interval(
             lower_bound(scene.objects.data.bounds).xyz(),
             upper_bound(scene.objects.data.bounds).xyz());
-        light_culling = ::light_culling(scene.lights, bounds, {4, 4, 4});
+        light_culling = ::light_culling(scene.lights, bounds, {1, 1, 1});
     }
 
     { // Gizmos.

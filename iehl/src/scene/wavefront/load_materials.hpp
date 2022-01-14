@@ -12,5 +12,5 @@ void load_materials(
 {
     load_albedo_textures(scene, wavefront, folder_path);
     load_ao_roughness_metallic_textures(scene, wavefront, folder_path);
-    load_material_properties(scene, wavefront, folder_path);
+    load_material_properties(scene, wavefront);
 }
