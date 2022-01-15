@@ -9,17 +9,6 @@ void Application::init() {
     { // Shader compiler.
         shader_compiler.log_folder = "logs/";
     }
-    { // Forward rendering.
-        
-    }
-    { // Scene.
-        scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
-        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
-        
-        grid_subdivision(scene.objects, {8, 8, 8});
-    }
     { // Camera.
         if(auto pp = std::get_if<eng::PerspectiveProjection>(&camera.projection)) {
             pp->aspect_ratio = 16.f / 9.f;
@@ -29,7 +18,32 @@ void Application::init() {
         frustum_culling_camera = camera;
         occlusion_culling_camera = camera;
     }
+    { // Computer shaders.
+        frustum_culler = ::frustum_culler(shader_compiler);
+        occlusion_culler = ::occlusion_culler(shader_compiler);
+        z_prepasser = ::z_prepasser(shader_compiler);
+    }
+    { // Tone mapping.
+        tone_mapper = ::tone_mapper(shader_compiler);
+    }
+    { // Scene.
+        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
+        // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
+        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+        
+        grid_subdivision(scene.objects, {8, 8, 8});
 
+        scene_z_prepasser_vao = vertex_array(scene.objects,
+            z_prepasser);
+    }
+    { // Light culling.
+        std::cout << "Light culling." << std::endl;
+        auto bounds = agl::common::interval(
+            lower_bound(scene.objects.data.bounds).xyz(),
+            upper_bound(scene.objects.data.bounds).xyz());
+        light_culling = ::light_culling(scene.lights, bounds, {32, 32, 32});
+    }
     { // Forward rendering.
         forward_renderer = ::forward_renderer(shader_compiler);
         forward_rendering_vao = vertex_array(
@@ -37,21 +51,6 @@ void Application::init() {
         glVertexArrayElementBuffer(forward_rendering_vao,
                 scene.objects.topology.element_buffer);
     }
-    { // Computer shaders
-        frustum_culler = ::frustum_culler(shader_compiler);
-        occlusion_culler = ::occlusion_culler(shader_compiler);
-    }
-    { // Tone mapping.
-        tone_mapper = ::tone_mapper(shader_compiler);
-    }
-    { // Light culling.
-        std::cout << "Light culling." << std::endl;
-        auto bounds = agl::common::interval(
-            lower_bound(scene.objects.data.bounds).xyz(),
-            upper_bound(scene.objects.data.bounds).xyz());
-        light_culling = ::light_culling(scene.lights, bounds, {16, 16, 16});
-    }
-
     { // Gizmos.
         solid_renderer = ::solid_renderer(shader_compiler);
         wireframe_renderer = ::wireframe_renderer(shader_compiler);

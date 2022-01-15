@@ -1,22 +1,35 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
+////////////////////////////////////////////////////////////////////////////////
 
+struct FrustumCullingSettings {
+    bool is_enabled = false;
 
-struct RayTracingSettings {
-    bool enabled = false;
-    float range = 1.f;
-    uint32_t ray_per_frame = 0;
+    // Debugging.
+
+    bool is_anchored = false;
 };
 
-struct SceneStatistics {
-    std::size_t object_count = 0;
+////////////////////////////////////////////////////////////////////////////////
+
+struct OcclusionCullingSettings {
+    bool is_enabled = true;
+
+    // Debugging.
+
+    bool is_anchored = false;
 };
 
-struct TimeStatistics {
-    float framerate = 0.f;
+////////////////////////////////////////////////////////////////////////////////
 
-    float cpu_time = 0.f;
-    float gpu_time = 0.f;
+struct Z_PrepassSettings {
+    bool is_enabled = true;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct Settings {
+    FrustumCullingSettings frustum_culling;
+    OcclusionCullingSettings occlusion_culling;
+    Z_PrepassSettings z_prepass;
 };

@@ -5,13 +5,13 @@
 #include "frustum_culler/all.hpp"
 #include "gizmo/all.hpp"
 #include "hdr_framebuffer/all.hpp"
-#include "lighting/all.hpp"
 #include "occlusion_culling/all.hpp"
-#include "settings/all.hpp"
 #include "scene/all.hpp"
 #include "solid_renderer/all.hpp"
 #include "tone_mapping/all.hpp"
 #include "wireframe_renderer/all.hpp"
+#include "z_prepasser/all.hpp"
+#include "settings.hpp"
 #include "statistics.hpp"
 
 #include <agl/standard/all.hpp>
@@ -25,12 +25,22 @@
 struct Application : Program {
     eng::ShaderCompiler shader_compiler;
     
+    // Scene.
+
     Scene scene;
+
+    gl::VertexArray scene_z_prepasser_vao;
+
+    //
 
     HDR_Framebuffer hdr_framebuffer;
 
+    //
+
     ForwardRenderer forward_renderer;
     gl::VertexArray forward_rendering_vao;
+
+    Z_Prepasser z_prepasser;
 
     // Compute shaders.
 

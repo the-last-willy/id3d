@@ -167,6 +167,25 @@ void Application::render() {
 
         glViewport(0, 0, 1280, 720);
     }
+    // Z-Prepass.
+    if(settings.z_prepass.is_enabled) {
+        bind(z_prepasser);
+
+        glBindVertexArray(scene_z_prepasser_vao);
+
+        glDepthFunc(GL_LESS);
+        auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
+        
+        glProgramUniformMatrix4fv(z_prepasser.program,
+            z_prepasser.world_to_clip,
+            1, GL_FALSE, data(w2c));
+
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+            accepted_commands.commands_buffer);
+        glMultiDrawElementsIndirect(
+            GL_TRIANGLES, GL_UNSIGNED_INT,
+            0, size(accepted_commands), 0);
+    }
     if constexpr(true) { // Drawing.
         bind(forward_renderer);
         bind(forward_renderer, accepted_commands);
@@ -200,7 +219,7 @@ void Application::render() {
         // glCullFace(GL_BACK);
         // glEnable(GL_CULL_FACE);
 
-        glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LEQUAL);
         glEnable(GL_DEPTH_TEST);
 
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
@@ -208,7 +227,7 @@ void Application::render() {
 
         glMultiDrawElementsIndirect(
             GL_TRIANGLES, GL_UNSIGNED_INT,
-            0, GLsizei(size(accepted_commands)), 0);
+            0, size(accepted_commands), 0);
 
         // glDisable(GL_CULL_FACE);
 
@@ -222,7 +241,7 @@ void Application::render() {
         auto cap_b = scoped(gl::Enable(GL_BLEND));
 
         glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LEQUAL);
         auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
 
         glProgramUniform3fv(solid_renderer.program,
@@ -316,7 +335,7 @@ void Application::render() {
         auto cap_b = scoped(gl::Enable(GL_BLEND));
 
         glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LEQUAL);
         auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
 
         glProgramUniform3fv(solid_renderer.program,

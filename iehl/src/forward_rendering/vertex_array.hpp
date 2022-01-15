@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vertex_attribute/all.hpp"
+#include "scene/vertex_attribute/all.hpp"
 #include "forward_renderer.hpp"
 
 inline

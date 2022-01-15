@@ -3,6 +3,7 @@
 struct MaterialProperties {
     std::array<float, 4> color_factor;
     std::array<float, 4> emission_factor;
+    std::array<float, 4> ao_roughness_metalness_fator;
 };
 
 inline

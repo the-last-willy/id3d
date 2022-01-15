@@ -1,8 +1,8 @@
 #pragma once
 
-#include "lighting/all.hpp"
-#include "material/all.hpp"
-#include "object/all.hpp"
+#include "scene/lighting/all.hpp"
+#include "scene/material/all.hpp"
+#include "scene/object/all.hpp"
 #include "forward_renderer.hpp"
 
 inline

@@ -24,7 +24,7 @@ void load_albedo_textures(
         glSamplerParameteri(scene.materials.albedo_sampler,
             GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureStorage3D(scene.materials.albedo_texture_array,
-            1, GL_RGB8, width, height, depth);
+            1, GL_RGBA8, width, height, depth);
     }
 
     stbi_set_flip_vertically_on_load(true);
@@ -35,23 +35,23 @@ void load_albedo_textures(
             int x, y, n;
             auto data = stbi_load(
                 texture_path.c_str(),
-                &x, &y, &n, 3);
+                &x, &y, &n, 4);
             if(data == NULL) { 
                 throw std::runtime_error(
                     "Failed to open texture \"" + texture_path + "\"");
             }
             if(x != width.value or y != width.value) {
-                auto resized = std::make_unique_for_overwrite<unsigned char[]>(3 * width.value * height.value);
+                auto resized = std::make_unique_for_overwrite<unsigned char[]>(4 * width.value * height.value);
                 stbir_resize_uint8(
                     data, x, y, 0,
                     resized.get(), width.value, height.value, 0,
-                    3);
+                    4);
                 glTextureSubImage3D(
                     scene.materials.albedo_texture_array,
                     0,
                     0, 0, GLsizei(m),
                     width, height, 1,
-                    GL_RGB, GL_UNSIGNED_BYTE,
+                    GL_RGBA, GL_UNSIGNED_BYTE,
                     resized.get());
             } else {
                 glTextureSubImage3D(
@@ -59,18 +59,18 @@ void load_albedo_textures(
                     0,
                     0, 0, GLsizei(m),
                     x, y, 1,
-                    GL_RGB, GL_UNSIGNED_BYTE,
+                    GL_RGBA, GL_UNSIGNED_BYTE,
                     data);
             }
             stbi_image_free(data);
         } else {
-            auto white = std::array<GLubyte, 3>{255, 255, 255};
+            auto white = std::array<GLubyte, 4>{255, 255, 255, 255};
             glClearTexSubImage(
                 scene.materials.albedo_texture_array,
                 0,
                 0, 0, 0,
                 width, height, depth,
-                GL_RGB,
+                GL_RGBA,
                 GL_UNSIGNED_BYTE,
                 data(white));
         }

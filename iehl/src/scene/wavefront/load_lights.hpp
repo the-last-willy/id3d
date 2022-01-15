@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../scene.hpp"
-#include "lighting/all.hpp"
+#include "scene/lighting/all.hpp"
 
 #include <tiny_obj_loader.h>
 
@@ -35,6 +35,8 @@ void load_lights(
             if(is_emissive(material)) {
                 auto centroid_sum = agl::vec3(0.f);
                 auto face_count = 0;
+                auto total_area = 0.f;
+
                 auto centroid0 = agl::vec3(0.f);
                 {
                     for(int vi = 0; vi < 3; ++vi) {
@@ -52,24 +54,29 @@ void load_lights(
                     if(mesh.material_ids[fi] != material_id) {
                         break;
                     }
-                    auto centroid = agl::vec3(0.f);
+                    auto positions = std::array<agl::Vec3, 3>();
                     for(int vi = 0; vi < 3; ++vi) {
                         auto vertex_id = mesh.indices[3 * fi + vi].vertex_index;
-                        centroid += agl::vec3(
+                        positions[vi] = agl::vec3(
                             attrib.vertices[3 * vertex_id + 0],
                             attrib.vertices[3 * vertex_id + 1],
                             attrib.vertices[3 * vertex_id + 2]);
                         
                     }
-                    centroid /= 3.f;
+                    auto centroid = (positions[0] + positions[1] + positions[2]) / 3.f;
                     if(distance(centroid, centroid0) > 2.f) {
                         break;
                     }
                     centroid_sum += centroid;
                     face_count += 1;
+                    total_area += length(
+                        cross(
+                            positions[1] - positions[0],
+                            positions[2] - positions[0])) 
+                        / 2.f;
                 }
                 auto light = LightProperties();
-                light.attenuation = agl::vec4(1.f, 0.f, 1.f, 0.f) / 2.f;
+                light.attenuation = agl::vec4(1.f, 0.f, 1.f, 0.f) / std::sqrt(total_area) / 32.f;
                 light.rgb_color = agl::vec4(
                     material.emission[0],
                     material.emission[1],

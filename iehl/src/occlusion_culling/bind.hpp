@@ -1,7 +1,7 @@
 #pragma once
 
 #include "command/all.hpp"
-#include "object/all.hpp"
+#include "scene/object/all.hpp"
 #include "occlusion_culler.hpp"
 
 inline

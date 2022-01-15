@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vertex_attribute/vertex_attribute_group.hpp"
+#include "scene/vertex_attribute/vertex_attribute_group.hpp"
 #include "object_group.hpp"
 #include "triangle_centroid.hpp"
 

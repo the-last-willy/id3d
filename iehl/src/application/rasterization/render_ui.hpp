@@ -50,6 +50,10 @@ void render_ui(Application& app) {
                 100.f * rejected_ratio(app.statistics.occlusion_culling));
             ImGui::TreePop();
         }
+        if(ImGui::TreeNode("Z-prepass")) {
+            ImGui::Checkbox("Enabled",
+                &app.settings.z_prepass.is_enabled);
+        }
     }
     ImGui::End();
 }

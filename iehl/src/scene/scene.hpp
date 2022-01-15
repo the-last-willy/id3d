@@ -1,9 +1,9 @@
 #pragma once
 
-#include "lighting/all.hpp"
-#include "material/all.hpp"
-#include "object/all.hpp"
-#include "vertex_attribute/all.hpp"
+#include "scene/lighting/all.hpp"
+#include "scene/material/all.hpp"
+#include "scene/object/all.hpp"
+#include "scene/vertex_attribute/all.hpp"
 
 #include <agl/engine/all.hpp>
 

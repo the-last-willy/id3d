@@ -1,18 +1,29 @@
 #version 450 core
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-// Fragment interface.
-
 // Unqualified normals and positions are assumed to be in world space.
 // Lighting is done in world space.
 
-struct FragmentContext {
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Fragment.
+
+struct Fragment {
+    vec3 position;
+
+    // Directions.
+    // In world space, outward the fragment.
+
     vec3 normal_dir;
     vec3 view_dir;
 
-    vec3 position;
+    // Material.
+
+    vec3 albedo;
+    vec3 emissivity;
+    float opacity;
+    float roughness;
+    float shininess;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,11 +61,18 @@ struct LightProperties {
     // Direction ?
 };
 
-vec3 lighting(in LightProperties lps, in vec3 position) {
-    float d = distance(lps.position.xyz, position);
+vec3 lighting(in Fragment f, in LightProperties light) {
+    vec3 light_dir = normalize(light.position.xyz - f.position);
+    float lambertian = max(dot(light_dir, f.normal_dir), 0.);
+
+    float d = distance(light.position.xyz, f.position);
     vec3 monomial_basis = vec3(1., d, d * d);
-    float attenuation = dot(monomial_basis, lps.attenuation.xyz);
-    return lps.rgb_color.rgb / attenuation;
+    float inv_attenuation = dot(monomial_basis, light.attenuation.xyz);
+
+    vec3 halfway_dir = normalize(light_dir + f.view_dir);
+    float specular = pow(max(dot(halfway_dir, f.normal_dir), 0.), f.shininess);
+
+    return (lambertian + specular) * light.rgb_color.rgb / inv_attenuation;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,10 +112,10 @@ ivec3 light_culling_cell_coords(in vec3 position) {
     return ivec3((position - lb) / (ub - lb) * r);
 }
 
-vec3 light_culling_lighting(in vec3 position) {
+vec3 light_culling_lighting(in Fragment f) {
     ivec3 r = light_culling_resolution;
 
-    ivec3 cell = light_culling_cell_coords(position);
+    ivec3 cell = light_culling_cell_coords(f.position);
     if(any(lessThan(cell, ivec3(0))) || any(greaterThanEqual(cell, r))) {
         return vec3(0.);
     } else {
@@ -107,7 +125,7 @@ vec3 light_culling_lighting(in vec3 position) {
 
         vec3 sum = vec3(0.f);
         for(uint i = span.first; i < span.first + min(span.count, 500); ++i) {
-            sum += lighting(light_properties[light_culling_indices[i]], position);
+            sum += lighting(f, light_properties[light_culling_indices[i]]);
         }
         return sum;
     }
@@ -119,6 +137,7 @@ vec3 light_culling_lighting(in vec3 position) {
 struct MaterialProperties {
     vec4 color_factor;
     vec4 emission_factor;
+    vec4 ao_roughness_metalness_factor;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -135,11 +154,26 @@ layout(std430) readonly buffer material_triangle_material_id_buffer {
     int triangle_material_ids[/*primitive index*/];
 };
 
-vec4 material(in vec3 position, in uint triangle_id) {
+vec3 material_emission(in Fragment f, in uint triangle_id) {
     uint material_id = triangle_material_ids[triangle_id];
     MaterialProperties properties = material_properties[material_id];
-    // return texture(ao_roughness_metallic_roughness_texture_array, vec3(v_texcoords, material_id));
-    return properties.emission_factor;
+
+    return properties.emission_factor.rgb;
+}
+
+vec3 material(in Fragment f, in uint triangle_id) {
+    uint material_id = triangle_material_ids[triangle_id];
+    MaterialProperties properties = material_properties[material_id];
+
+    vec4 albedo_alpha = texture(
+        albedo_texture_array,
+        vec3(v_texcoords, material_id));
+
+    vec3 ao_roughness_metallic = texture(
+        ao_roughness_metallic_roughness_texture_array,
+        vec3(v_texcoords, material_id)).rgb;
+    
+    return albedo_alpha.rgb;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -176,15 +210,56 @@ uniform vec3 eye_world_position;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+Fragment current_fragment() {
+    Fragment f;
+
+    f.position = v_world_position;
+
+    // Directions.
+
+    f.normal_dir = normalize(v_world_normal);
+    f.view_dir = normalize(eye_world_position - v_world_position);
+
+    // Material.
+
+    uint triangle_id = object_global_primitive_id(v_draw_id);
+    uint material_id = triangle_material_ids[triangle_id];
+    MaterialProperties properties = material_properties[material_id];
+
+    f.emissivity = properties.emission_factor.rgb;
+
+    vec4 albedo_opacity = texture(
+        albedo_texture_array,
+        vec3(v_texcoords, material_id));
+
+    f.albedo = albedo_opacity.rgb;
+    f.opacity = albedo_opacity.a;
+
+    vec3 ao_roughness_metallic = texture(
+        ao_roughness_metallic_roughness_texture_array,
+        vec3(v_texcoords, material_id)).rgb;
+    
+    f.roughness = properties.ao_roughness_metalness_factor.g
+    * ao_roughness_metallic.g;
+
+    f.shininess = 2. / pow(max(f.roughness, 0.001), 2.) - 2.;
+
+    return f;
+}
+
 void main() {
-    // In world space, outward the position.
-    vec3 normal_dir = normalize(v_world_normal);
-    vec3 view_dir = normalize(eye_world_position - v_world_position);
+    Fragment f = current_fragment();
 
-    float lambertian = abs(dot(view_dir, normal_dir)) * .5 + .5;
-    vec3 lighting = light_culling_lighting(v_world_position);
-    // vec3 lighting = material(v_world_position, object_global_primitive_id(v_draw_id)).xyz;
-    lighting = lighting * .8 + .2;
+    if(f.opacity <= .5) {
+        discard;
+    }
 
-    f_rgba_color = vec4(lambertian * lighting, 1.);
+    float lambertian = abs(dot(f.view_dir, f.normal_dir)) * .5 + .5;
+
+    float d = distance(f.position, eye_world_position);
+    vec3 lighting = light_culling_lighting(f) / (1. + d + d);
+
+    vec3 diffuse_lighting = lambertian * (lighting * f.albedo + f.emissivity);
+
+    f_rgba_color = vec4(diffuse_lighting, 1.);
 }

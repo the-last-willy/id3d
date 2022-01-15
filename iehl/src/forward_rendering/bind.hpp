@@ -1,7 +1,7 @@
 #pragma once
 
 #include "command/all.hpp"
-#include "material/all.hpp"
+#include "scene/material/all.hpp"
 #include "forward_renderer.hpp"
 
 inline

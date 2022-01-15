@@ -70,7 +70,7 @@ void load_ao_roughness_metallic_textures(
             }
             stbi_image_free(data);
         } else {
-            auto white = std::array<GLubyte, 3>{255, 0, 0};
+            auto white = std::array<GLubyte, 3>{255, 255, 255};
             glClearTexSubImage(
                 texture_array,
                 0,
