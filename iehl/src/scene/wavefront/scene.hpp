@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../scene.hpp"
 #include "load_lights.hpp"
 #include "load_materials.hpp"
 
@@ -94,7 +93,7 @@ Scene wavefront_scene(std::filesystem::path file_path) {
                     vertex_to_index[mesh.indices[i + 2]]});
             scene.objects.data.triangle_material_ids.push_back(
                 mesh.material_ids[i / 3]);
-            scene.objects.data.triangle_object_ids.push_back(s);
+            // scene.objects.data.triangle_object_ids.push_back(s);
         }
     }
 

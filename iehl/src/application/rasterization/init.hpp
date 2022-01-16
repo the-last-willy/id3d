@@ -6,6 +6,9 @@
 #include <id3d/common/all.hpp>
 
 void Application::init() {
+    { // Random.
+        random = std::default_random_engine(agl::standard::random_seed());
+    }
     { // Shader compiler.
         shader_compiler.log_folder = "logs/";
     }
@@ -33,9 +36,13 @@ void Application::init() {
         // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         
         grid_subdivision(scene.objects, {8, 8, 8});
+        update_emissive_triangle_ids(scene);
 
         scene_z_prepasser_vao = vertex_array(scene.objects,
             z_prepasser);
+    }
+    { // Ray tracer.
+        ray_tracer = ::ray_tracer(shader_compiler);
     }
     { // Light culling.
         std::cout << "Light culling." << std::endl;

@@ -6,6 +6,7 @@
 #include "gizmo/all.hpp"
 #include "hdr_framebuffer/all.hpp"
 #include "occlusion_culling/all.hpp"
+#include "ray_tracer/all.hpp"
 #include "scene/all.hpp"
 #include "solid_renderer/all.hpp"
 #include "tone_mapping/all.hpp"
@@ -23,6 +24,8 @@
 //
 
 struct Application : Program {
+    std::default_random_engine random;
+
     eng::ShaderCompiler shader_compiler;
     
     // Scene.
@@ -30,6 +33,10 @@ struct Application : Program {
     Scene scene;
 
     gl::VertexArray scene_z_prepasser_vao;
+
+    // Ray tracer.
+
+    RayTracer ray_tracer;
 
     //
 

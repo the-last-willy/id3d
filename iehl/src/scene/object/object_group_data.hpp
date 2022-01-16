@@ -10,11 +10,13 @@ struct ObjectGroupData {
 
     // Per triangle.
 
+    std::vector<GLuint> emissive_triangle_ids;
+
     std::vector<int> triangle_material_ids;
     gl::Buffer triangle_material_id_ssbo;
 
     // Unused ?
-    std::vector<std::size_t> triangle_object_ids; 
+    // std::vector<std::size_t> triangle_object_ids; 
 
     // Whole.
 

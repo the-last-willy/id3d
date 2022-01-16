@@ -13,11 +13,25 @@ struct FrustumCullingSettings {
 ////////////////////////////////////////////////////////////////////////////////
 
 struct OcclusionCullingSettings {
-    bool is_enabled = true;
+    bool is_enabled = false;
 
     // Debugging.
 
     bool is_anchored = false;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct RasterizerSettings {
+    bool is_enabled = true;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct RayTracerSettings {
+    bool is_enabled = true;
+    
+    bool is_shooting = true;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,5 +45,7 @@ struct Z_PrepassSettings {
 struct Settings {
     FrustumCullingSettings frustum_culling;
     OcclusionCullingSettings occlusion_culling;
+    RasterizerSettings rasterizer;
+    RayTracerSettings ray_tracer;
     Z_PrepassSettings z_prepass;
 };

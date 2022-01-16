@@ -1,9 +1,8 @@
 #pragma once
 
-#include "scene/lighting/all.hpp"
-#include "scene/material/all.hpp"
-#include "scene/object/all.hpp"
-#include "scene/vertex_attribute/all.hpp"
+#include "lighting/light_group.hpp"
+#include "material/material_group.hpp"
+#include "object/object_group.hpp"
 
 #include <agl/engine/all.hpp>
 

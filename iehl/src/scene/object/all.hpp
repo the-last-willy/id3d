@@ -1,5 +1,6 @@
 #pragma once
 
+#include "data/all.hpp"
 #include "grid_subdivision.hpp"
 #include "object_group.hpp"
 #include "object_group_data.hpp"

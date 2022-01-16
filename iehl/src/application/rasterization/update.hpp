@@ -43,4 +43,23 @@ void Application::update(float) {
             occlusion_culling_camera = camera;
         }
     }
+    // Ray tracer.
+    if(settings.ray_tracer.is_enabled) {
+        if(settings.ray_tracer.is_shooting) {
+            auto c2w = agl::engine::clip_to_world(camera);
+            auto rd = std::uniform_real_distribution<float>(-1.f, 1.f);
+            for(int i = 0; i < 1'000; ++i) {
+                auto r = Ray{
+                    .origin = camera.view.position,
+                    .direction = agl::normalize((c2w * agl::vec4(
+                        0.2f * rd(random),
+                        0.2f * rd(random),
+                        1.f,
+                        1.f)
+                    ).xyz())};
+                trace(ray_tracer, scene, r);
+            }
+            statistics.ray_tracer.point_count = ray_tracer.pc.size;
+        }
+    }
 }

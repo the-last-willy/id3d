@@ -10,10 +10,12 @@ struct OcclusionCuller {
 
     gl::Framebuffer depth_fbo;
 
-    std::vector<GLint> depth_image_widths;
-    std::vector<GLint> depth_image_heights;
-    std::vector<std::vector<GLfloat>> depth_images;
-    gl::Texture depth_texture = GL_TEXTURE_2D;
+    // std::vector<GLint> depth_image_widths;
+    // std::vector<GLint> depth_image_heights;
+    // std::vector<std::vector<GLfloat>> depth_images;
+
+    gl::Texture cull_depth_texture = GL_TEXTURE_2D;
+    gl::Texture draw_depth_texture = GL_TEXTURE_2D;
 
     gl::Program cull_program;
     // VAOs have to be compatible with the forward rendering program.
@@ -69,13 +71,15 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
 
     // Textures.
     
-    glTextureStorage2D(oc.depth_texture,
-        8, GL_DEPTH_COMPONENT32F, oc.width, oc.height);
+    glTextureStorage2D(oc.cull_depth_texture,
+        8, GL_R32F, oc.width, oc.height);
+    glTextureStorage2D(oc.draw_depth_texture,
+        1, GL_DEPTH_COMPONENT32F, oc.width, oc.height);
 
     // Framebuffers.
 
     glNamedFramebufferTexture(oc.depth_fbo,
-        GL_DEPTH_ATTACHMENT, oc.depth_texture, 0);
+        GL_DEPTH_ATTACHMENT, oc.draw_depth_texture, 0);
 
     // Shader storage buffer bindigs.
 

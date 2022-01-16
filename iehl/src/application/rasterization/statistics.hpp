@@ -42,7 +42,14 @@ auto rejected_ratio(const OcclusionCullingStatistics& ocs) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+struct RayTracerStatistics {
+    std::size_t point_count = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 struct Statistics {
     FrustumCullingStatistics frustum_culling;
     OcclusionCullingStatistics occlusion_culling;
+    RayTracerStatistics ray_tracer;
 };

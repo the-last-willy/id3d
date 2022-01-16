@@ -10,12 +10,12 @@ void bind_for_culling(const OcclusionCuller& oc) {
 
     // Textures.
 
+    glBindTextureUnit(
+        oc.cull_hzb_texture_unit,
+        oc.cull_depth_texture);
     glProgramUniform1i(oc.cull_program,
         oc.cull_hzb_uniform_location,
         oc.cull_hzb_texture_unit);
-    glBindTextureUnit(
-        oc.cull_hzb_texture_unit,
-        oc.depth_texture);
 }
 
 inline
