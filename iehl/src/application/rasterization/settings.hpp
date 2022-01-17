@@ -9,19 +9,23 @@ struct FrustumCullingSettings {
 ////////////////////////////////////////////////////////////////////////////////
 
 struct OcclusionCullingSettings {
-    bool is_enabled = true;
+    bool is_enabled = false;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 struct RasterizerSettings {
     bool is_enabled = true;
+
+    // Debugging.
+
+    int draw_mode = 1;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 struct RayTracerSettings {
-    bool is_enabled = false;
+    bool is_enabled = true;
     
     bool is_shooting = false;
 };

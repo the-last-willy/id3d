@@ -11,13 +11,6 @@ void render_ui(Application& app) {
 
             ImGui::NewLine();
 
-            ImGui::Text("Debbuging:");
-            ImGui::Checkbox(
-                "Anchor view",
-                &app.settings.is_culling_anchored);
-
-            ImGui::NewLine();
-
             ImGui::Text("Statistics:");
             ImGui::Text("Accepted: %i (%f%%)", 
                 app.statistics.frustum_culling.accepted_count,
@@ -25,6 +18,15 @@ void render_ui(Application& app) {
             ImGui::Text("Rejected: %i (%f%%)",
                 app.statistics.frustum_culling.rejected_count,
                 100.f * rejected_ratio(app.statistics.frustum_culling));
+
+            ImGui::NewLine();
+
+            ImGui::Text("Debbuging:");
+            ImGui::Checkbox(
+                "Anchor view",
+                &app.settings.is_culling_anchored);
+
+            ImGui::NewLine();
                 
             ImGui::TreePop();
         }
@@ -53,6 +55,46 @@ void render_ui(Application& app) {
         if(ImGui::TreeNode("Rasterizer")) {
             ImGui::Checkbox("Enabled",
                 &app.settings.rasterizer.is_enabled);
+            
+            ImGui::NewLine();
+            
+            ImGui::Text("Statistics:");
+            ImGui::Text("Object count: %i", 
+                app.statistics.rasterization.object_draw_count);
+            ImGui::Text("CPU time (ms): %.3f ms", 
+                app.statistics.rasterization.cpu_time);
+            ImGui::Text("GPU time (ms): %.3f ms",
+                app.statistics.rasterization.gpu_time);
+
+            ImGui::NewLine();
+
+            ImGui::Text("Debugging:");
+            ImGui::Text("Draw mode:");
+            ImGui::SameLine();
+            {
+                bool enabled = ImGui::RadioButton("Normal",
+                    app.settings.rasterizer.draw_mode == 0);
+                if(enabled) {
+                    app.settings.rasterizer.draw_mode = 0;
+                }
+            }
+            ImGui::SameLine();
+            {
+                bool enabled = ImGui::RadioButton("Plain",
+                    app.settings.rasterizer.draw_mode == 1);
+                if(enabled) {
+                    app.settings.rasterizer.draw_mode = 1;
+                }
+            }
+            ImGui::SameLine();
+            {
+                bool enabled = ImGui::RadioButton("Bounding box",
+                    app.settings.rasterizer.draw_mode == 2);
+                if(enabled) {
+                    app.settings.rasterizer.draw_mode = 2;
+                }
+            }
+            
             ImGui::TreePop();
         }
         if(ImGui::TreeNode("Ray tracer")) {

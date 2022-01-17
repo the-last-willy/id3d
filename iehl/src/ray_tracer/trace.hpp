@@ -129,6 +129,10 @@ void trace(
                 rand_01(rt.random),
                 rand_01(rt.random));
             
+            auto enormal
+            = eu * vas.normals[ea]
+            + ev * vas.normals[eb]
+            + ew * vas.normals[ec];
             auto eposition
             = eu * vas.positions[ea]
             + ev * vas.positions[eb]
@@ -149,16 +153,36 @@ void trace(
                 + lw * vas.positions[lc];
 
                 auto dist = distance(lposition, eposition);
-                if(dist < 0.001f) {
+                if(is_emissive(material)) {
+                    auto color = agl::vec3(
+                        material.emission_factor[0],
+                        material.emission_factor[1],
+                        material.emission_factor[2]);
                     push_back(rt.pc, Point{
-                        .color = agl::vec3(
-                            material.color_factor[0],
-                            material.color_factor[1],
-                            material.color_factor[2]),
+                        .color = color,
                         .normal = agl::normalize(
                             u * vas.normals[a]
                             + v * vas.normals[b]
                             + w * vas.normals[c]),
+                        .position = position});
+                } else if(dist < 0.001f) {
+                    auto normal = agl::normalize(
+                        u * vas.normals[a]
+                        + v * vas.normals[b]
+                        + w * vas.normals[c]);
+
+                    auto distance_to_light = distance(position, eposition);
+                    float attenuation = 8.f / (1.f + distance_to_light * distance_to_light);
+                    float lambertian = std::abs(dot(normal, light_dir));
+
+                    auto color = lambertian * attenuation * agl::vec3(
+                        material.color_factor[0],
+                        material.color_factor[1],
+                        material.color_factor[2]);
+
+                    push_back(rt.pc, Point{
+                        .color = color,
+                        .normal = normal,
                         .position = position});
                 } else {
                     push_back(rt.pc, Point{

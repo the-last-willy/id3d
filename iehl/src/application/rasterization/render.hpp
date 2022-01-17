@@ -33,7 +33,17 @@ void Application::render() {
         gl::ClearNamedFramebuffer(0,
             GL_DEPTH, 0, 1.f);
     }
+    { // Clear HDR framebuffer.
+        gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0,
+            1.f);
+        gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_COLOR, 0,
+            std::array{0.f, 0.f, 0.f, 1.f});
+    }
     if(settings.rasterizer.is_enabled) {
+        auto cpu_time_start = std::chrono::high_resolution_clock::now();
+        { // Time.
+            gl::BeginQuery(GL_TIME_ELAPSED, gpu_time_query);
+        }
         // Frustum culling.
         if(settings.frustum_culling.is_enabled) {
             auto output_commands = CommandGroup(size(accepted_commands));
@@ -96,7 +106,8 @@ void Application::render() {
             accepted_commands = std::move(output_commands);
         }
         // Occlusion culling.
-        if constexpr(false) {
+        if(settings.occlusion_culling.is_enabled) {
+            auto oc_w2c = agl::engine::world_to_clip(culling_camera);
             { // Drawing.
                 bind_for_drawing(occlusion_culler);
 
@@ -109,7 +120,7 @@ void Application::render() {
 
                 glProgramUniformMatrix4fv(occlusion_culler.draw_program,
                     occlusion_culler.draw_model_to_clip_uniform_location,
-                    1, GL_FALSE, data(m2c));
+                    1, GL_FALSE, data(oc_w2c));
 
                 glDepthFunc(GL_LESS);
                 glEnable(GL_DEPTH_TEST);
@@ -126,7 +137,7 @@ void Application::render() {
             { // Mipmapping.
                 generate_mipmap(occlusion_culler);
             }
-            if constexpr(true) { // Culling.
+            { // Culling.
                 auto output_commands = CommandGroup(size(accepted_commands));
                 copy_cpu_to_gpu(output_commands);
 
@@ -135,8 +146,6 @@ void Application::render() {
                     accepted_commands, output_commands);
                 bind_for_culling(occlusion_culler,
                     scene.objects.data);
-
-                auto oc_w2c = agl::engine::world_to_clip(culling_camera);
 
                 glProgramUniformMatrix4fv(occlusion_culler.cull_program,
                     occlusion_culler.cull_world_to_clip_uniform_location,
@@ -150,11 +159,6 @@ void Application::render() {
                 std::sort(begin(accepted_commands.commands), end(accepted_commands.commands));
                 std::sort(begin(output_commands.commands), end(output_commands.commands));
 
-                // for(auto& c : output_commands.commands) {
-                //     std::cout << c.baseInstance << " ";
-                // }
-                // std::cout << std::endl;
-
                 std::set_difference(
                     begin(accepted_commands.commands), end(accepted_commands.commands),
                     begin(output_commands.commands), end(output_commands.commands),
@@ -163,17 +167,22 @@ void Application::render() {
                 copy_cpu_to_gpu(occlusion_culling_rejected_commands);
 
                 accepted_commands = std::move(output_commands);
+
+                statistics.occlusion_culling.accepted_count
+                = size(accepted_commands);
+
+                statistics.occlusion_culling.rejected_count
+                = size(occlusion_culling_rejected_commands);
             }
         }
         { // Setup HDR framebuffer.
             bind(hdr_framebuffer);
 
-            gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_DEPTH, 0,
-                1.f);
-            gl::ClearNamedFramebuffer(hdr_framebuffer.fbo, GL_COLOR, 0,
-                std::array{0.f, 0.f, 0.f, 1.f});
-
             glViewport(0, 0, 1280, 720);
+        }
+        { // Statistics.
+            statistics.rasterization.object_draw_count
+            = unsigned(size(accepted_commands));
         }
         // Z-Prepass.
         if(settings.z_prepass.is_enabled) {
@@ -204,7 +213,7 @@ void Application::render() {
 
             glDisable(GL_DEPTH_TEST);
         }
-        if constexpr(false) { // Drawing.
+        if(settings.rasterizer.draw_mode == 0) { // Drawing.
             bind(forward_renderer);
             bind(forward_renderer, accepted_commands);
             bind(forward_renderer, scene.materials);
@@ -251,7 +260,7 @@ void Application::render() {
 
             glDisable(GL_DEPTH_TEST);
         }
-        if constexpr(true) { // Solid BBox drawing.
+        if(settings.rasterizer.draw_mode == 2) { // Solid BBox drawing.
             glUseProgram(solid_renderer.program);
 
             glBlendEquation(GL_FUNC_ADD);
@@ -345,7 +354,7 @@ void Application::render() {
 
             glDepthMask(GL_TRUE);
         }
-        if constexpr(false) { // Solid drawing.
+        if(settings.rasterizer.draw_mode == 1) { // Solid drawing.
             glUseProgram(solid_renderer.program);
 
             glBlendEquation(GL_FUNC_ADD);
@@ -465,40 +474,54 @@ void Application::render() {
 
             glDepthMask(GL_TRUE);
         }
-        { // Tone mapping.
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        { // Time.
+            auto cpu_time_stop = std::chrono::high_resolution_clock::now();
+            gl::EndQuery(GL_TIME_ELAPSED);
 
-            bind(tone_mapper);
-            bind(tone_mapper, hdr_framebuffer);
+            statistics.rasterization.cpu_time *= .9f;
+            statistics.rasterization.cpu_time
+            += .1f * std::chrono::duration_cast<std::chrono::microseconds>(cpu_time_stop - cpu_time_start).count() / 1e3f;
 
-            glViewport(0, 0, 1280, 720);
-
-            glBindVertexArray(tone_mapping_vao);
-
-            draw(tone_mapper);
+            statistics.rasterization.gpu_time *= .9f;
+            statistics.rasterization.gpu_time
+            += .1f  * gl::GetQueryObjectui64v(gpu_time_query, GL_QUERY_RESULT) / 1e6f;
         }
     }
     if(settings.ray_tracer.is_enabled) {
-        // // Z-Prepass.
-        // if(settings.z_prepass.is_enabled) {
-        //     bind(z_prepasser);
+        // Z-Prepass.
+        if(settings.z_prepass.is_enabled) {
+            bind(hdr_framebuffer);
 
-        //     glBindVertexArray(scene_z_prepasser_vao);
+            bind_for_depth(forward_renderer);
+            bind_for_depth(forward_renderer, accepted_commands);
+            bind_for_depth(forward_renderer, scene.materials);
+            bind_for_depth(forward_renderer, scene.objects.data);
 
-        //     glDepthFunc(GL_LESS);
-        //     auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
-            
-        //     glProgramUniformMatrix4fv(z_prepasser.program,
-        //         z_prepasser.world_to_clip,
-        //         1, GL_FALSE, data(w2c));
+            glBindVertexArray(forward_rendering_vao);
 
-        //     glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
-        //         accepted_commands.commands_buffer);
-        //     glMultiDrawElementsIndirect(
-        //         GL_TRIANGLES, GL_UNSIGNED_INT,
-        //         0, size(accepted_commands), 0);
-        // }
+            glProgramUniformMatrix4fv(forward_renderer.depth_program,
+                forward_renderer.depth_world_to_clip_position,
+                1, GL_FALSE, data(w2c));
+
+            // glCullFace(GL_BACK);
+            // glEnable(GL_CULL_FACE);
+
+            glDepthFunc(GL_LESS);
+            glEnable(GL_DEPTH_TEST);
+
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+                accepted_commands.commands_buffer);
+            glMultiDrawElementsIndirect(
+                GL_TRIANGLES, GL_UNSIGNED_INT,
+                0, size(accepted_commands), 0);
+
+            // glDisable(GL_CULL_FACE);
+
+            glDisable(GL_DEPTH_TEST);
+        }
         { // Draw point clouds.
+            bind(hdr_framebuffer);
+
             bind(ray_tracer);
 
             glDepthFunc(GL_LESS);
@@ -522,6 +545,18 @@ void Application::render() {
             glDrawArrays(GL_POINTS, 0, ray_tracer.pc.size);
         }
     }
+    { // Tone mapping.
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            bind(tone_mapper);
+            bind(tone_mapper, hdr_framebuffer);
+
+            glViewport(0, 0, 1280, 720);
+
+            glBindVertexArray(tone_mapping_vao);
+
+            draw(tone_mapper);
+        }
     {
         render_ui(*this);
     }

@@ -81,6 +81,10 @@ struct Application : Program {
     WireQuadObject wire_quad;
     gl::VertexArray wire_quad_vao;
 
+    // Time queries.
+
+    gl::Query gpu_time_query = GL_TIME_ELAPSED;
+
     //
 
     Settings settings;

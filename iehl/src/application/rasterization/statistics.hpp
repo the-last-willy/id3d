@@ -42,6 +42,15 @@ auto rejected_ratio(const OcclusionCullingStatistics& ocs) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+struct RasterizationStatistics {
+    unsigned object_draw_count = 0;
+
+    float cpu_time = 0.f;
+    float gpu_time = 0.f;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 struct RayTracerStatistics {
     std::size_t point_count = 0;
 };
@@ -51,5 +60,6 @@ struct RayTracerStatistics {
 struct Statistics {
     FrustumCullingStatistics frustum_culling;
     OcclusionCullingStatistics occlusion_culling;
+    RasterizationStatistics rasterization;
     RayTracerStatistics ray_tracer;
 };

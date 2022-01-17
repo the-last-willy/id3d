@@ -18,7 +18,7 @@ struct PointCloud {
     GLsizei capacity;
     GLsizei size;
 
-    PointCloud(GLsizei capacity = 1'000'000)
+    PointCloud(GLsizei capacity = 10'000'000)
         : capacity(capacity)
         , size(0)
     {

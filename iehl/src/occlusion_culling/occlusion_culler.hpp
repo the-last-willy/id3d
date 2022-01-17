@@ -81,7 +81,7 @@ OcclusionCuller occlusion_culler(eng::ShaderCompiler& sc) {
     glNamedFramebufferTexture(oc.depth_fbo,
         GL_DEPTH_ATTACHMENT, oc.draw_depth_texture, 0);
 
-    // Shader storage buffer bindigs.
+    // Shader storage buffer bindings.
 
     gl::ShaderStorageBlockBinding(oc.cull_program,
         "input_draw_commands_buffer",
