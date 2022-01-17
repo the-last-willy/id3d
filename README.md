@@ -15,14 +15,9 @@ If the results are interesting they might be moved into their own projects.
 
 # Projects
 
-- [3D Image Synthesis (iehl)](https://github.com/the-last-willy/id3d/tree/main/iehl)
-- [Implicit modelling (galin)](https://github.com/the-last-willy/id3d/tree/main/galin)
+- [3D Image Synthesis / GPU programming (iehl)](https://github.com/the-last-willy/id3d/tree/main/iehl)
+- [Implicit modelling / Digital terrain modelling (galin)](https://github.com/the-last-willy/id3d/tree/main/galin)
 - [Meshes and Computational Geometry (chaine)](https://github.com/the-last-willy/id3d/tree/main/chaine)
-
-Upcoming projects:
-- Digital terrain modelling (galin2)
-- GPU programming (iehl2)
-- Animation (meyer/zara) ???
 
 Some of these projects have been made in group.
 
