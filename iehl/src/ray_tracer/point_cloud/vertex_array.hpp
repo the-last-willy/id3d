@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../z_prepasser/z_prepasser.hpp"
 #include "../ray_tracer.hpp"
 #include "point_cloud.hpp"
 
@@ -56,6 +57,32 @@ gl::VertexArray vertex_array(
             0, sizeof(PointCloud::Position));
         glEnableVertexArrayAttrib(vao,
             rt.draw_position);
+    }
+    return vao;
+}
+
+
+inline
+gl::VertexArray vertex_array(
+    const PointCloud& pc,
+    const Z_Prepasser& zp)
+{
+    auto vao = gl::VertexArray();
+    if(gl::GetNamedBufferParameter(pc.position_vbo, GL_BUFFER_SIZE) > 0) {
+        auto bindingindex = GLuint(0);
+        auto size = GLint(3);
+        glVertexArrayAttribBinding(vao,
+            zp.world_position,
+            bindingindex);
+        glVertexArrayAttribFormat(vao,
+            zp.world_position,
+            size, GL_FLOAT, GL_FALSE, 0);
+        glVertexArrayVertexBuffer(vao,
+            bindingindex,
+            pc.position_vbo,
+            0, sizeof(PointCloud::Position));
+        glEnableVertexArrayAttrib(vao,
+            zp.world_position);
     }
     return vao;
 }

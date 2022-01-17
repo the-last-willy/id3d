@@ -37,6 +37,7 @@ struct Application : Program {
     // Ray tracer.
 
     RayTracer ray_tracer;
+    gl::VertexArray point_cloud_z_prepasser_vao;
 
     //
 
@@ -60,8 +61,7 @@ struct Application : Program {
     gl::VertexArray tone_mapping_vao;
 
     eng::Camera camera;
-    eng::Camera frustum_culling_camera;
-    eng::Camera occlusion_culling_camera;
+    eng::Camera culling_camera;
 
     LightCulling light_culling;
 

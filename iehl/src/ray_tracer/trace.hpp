@@ -139,48 +139,37 @@ void trace(
                 .origin = position + 0.001f * light_dir,
                 .direction = light_dir};
 
-            // auto lci = closest_intersection(s, light_ray);
-            // if(lci) {
-            //     auto [la, lb, lc] = s.objects.topology.triangle_indices[lci->index];
-            //     auto [lu, lv, lw] = lci->barycentric_coordinates;
-            //     auto lposition
-            //     = lu * vas.positions[la]
-            //     + lv * vas.positions[lb]
-            //     + lw * vas.positions[lc];
+            auto lci = closest_intersection(s, light_ray);
+            if(lci) {
+                auto [la, lb, lc] = s.objects.topology.triangle_indices[lci->index];
+                auto [lu, lv, lw] = lci->barycentric_coordinates;
+                auto lposition
+                = lu * vas.positions[la]
+                + lv * vas.positions[lb]
+                + lw * vas.positions[lc];
 
-            //     auto dist = distance(lposition, eposition);
-            //     if(dist < 0.001f) {
-            //         push_back(rt.pc, Point{
-            //             .color = agl::vec3(
-            //                 material.color_factor[0],
-            //                 material.color_factor[1],
-            //                 material.color_factor[2]),
-            //             .normal = agl::normalize(
-            //                 u * vas.normals[a]
-            //                 + v * vas.normals[b]
-            //                 + w * vas.normals[c]),
-            //             .position = position});
-            //     } else {
-            //         push_back(rt.pc, Point{
-            //             .color = agl::vec3(0.f),
-            //             .normal = agl::normalize(
-            //                 u * vas.normals[a]
-            //                 + v * vas.normals[b]
-            //                 + w * vas.normals[c]),
-            //             .position = position});
-            //     }
-            // }
-
-            push_back(rt.pc, Point{
-                .color = agl::vec3(
-                    material.color_factor[0],
-                    material.color_factor[1],
-                    material.color_factor[2]),
-                .normal = agl::normalize(
-                    u * vas.normals[a]
-                    + v * vas.normals[b]
-                    + w * vas.normals[c]),
-                .position = eposition});
+                auto dist = distance(lposition, eposition);
+                if(dist < 0.001f) {
+                    push_back(rt.pc, Point{
+                        .color = agl::vec3(
+                            material.color_factor[0],
+                            material.color_factor[1],
+                            material.color_factor[2]),
+                        .normal = agl::normalize(
+                            u * vas.normals[a]
+                            + v * vas.normals[b]
+                            + w * vas.normals[c]),
+                        .position = position});
+                } else {
+                    push_back(rt.pc, Point{
+                        .color = agl::vec3(0.f),
+                        .normal = agl::normalize(
+                            u * vas.normals[a]
+                            + v * vas.normals[b]
+                            + w * vas.normals[c]),
+                        .position = position});
+                }
+            }
         }
     }
 }

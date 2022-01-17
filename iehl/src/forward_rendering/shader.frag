@@ -72,7 +72,7 @@ vec3 lighting(in Fragment f, in LightProperties light) {
     vec3 halfway_dir = normalize(light_dir + f.view_dir);
     float specular = pow(max(dot(halfway_dir, f.normal_dir), 0.), f.shininess);
 
-    return (lambertian + specular) * light.rgb_color.rgb / inv_attenuation;
+    return (specular) * light.rgb_color.rgb / inv_attenuation;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

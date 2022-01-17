@@ -14,7 +14,7 @@ void render_ui(Application& app) {
             ImGui::Text("Debbuging:");
             ImGui::Checkbox(
                 "Anchor view",
-                &app.settings.frustum_culling.is_anchored);
+                &app.settings.is_culling_anchored);
 
             ImGui::NewLine();
 
@@ -37,7 +37,7 @@ void render_ui(Application& app) {
             ImGui::Text("Debbuging:");
             ImGui::Checkbox(
                 "Anchor view",
-                &app.settings.occlusion_culling.is_anchored);
+                &app.settings.is_culling_anchored);
 
             ImGui::NewLine();
 

@@ -92,11 +92,27 @@ void load_lights(
             }
         }
     }
-    {
+    std::cout << "unmerged light count=" << size(lg.light_properties) << std::endl;
+    { // Merge lights.
+        auto unmerged_lights = std::move(lg.light_properties);
+        for(auto& ul : unmerged_lights) {
+            bool is_merged = false;
+            for(auto& l : lg.light_properties) {
+                if(are_mergeable(l, ul)) {
+                    l = merged(l, ul);
+                    is_merged = true;
+                }
+            }
+            if(not is_merged) {
+                lg.light_properties.push_back(ul);
+            }
+        }
+    }
+    { // Upload to GPU.
         if(size(lg.light_properties) > 0) {
             gl::NamedBufferStorage(lg.light_properties_ssbo,
                 lg.light_properties);
         }
     }
-    std::cout << "light count=" << size(lg.light_properties) << std::endl;
+    std::cout << "merged light count=" << size(lg.light_properties) << std::endl;
 }

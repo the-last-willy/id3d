@@ -23,15 +23,19 @@ void Application::render() {
     auto accepted_commands = CommandGroup(size(scene.objects.topology.commands));
     auto frustum_culling_rejected_commands = CommandGroup();
     auto occlusion_culling_rejected_commands = CommandGroup();
-
+    { // Setup.
+        // Initialize the draw commands with all the draw commands of the scene.
+        // Culling passes will filter these.
+        accepted_commands.commands = scene.objects.topology.commands.commands;
+        copy_cpu_to_gpu(accepted_commands);
+    }
+    { // Clear default framebuffer.
+        gl::ClearNamedFramebuffer(0,
+            GL_DEPTH, 0, 1.f);
+    }
     if(settings.rasterizer.is_enabled) {
-        { // Setup.
-            // Initialize the draw commands with all the draw commands of the scene.
-            // Culling passes will filter these.
-            accepted_commands.commands = scene.objects.topology.commands.commands;
-            copy_cpu_to_gpu(accepted_commands);
-        }
-        if constexpr(false) { // Frustum culling.
+        // Frustum culling.
+        if(settings.frustum_culling.is_enabled) {
             auto output_commands = CommandGroup(size(accepted_commands));
             copy_cpu_to_gpu(output_commands);
 
@@ -42,9 +46,9 @@ void Application::render() {
                 scene.objects.data);
 
             auto fc_clip_to_world
-            = agl::engine::clip_to_world(frustum_culling_camera);
+            = agl::engine::clip_to_world(culling_camera);
             auto fc_world_to_clip
-            = agl::engine::world_to_clip(frustum_culling_camera);
+            = agl::engine::world_to_clip(culling_camera);
 
             auto frustum_clip_bounds = agl::common::interval(
                 agl::vec4(agl::vec3(-1.f), 1.f),
@@ -92,7 +96,7 @@ void Application::render() {
             accepted_commands = std::move(output_commands);
         }
         // Occlusion culling.
-        if(settings.occlusion_culling.is_enabled) {
+        if constexpr(false) {
             { // Drawing.
                 bind_for_drawing(occlusion_culler);
 
@@ -122,7 +126,7 @@ void Application::render() {
             { // Mipmapping.
                 generate_mipmap(occlusion_culler);
             }
-            if constexpr(false) { // Culling.
+            if constexpr(true) { // Culling.
                 auto output_commands = CommandGroup(size(accepted_commands));
                 copy_cpu_to_gpu(output_commands);
 
@@ -132,7 +136,7 @@ void Application::render() {
                 bind_for_culling(occlusion_culler,
                     scene.objects.data);
 
-                auto oc_w2c = agl::engine::world_to_clip(occlusion_culling_camera);
+                auto oc_w2c = agl::engine::world_to_clip(culling_camera);
 
                 glProgramUniformMatrix4fv(occlusion_culler.cull_program,
                     occlusion_culler.cull_world_to_clip_uniform_location,
@@ -173,24 +177,34 @@ void Application::render() {
         }
         // Z-Prepass.
         if(settings.z_prepass.is_enabled) {
-            bind(z_prepasser);
+            bind_for_depth(forward_renderer);
+            bind_for_depth(forward_renderer, accepted_commands);
+            bind_for_depth(forward_renderer, scene.materials);
+            bind_for_depth(forward_renderer, scene.objects.data);
 
-            glBindVertexArray(scene_z_prepasser_vao);
+            glBindVertexArray(forward_rendering_vao);
+
+            glProgramUniformMatrix4fv(forward_renderer.depth_program,
+                forward_renderer.depth_world_to_clip_position,
+                1, GL_FALSE, data(w2c));
+
+            // glCullFace(GL_BACK);
+            // glEnable(GL_CULL_FACE);
 
             glDepthFunc(GL_LESS);
-            auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
-            
-            glProgramUniformMatrix4fv(z_prepasser.program,
-                z_prepasser.world_to_clip,
-                1, GL_FALSE, data(w2c));
+            glEnable(GL_DEPTH_TEST);
 
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
                 accepted_commands.commands_buffer);
             glMultiDrawElementsIndirect(
                 GL_TRIANGLES, GL_UNSIGNED_INT,
                 0, size(accepted_commands), 0);
+
+            // glDisable(GL_CULL_FACE);
+
+            glDisable(GL_DEPTH_TEST);
         }
-        if constexpr(true) { // Drawing.
+        if constexpr(false) { // Drawing.
             bind(forward_renderer);
             bind(forward_renderer, accepted_commands);
             bind(forward_renderer, scene.materials);
@@ -237,7 +251,7 @@ void Application::render() {
 
             glDisable(GL_DEPTH_TEST);
         }
-        if constexpr(false) { // Solid BBox drawing.
+        if constexpr(true) { // Solid BBox drawing.
             glUseProgram(solid_renderer.program);
 
             glBlendEquation(GL_FUNC_ADD);
@@ -411,30 +425,12 @@ void Application::render() {
             glCullFace(GL_BACK);
             auto cap_cf = scoped(gl::Enable(GL_CULL_FACE));
 
-            // Frustum culling frustum.
-            if(settings.frustum_culling.is_anchored) {
+            // Culling frustum.
+            if(settings.is_culling_anchored) {
                 gl::ProgramUniform4fv(solid_renderer.program,
                     solid_renderer.rgba_color,
-                    std::array{0.5f, 0.f, 0.f, 1.f});
-                auto frustum_o2w = solid_box_model_to_world(frustum_culling_camera);
-                auto frustum_o2c = w2c * frustum_o2w;
-                glProgramUniformMatrix4fv(solid_renderer.program,
-                    solid_renderer.object_to_clip_position,
-                    1, GL_FALSE, data(frustum_o2c));
-                glProgramUniformMatrix4fv(solid_renderer.program,
-                    solid_renderer.object_to_world_normal,
-                    1, GL_FALSE, data(frustum_o2w));
-                glProgramUniformMatrix4fv(solid_renderer.program,
-                    solid_renderer.object_to_world_position,
-                    1, GL_FALSE, data(frustum_o2w));
-                draw(solid_box.topology);
-            }
-            // Occlusion culling frustum.
-            if(settings.occlusion_culling.is_anchored) {
-                gl::ProgramUniform4fv(solid_renderer.program,
-                    solid_renderer.rgba_color,
-                    std::array{0.f, 0.2f, 0.f, 1.f});
-                auto frustum_o2w = solid_box_model_to_world(occlusion_culling_camera);
+                    std::array{0.2f, 0.2f, 0.2f, 1.f});
+                auto frustum_o2w = solid_box_model_to_world(culling_camera);
                 auto frustum_o2c = w2c * frustum_o2w;
                 glProgramUniformMatrix4fv(solid_renderer.program,
                     solid_renderer.object_to_clip_position,
@@ -448,7 +444,7 @@ void Application::render() {
                 draw(solid_box.topology);
             }
             glCullFace(GL_FRONT);
-            // Lights.
+            // // Lights.
             // for(auto& l : scene.lights.light_properties) {
             //     auto l_o2w = agl::translation(l.position.xyz()) * agl::scaling3(0.5f);
             //     auto l_o2c = w2c * l_o2w;
@@ -483,11 +479,30 @@ void Application::render() {
         }
     }
     if(settings.ray_tracer.is_enabled) {
-        { // Draw points.
+        // // Z-Prepass.
+        // if(settings.z_prepass.is_enabled) {
+        //     bind(z_prepasser);
+
+        //     glBindVertexArray(scene_z_prepasser_vao);
+
+        //     glDepthFunc(GL_LESS);
+        //     auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
+            
+        //     glProgramUniformMatrix4fv(z_prepasser.program,
+        //         z_prepasser.world_to_clip,
+        //         1, GL_FALSE, data(w2c));
+
+        //     glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+        //         accepted_commands.commands_buffer);
+        //     glMultiDrawElementsIndirect(
+        //         GL_TRIANGLES, GL_UNSIGNED_INT,
+        //         0, size(accepted_commands), 0);
+        // }
+        { // Draw point clouds.
             bind(ray_tracer);
 
-            // glDepthFunc(GL_LESS);
-            // auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
+            glDepthFunc(GL_LESS);
+            auto cap_dt = scoped(gl::Enable(GL_DEPTH_TEST));
 
             glBindVertexArray(ray_tracer.pc.vao);
 

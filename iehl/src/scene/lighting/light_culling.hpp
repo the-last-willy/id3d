@@ -57,7 +57,7 @@ auto light_culling(
                 auto lp = l.position.xyz();
                 auto d = agl::distance(clamp(cell, lp), lp);
                 auto monomial_basis = agl::vec3(1.f, d, d * d);
-                if(1.f / dot(monomial_basis, l.attenuation.xyz()) > 0.02f) {
+                if(1.f / dot(monomial_basis, l.attenuation.xyz()) > 0.03f) {
                     lc.light_indices.push_back(li);
                     count += 1;
                 }

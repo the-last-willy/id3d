@@ -111,7 +111,7 @@ void grid_subdivision(
         og.data.object_bounds.clear();
         for(auto& c : og.topology.commands.commands) {
             auto bounds = agl::common::interval(positions[tis[c.firstIndex / 3][0]]);
-            for(GLuint i = c.firstIndex; i < c.firstIndex + c.count / 3; ++i) {
+            for(GLuint i = c.firstIndex; i < c.firstIndex + c.count; i += 3) {
                 extend(bounds, positions[tis[i / 3][0]]);
                 extend(bounds, positions[tis[i / 3][1]]);
                 extend(bounds, positions[tis[i / 3][2]]);

@@ -18,8 +18,8 @@ void Application::init() {
             pp->z_far = 500.f;
             pp->z_near = 1.f;
         }
-        frustum_culling_camera = camera;
-        occlusion_culling_camera = camera;
+        culling_camera = camera;
+        culling_camera = camera;
     }
     { // Computer shaders.
         frustum_culler = ::frustum_culler(shader_compiler);
@@ -32,8 +32,8 @@ void Application::init() {
     { // Scene.
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/bistro-small/exterior.obj");
         // scene = wavefront_scene("C:/Users/Willy/Desktop/data/wavefront/CornellBox/cornell-box.obj");
-        scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
-        // scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
+        // scene = wavefront_scene("D:/data/cornell-box/cornell-box.obj");
+        scene = wavefront_scene("D:/data/bistro-small/exterior.obj");
         
         grid_subdivision(scene.objects, {8, 8, 8});
         update_emissive_triangle_ids(scene);
@@ -43,6 +43,9 @@ void Application::init() {
     }
     { // Ray tracer.
         ray_tracer = ::ray_tracer(shader_compiler);
+        // point_cloud_z_prepasser_vao = vertex_array(
+        //     ray_tracer.point_cloud,
+        //     z_prepasser);
     }
     { // Light culling.
         std::cout << "Light culling." << std::endl;

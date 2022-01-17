@@ -31,16 +31,8 @@ void Application::update(float) {
         }
     }
     { // Frustum culling.
-        if(not settings.frustum_culling.is_anchored) {
-            frustum_culling_camera = camera;
-            if(auto pp = std::get_if<eng::PerspectiveProjection>(&frustum_culling_camera.projection)) {
-                pp->z_far = 100.f;
-            }
-        }
-    }
-    { // Occlusion culling.
-        if(not settings.occlusion_culling.is_anchored) {
-            occlusion_culling_camera = camera;
+        if(not settings.is_culling_anchored) {
+            culling_camera = camera;
         }
     }
     // Ray tracer.
