@@ -133,4 +133,38 @@ At first I wanted to make an orerry but it was rejected by the teacher for some 
 
 ![image](https://user-images.githubusercontent.com/84744335/168466566-0325f574-08a8-4c17-a43e-8dd264b2214a.png)
 
-# Meshes and computational geometry
+# [Meshes and computational geometry](meshes_and_computational_geometry.pdf)
+
+In this project we had to implement mesh representations and mesh maniputation algorithms.
+
+Unfortunately, there's is not much to show as I spent a lot of time optimizing data structures and ensuring the algorithms were correct.
+
+A lot of work was done on mesh element traversal and I came up with, I believe, some interesting ideas.
+
+The mesh representation is able to support abitrary data on elements as well as arbitrary topology.
+
+The project had a part on 2D triangulations and one on 3D triangulation.
+
+50% of triangle decimation by shortest edge:
+
+![image](https://user-images.githubusercontent.com/84744335/168466971-7f92651c-c093-45fb-b113-f398ee0d2d32.png)
+
+90% of triangle decimation by shortest edge:
+
+![image](https://user-images.githubusercontent.com/84744335/168466990-05dde2df-a726-4f37-82fe-d24916c96c11.png)
+
+97% of triangle decimation by shortest edge:
+
+![image](https://user-images.githubusercontent.com/84744335/168466994-fc324497-8487-4fe8-8fe2-650c96c7fe62.png)
+
+Computation of Laplacian:
+
+![image](https://user-images.githubusercontent.com/84744335/168466921-c3158b27-e92f-40b0-a50f-15169b81216a.png)
+
+Computation of average curvature:
+
+![image](https://user-images.githubusercontent.com/84744335/168466932-bfb745ae-f99d-4df3-a105-cca65272a72e.png)
+
+Delaunay triangulation and Voronoi dual:
+
+![image](https://user-images.githubusercontent.com/84744335/168467108-c02afd32-1479-44ad-b01b-26dd35055617.png)
