@@ -11,7 +11,7 @@ Below are images taken from the submitted reports.
 
 # [3D Image Synthesis](3d_image_synthesis.pdf)
 
-The goal of this class was to explore rendering.
+The goal of this project was to explore rendering.
 I chose to focus on optimization and culling technics (frustum, occlusion and light).
 
 Both the frustum and occlusion culling were implemented on compute shaders.
@@ -64,7 +64,55 @@ Real-time ray traced point cloud:
 
 ![image](https://user-images.githubusercontent.com/84744335/168463970-7191923d-cc10-45c8-87b8-5d57e6587e74.png)
 
-# Digital terrain modelling
+# [Digital terrain modelling](digital_terrain_modelling.pdf)
+
+The goal of this project was to implement common algortihms for terrain manipulation.
+
+I made a real-time visualizer to load, explore and interact with terrains.
+
+Computing vegetation distributions:
+
+![image](https://user-images.githubusercontent.com/84744335/168465867-1e1ff0da-b3a4-4986-84b5-bf4749efca95.png)
+
+Sampling and instancing vegetation:
+
+![image](https://user-images.githubusercontent.com/84744335/168465881-c0224b6a-922d-45f9-98d6-7955f6ab8353.png)
+
+Applying successive erosion operations - before:
+
+![image](https://user-images.githubusercontent.com/84744335/168465497-1511dd59-0a8f-47b0-8349-bf4f7a6fac8d.png)
+
+Applying successive erosion operations - after:
+
+![image](https://user-images.githubusercontent.com/84744335/168465521-a6cabb05-f0ab-442c-9b32-93c2c80fe795.png)
+
+Breaching:
+
+![image](https://user-images.githubusercontent.com/84744335/168465550-6db8f8fb-2c27-4eff-ab20-76f849647879.png)
+
+Debris slope erosion:
+
+![image](https://user-images.githubusercontent.com/84744335/168465465-a9106410-9a01-4116-a5b0-5f489aa0d2bd.png)
+
+Hill slope erosion:
+
+![image](https://user-images.githubusercontent.com/84744335/168465575-47d7a080-667a-46ea-b4ba-85e8c8a2ef79.png)
+
+Stream power erosion:
+
+![image](https://user-images.githubusercontent.com/84744335/168465590-8a44b814-8e89-47bb-814e-6586f6d51e2f.png)
+
+Computing drainage area using steepest and weighted methods:
+
+![image](https://user-images.githubusercontent.com/84744335/168465442-269debc6-671f-4d91-b6b2-610afc86de0b.png)
+
+Shaded, normals, slope, Laplacian.
+
+![image](https://user-images.githubusercontent.com/84744335/168465616-008e086f-8717-4368-9203-63a62b40ab99.png)
+
+Bigger terrain support:
+
+![image](https://user-images.githubusercontent.com/84744335/168465774-ff2a05d0-0608-4739-ad5a-eafd6e8919b0.png)
 
 # Implicit modelling ([Shadertoy](https://www.shadertoy.com/view/sd3XWX))
 
