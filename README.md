@@ -114,8 +114,23 @@ Bigger terrain support:
 
 ![image](https://user-images.githubusercontent.com/84744335/168465774-ff2a05d0-0608-4739-ad5a-eafd6e8919b0.png)
 
-# Implicit modelling ([Shadertoy](https://www.shadertoy.com/view/sd3XWX))
+# [Implicit modelling](implicit_modelling.pdf) ([Shadertoy](https://www.shadertoy.com/view/sd3XWX))
+
+In this project we had to make any object in shadertoy using implicit geometric representations.
+I ended up making a shadertoy like viewer with editing features, it took me a lot of work and wasn't required.
+
+The editor generates GLSL code based on a hierarchical symbolic based representation of the object.
+It provides a free movement camera as well as the capacity to interact with parameters of subobjects and their transformations.
+
+At the end I just pasted the code generated into a shadertoy.
+
+The coolest master Roshi ever made in shadertoy:
 
 ![image](https://user-images.githubusercontent.com/84744335/168463849-608fc122-2301-4456-93f5-f14e2005bf9f.png)
+
+At first I wanted to make an orerry but it was rejected by the teacher for some reason.
+[Here's the unifinished thing:](https://www.shadertoy.com/view/fdySzz)
+
+![image](https://user-images.githubusercontent.com/84744335/168466566-0325f574-08a8-4c17-a43e-8dd264b2214a.png)
 
 # Meshes and computational geometry
