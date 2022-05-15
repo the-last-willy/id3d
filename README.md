@@ -114,6 +114,48 @@ Bigger terrain support:
 
 ![image](https://user-images.githubusercontent.com/84744335/168465774-ff2a05d0-0608-4739-ad5a-eafd6e8919b0.png)
 
+# [Surface modelling](suraface_modelling.pdf)
+
+In this project we had to implement surface representations sur as Bezier patches and space transformations.
+
+Barr's taper deformation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477832-66917e26-00cf-42f5-bb26-b486e8462041.png)
+
+Barr's twist deformation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477905-b6b52a33-4b50-40ef-855f-199e59bede68.png)
+
+Barr's bend deformation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477864-74fc6860-c994-4e7a-9720-400d3af7c29b.png)
+
+Free form déformation:
+
+Localized twist deformation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477765-df3498ac-678c-474e-ba4e-66680144a09d.png)
+
+Localized extrusion deformation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477729-b18e961b-1d98-47dd-9c47-2a826637d86b.png)
+
+Localized attraction deformation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477707-6ec6af41-9578-47b2-9e62-01a761f5d422.png)
+
+Closed revolution surface using a Bezier curve:
+
+![image](https://user-images.githubusercontent.com/84744335/168477604-22c3c61e-7ecd-4cad-9393-3c34071ac9ca.png)
+
+Hemisphere revolution surface using a rational Bezier curve:
+
+![image](https://user-images.githubusercontent.com/84744335/168477637-e437669c-e997-4940-b41c-c0389146a40a.png)
+
+Utah teapot generated from its Bezier patch representation:
+
+![image](https://user-images.githubusercontent.com/84744335/168477583-559ea38e-7ad4-4c0c-b1d8-c526c64ac8f0.png)
+
 # [Implicit modelling](implicit_modelling.pdf) ([Shadertoy](https://www.shadertoy.com/view/sd3XWX))
 
 In this project we had to make any object in shadertoy using implicit geometric representations.
